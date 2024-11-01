@@ -12,9 +12,9 @@ import {
   Switch,
 } from "solid-js";
 
-import { Textarea } from "../ui/textarea";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Client } from "@/libs/core/type";
 import { textareaAutoResize } from "@/libs/hooks/input-resize";
 import { cn } from "@/libs/cn";
@@ -22,7 +22,7 @@ import {
   Progress,
   ProgressLabel,
   ProgressValueLabel,
-} from "../ui/progress";
+} from "@/components/ui/progress";
 import { clientProfile } from "@/libs/core/store";
 import {
   ChunkCache,
@@ -34,7 +34,7 @@ import {
 } from "@/libs/core/file-transferer";
 import createTransferSpeed from "@/libs/hooks/transfer-speed";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
-import { ContextMenuItem } from "../ui/context-menu";
+import { ContextMenuItem } from "@/components/ui/context-menu";
 
 import { convertImageToPNG } from "@/libs/utils/conver-to-png";
 
@@ -50,7 +50,7 @@ import {
 } from "@/libs/core/messge";
 import { cacheManager } from "@/libs/services/cache-serivce";
 import { transferManager } from "@/libs/services/transfer-service";
-import { PortableContextMenu } from "../portable-contextmenu";
+import { PortableContextMenu } from "@/components/portable-contextmenu";
 import {
   IconAttachFile,
   IconAudioFileFilled,
@@ -68,14 +68,11 @@ import {
   IconSchedule,
   IconSend,
   IconVideoFileFilled,
-} from "../icons";
+} from "@/components/icons";
 import { sessionService } from "@/libs/services/session-service";
 import { t } from "@/i18n";
-import { createSendItemPreviewDialog } from "../preview-dialog";
-import { toast } from "solid-sonner";
 import { Dynamic } from "solid-js/web";
-import { createMediaQuery } from "@solid-primitives/media";
-import { appOptions } from "@/options";
+
 import { createTimeAgo } from "@/libs/utils/timeago";
 export interface MessageCardProps
   extends ComponentProps<"li"> {
@@ -666,171 +663,3 @@ export interface MessageChatProps
   extends ComponentProps<"div"> {
   target: string;
 }
-
-export const ChatBar: Component<
-  ComponentProps<"div"> & { client: Client }
-> = (props) => {
-  const [local, other] = splitProps(props, [
-    "client",
-    "class",
-  ]);
-  const { send } = useWebRTC();
-  const [text, setText] = createSignal("");
-
-  const { open: openPreview, Component: PreviewDialog } =
-    createSendItemPreviewDialog();
-  const isMobile = createMediaQuery("(max-width: 768px)");
-  const onSend = async () => {
-    if (text().trim().length === 0) return;
-    try {
-      if (
-        await send(text(), {
-          target: props.client.clientId,
-        })
-      ) {
-        setText("");
-      }
-    } catch (error) {
-      console.error(error);
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error(t("common.notification.unknown_error"));
-      }
-    }
-  };
-
-  return (
-    <div
-      class={cn(
-        `sticky bottom-0 z-10 flex flex-col gap-1 border-t
-        border-border bg-background/80 backdrop-blur`,
-        local.class,
-      )}
-      {...other}
-    >
-      <PreviewDialog />
-      <form
-        id="send"
-        onSubmit={async (ev) => {
-          ev.preventDefault();
-          onSend();
-        }}
-      >
-        <Textarea
-          ref={(ref) => {
-            createEffect(() => {
-              textareaAutoResize(ref, text);
-            });
-          }}
-          rows="1"
-          class="max-h-48 resize-none"
-          onKeyDown={async (e) => {
-            if (e.key === "Enter") {
-              if (e.ctrlKey || e.shiftKey) {
-                e.preventDefault();
-                await onSend();
-              }
-            }
-          }}
-          placeholder={t("chat.message_editor.placeholder")}
-          value={text()}
-          onInput={(ev) => setText(ev.currentTarget.value)}
-          onPaste={(ev) => {
-            if (
-              navigator.clipboard &&
-              appOptions.enableClipboard
-            ) {
-              if (!isMobile()) {
-                ev.stopPropagation();
-              } else {
-                setTimeout(() => {
-                  setText("");
-                }, 0);
-              }
-            }
-            const clipboardData = ev.clipboardData;
-            const items = clipboardData?.items;
-            if (!items) return;
-
-            for (let i = 0; i < items.length; i++) {
-              if (items[i].kind === "file") {
-                ev.preventDefault();
-
-                const imageFile = items[i].getAsFile();
-                if (!imageFile) continue;
-
-                openPreview(imageFile, props.client.name)
-                  .then(({ result }) => {
-                    if (result) {
-                      return send(imageFile, {
-                        target: local.client.clientId,
-                      });
-                    }
-                  })
-                  .catch((error) => {
-                    console.error(error);
-                    if (error instanceof Error) {
-                      toast.error(error.message);
-                    } else {
-                      toast.error(
-                        t(
-                          "common.notification.unknown_error",
-                        ),
-                      );
-                    }
-                  });
-                break;
-              }
-            }
-          }}
-        />
-      </form>
-      <div class="flex gap-1">
-        <Show
-          when={
-            isMobile() &&
-            navigator.clipboard &&
-            appOptions.enableClipboard
-          }
-        >
-          <p class="text-xs text-muted-foreground">
-            {t("chat.message_editor.paste_tip")}
-          </p>
-        </Show>
-        <Button
-          class="ml-auto"
-          as="label"
-          variant="ghost"
-          size="icon"
-        >
-          <IconAttachFile class="size-6" />
-          <Input
-            multiple
-            class="hidden"
-            type="file"
-            onChange={(ev) => {
-              const files = ev.currentTarget.files;
-              if (!files) return;
-              for (let i = 0; i < files.length; i++) {
-                const file = files.item(i)!;
-                send(file, {
-                  target: local.client.clientId,
-                });
-              }
-            }}
-          />
-        </Button>
-
-        <Button
-          form="send"
-          type="submit"
-          variant="ghost"
-          size="icon"
-        >
-          <IconSend class="size-6" />
-        </Button>
-      </div>
-    </div>
-  );
-};

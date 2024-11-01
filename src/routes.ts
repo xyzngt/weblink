@@ -11,9 +11,15 @@ const routes = [
         component: lazy(() => import("@/routes/client")),
       },
       {
-        path: "client/:id",
+        path: "client/:id/chat",
         component: lazy(
-          () => import("@/routes/client/[id]"),
+          () => import("@/routes/client/[id]/chat"),
+        ),
+      },
+      {
+        path: "client/:id/sync",
+        component: lazy(
+          () => import("@/routes/client/[id]/sync"),
         ),
       },
     ],

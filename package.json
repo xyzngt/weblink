@@ -1,13 +1,14 @@
 {
   "name": "weblink",
   "type": "module",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "license": "MIT",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
+    "clean": "node scripts/clean.js",
     "generate-pwa-assets": "pwa-assets-generator"
   },
   "dependencies": {
@@ -24,8 +25,6 @@
     "@solid-primitives/date": "^2.0.24",
     "@solid-primitives/devices": "^1.2.6",
     "@solid-primitives/i18n": "^2.1.1",
-    "@solid-primitives/map": "^0.4.13",
-    "@solid-primitives/media": "^2.2.9",
     "@solid-primitives/permission": "^1.2.6",
     "@solid-primitives/resize-observer": "^2.0.26",
     "@solid-primitives/storage": "^4.0.0",

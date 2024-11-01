@@ -10,7 +10,7 @@ import {
   ContextMenuContent,
   ContextMenuTrigger,
 } from "./ui/context-menu";
-import { createMediaQuery } from "@solid-primitives/media";
+import { createIsMobile } from "@/libs/hooks/create-mobile";
 
 export interface PortableContextMenuProps {
   content: Component<ComponentProps<"">>;
@@ -20,7 +20,7 @@ export interface PortableContextMenuProps {
 export const PortableContextMenu: Component<
   PortableContextMenuProps
 > = (props) => {
-  const isMobile = createMediaQuery("(max-width: 768px)");
+  const isMobile = createIsMobile();
   const { open, close, Component } = createDrawer({
     content: () => (
       <div class="mx-4 mb-8">

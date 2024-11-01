@@ -1,15 +1,8 @@
-import { Component, Match, Show, Switch } from "solid-js";
-import {
-  downloadQRCode,
-  QRCode,
-} from "@/components/qrcode";
+import { Component, Match, Switch } from "solid-js";
 import { useColorMode } from "@kobalte/core";
-import { CopyToClipboard } from "@/components/copy-to-clipboard";
 import { t } from "@/i18n";
-import { joinUrl } from "@/components/join-dialog";
 import { sessionService } from "@/libs/services/session-service";
-import { Input } from "@/components/ui/input";
-import { toast } from "solid-sonner";
+
 
 const Client: Component = (props) => {
   const { colorMode } = useColorMode();

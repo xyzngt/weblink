@@ -23,15 +23,9 @@ import {
   readPacket,
 } from "./utils/packet";
 
-import {
-  deflate,
-  inflate,
-  gzip,
-  unzip,
-  Deflate,
-  deflateSync,
-  inflateSync,
-} from "fflate";
+import CompressWorker from "@/libs/workers/chunk-compress?worker";
+import UncompressWorker from "@/libs/workers/chunk-uncompress?worker";
+
 import { CompressionLevel } from "@/options";
 
 export enum TransferMode {
@@ -355,6 +349,24 @@ export class FileTransferer {
       delete this.blockCache[chunkIndex];
     };
 
+    const uncompressWorker = new UncompressWorker();
+
+    uncompressWorker.onmessage = (ev) => {
+      const { data, error, context } = ev.data;
+      if (error) {
+        console.error(error);
+        return;
+      }
+      const chunkIndex = context?.chunkIndex;
+      if (chunkIndex === undefined) {
+        console.error(
+          `can not store chunk, chunkIndex is undefined`,
+        );
+        return;
+      }
+      storeChunk(chunkIndex, data.buffer);
+    };
+
     channel.onmessage = (ev) =>
       this.handleMessage(ev, (packet) => {
         const {
@@ -379,24 +391,22 @@ export class FileTransferer {
         if (isLastBlock) {
           chunkInfo.totalBlockNumber = blockIndex + 1;
         }
-        // 检查是否收到所有块
         if (
           chunkInfo.receivedBlockNumber ===
           chunkInfo.totalBlockNumber
         ) {
-          // 重组压缩区块并解压
           const compressedData = assembleCompressedChunk(
             chunkInfo.blocks,
             chunkInfo.totalBlockNumber,
           );
 
-          inflate(compressedData, {}, (err, data) => {
-            if (err) {
-              console.error(err);
-              return;
-            }
-            storeChunk(chunkIndex, data.buffer);
+          uncompressWorker.postMessage({
+            data: compressedData,
+            context: {
+              chunkIndex,
+            },
           });
+
           // storeChunk(
           //   chunkIndex,
           //   inflateSync(compressedData),
@@ -549,7 +559,6 @@ export class FileTransferer {
     return channel;
   }
 
-  // send file
   public async sendFile(
     ranges?: ChunkRange[],
   ): Promise<void> {
@@ -647,24 +656,40 @@ export class FileTransferer {
     function enqueueTask(task: () => Promise<void>) {
       queue = queue.then(() => task());
     }
+
+    const compressWorker = new CompressWorker();
+
+    compressWorker.onmessage = (ev) => {
+      const { data, error, context } = ev.data;
+      if (error) {
+        console.error(error);
+        return;
+      }
+      const chunkIndex = context?.chunkIndex;
+      if (chunkIndex === undefined) {
+        console.error(
+          `can not store chunk, chunkIndex is null`,
+        );
+        return;
+      }
+      enqueueTask(() => spliteToBlock(chunkIndex, data));
+    };
+
     for (const chunkIndex of rangesIterator(
       transferRange,
     )) {
       const chunk = await this.cache.getChunk(chunkIndex);
       if (chunk) {
-        deflate(
-          new Uint8Array(chunk),
-          { level: this.compressionLevel },
-          (err, data) => {
-            if (err) {
-              console.error(err);
-              return;
-            }
-            enqueueTask(() =>
-              spliteToBlock(chunkIndex, data),
-            );
+        compressWorker.postMessage({
+          data: new Uint8Array(chunk),
+          option: {
+            level: this.compressionLevel,
           },
-        );
+          context: {
+            chunkIndex,
+          },
+        });
+
         // spliteToBlock(
         //   chunkIndex,
         //   deflateSync(new Uint8Array(chunk), {

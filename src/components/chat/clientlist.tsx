@@ -171,7 +171,7 @@ export const UserItem: Component<UserItemProps> = (
             <A
               class="flex gap-2 px-2 transition-colors hover:cursor-pointer
                 sm:px-1"
-              href={`/client/${local.client.clientId}`}
+              href={`/client/${local.client.clientId}/chat`}
             >
               <Avatar
                 class={cn(

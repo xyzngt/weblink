@@ -30,7 +30,7 @@ import {
   ResizablePanel,
 } from "@/components/ui/resizable";
 
-import { createMediaQuery } from "@solid-primitives/media";
+import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { makePersisted } from "@solid-primitives/storage";
 import { IconPerson } from "@/components/icons";
 import { UserItem } from "@/components/chat/clientlist";
@@ -45,7 +45,7 @@ export interface UserItemProps
 }
 
 export default function Home(props: RouteSectionProps) {
-  const isMobile = createMediaQuery("(max-width: 768px)");
+  const isMobile = createIsMobile();
 
   const matches = useCurrentMatches();
   const [size, setSize] = makePersisted(
@@ -62,7 +62,6 @@ export default function Home(props: RouteSectionProps) {
       } else {
         setSize([0, 1]);
       }
-    } else {
     }
   });
 

@@ -40,10 +40,8 @@ import {
   StoreMessage,
 } from "@/libs/core/messge";
 import { getInitials } from "@/libs/utils/name";
-import {
-  ChatBar,
-  MessageContent,
-} from "@/components/chat/message";
+import { MessageContent } from "@/routes/client/[id]/components/message";
+import { ChatBar } from "@/routes/client/[id]/components/chat-bar";
 import { sessionService } from "@/libs/services/session-service";
 import {
   DropdownMenu,
@@ -71,6 +69,8 @@ import { PeerSession } from "@/libs/core/session";
 import { v4 } from "uuid";
 import { appOptions } from "@/options";
 import { createClipboardHistoryDialog } from "@/components/box/clipboard-history";
+import clientInfoDialog from "./components/chat-client-info";
+import { handleDropItems } from "./components/process-file";
 export default function ClientPage(
   props: RouteSectionProps,
 ) {
@@ -90,54 +90,10 @@ export default function ClientPage(
     }
   });
 
-  const { open: openDialog, Component: DialogComponent } =
-    createDialog({
-      title: () =>
-        t("common.client_info_dialog.title", {
-          name: client()?.name,
-        }),
-      content: () => (
-        <Show
-          when={clientInfo()}
-          fallback={t("common.client_info_dialog.leave")}
-        >
-          {(info) => (
-            <div class="grid grid-cols-3 gap-4 overflow-y-auto">
-              <p class="justify-self-end">
-                {t("common.client_info_dialog.status")}
-              </p>
-              <p class="col-span-2">
-                {info()?.onlineStatus}
-              </p>
-              <p class="justify-self-end">
-                {t("common.client_info_dialog.client_id")}
-              </p>
-              <p class="col-span-2 text-sm">
-                {info().clientId}
-              </p>
-              <p class="justify-self-end">
-                {t("common.client_info_dialog.created_at")}
-              </p>
-              <p class="col-span-2">
-                {new Date(
-                  info().createdAt,
-                ).toLocaleString()}
-              </p>
-
-              <div class="col-span-3">
-                <pre class="overflow-x-auto font-mono text-xs">
-                  {JSON.stringify(
-                    info().statsReports,
-                    null,
-                    2,
-                  )}
-                </pre>
-              </div>
-            </div>
-          )}
-        </Show>
-      ),
-    });
+  const {
+    open: openClientInfoDialog,
+    Component: ClientInfoDialogComponent,
+  } = clientInfoDialog();
 
   const position = createScrollEnd(document);
 
@@ -274,7 +230,7 @@ export default function ClientPage(
               <IconArrowDownward class="size-6 sm:size-8" />
             </FloatingButton>
 
-            <DialogComponent class="flex max-h-[90%] flex-col" />
+            <ClientInfoDialogComponent class="flex max-h-[90%] flex-col" />
             <div
               class="sticky top-12 z-10 flex items-center justify-between gap-1
                 border-b border-border bg-background/80 backdrop-blur"
@@ -313,7 +269,9 @@ export default function ClientPage(
                     <DropdownMenuItem
                       class="gap-2"
                       onSelect={() => {
-                        openDialog();
+                        openClientInfoDialog(
+                          client().clientId,
+                        );
                       }}
                     >
                       <IconDataInfoAlert class="size-4" />
@@ -423,12 +381,19 @@ export default function ClientPage(
                 );
               }}
               onDrop={async (ev) => {
-                const files = ev.dataTransfer?.files;
-                if (!files) return;
-                for (let i = 0; i < files.length; i++) {
-                  const file = files.item(i)!;
-                  send(file, {
-                    target: client().clientId,
+                if (ev.dataTransfer?.items) {
+                  console.log(
+                    "drop",
+                    ev.dataTransfer.items,
+                  );
+                  const files = await handleDropItems(
+                    ev.dataTransfer.items,
+                  );
+
+                  files.forEach((file) => {
+                    send(file, {
+                      target: client().clientId,
+                    });
                   });
                 }
               }}
