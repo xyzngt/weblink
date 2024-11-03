@@ -43,10 +43,11 @@ import {
   appOptions,
   backgroundImage,
   setAppOptions,
+  TurnServerOptions,
 } from "./options";
 import { MetaProvider, Style } from "@solidjs/meta";
 import { Input } from "./components/ui/input";
-import { inputAutoResize } from "./libs/hooks/input-resize";
+import { produce } from "solid-js/store";
 let wakeLock: WakeLockSentinel | null = null;
 const requestWakeLock = async () => {
   if (!navigator.wakeLock) {
@@ -71,6 +72,18 @@ const createQRCodeDialog = () => {
   const { open, Component: QRCodeDialogComponent } =
     createDialog({
       title: () => t("common.scan_qrcode_dialog.title"),
+      description: () => (
+        <>
+          <span class="text-lg font-bold">
+            {clientProfile.name}&nbsp;
+          </span>
+          <span class="text-sm text-muted-foreground">
+            {t("common.scan_qrcode_dialog.invite", {
+              room: clientProfile.roomId,
+            })}
+          </span>
+        </>
+      ),
       content: () => {
         const url = joinUrl();
         return (
@@ -102,6 +115,8 @@ const createQRCodeDialog = () => {
                     : "#000000"
                 }
                 light="#00000000"
+                logo={clientProfile.avatar ?? undefined}
+                logoShape="circle"
               />
             </div>
             <Input
@@ -189,17 +204,39 @@ const InnerApp = (props: ParentProps) => {
       reset = true;
     }
     if (search.stun) {
+      const stunServers = JSON.parse(
+        search.stun,
+      ) as string[];
       setAppOptions(
         "servers",
         "stuns",
-        JSON.parse(search.stun),
+        produce((state) => {
+          stunServers.forEach((server) => {
+            if (!state.includes(server)) {
+              state.push(server);
+            }
+          });
+        }),
       );
     }
     if (search.turn) {
+      const turnServers = JSON.parse(
+        search.turn,
+      ) as TurnServerOptions[];
       setAppOptions(
         "servers",
         "turns",
-        JSON.parse(search.turn),
+        produce((state) => {
+          turnServers.forEach((server) => {
+            if (
+              state?.findIndex(
+                (s) => s.url === server.url,
+              ) === -1
+            ) {
+              state.push(server);
+            }
+          });
+        }),
       );
     }
     if (reset) {

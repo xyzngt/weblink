@@ -8,8 +8,8 @@ import {
 import { isServer } from "solid-js/web";
 
 export interface ModalOptions<T extends any> {
-  title?: () => string;
-  description?: () => string;
+  title?: () => JSX.Element;
+  description?: () => JSX.Element;
   content?: Component;
   confirm?: JSX.Element;
   cancel?: JSX.Element;
@@ -25,8 +25,8 @@ export interface BaseModalProps {
   class?: string;
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
-  description?: string;
+  title?: JSX.Element;
+  description?: JSX.Element;
   content?: JSX.Element;
   confirm?: JSX.Element;
   cancel?: JSX.Element;

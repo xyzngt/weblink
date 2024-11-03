@@ -21,6 +21,7 @@ import {
   A,
   RouteSectionProps,
   useCurrentMatches,
+  useNavigate,
 } from "@solidjs/router";
 import { ClientID, ClientInfo } from "@/libs/core/type";
 
@@ -37,6 +38,7 @@ import { UserItem } from "@/components/chat/clientlist";
 import { messageStores } from "@/libs/core/messge";
 import { t } from "@/i18n";
 import { sessionService } from "@/libs/services/session-service";
+import { appOptions } from "@/options";
 
 export interface UserItemProps
   extends ComponentProps<"li"> {
@@ -46,7 +48,7 @@ export interface UserItemProps
 
 export default function Home(props: RouteSectionProps) {
   const isMobile = createIsMobile();
-
+  const navigate = useNavigate();
   const matches = useCurrentMatches();
   const [size, setSize] = makePersisted(
     createSignal<number[]>(),
@@ -62,6 +64,16 @@ export default function Home(props: RouteSectionProps) {
       } else {
         setSize([0, 1]);
       }
+    }
+  });
+
+  createEffect(() => {
+    const clientId = appOptions.redirectToClient;
+    if (!clientId) return;
+
+    const clientInfo = sessionService.clientInfo[clientId];
+    if (clientInfo) {
+      navigate(`/client/${clientId}/chat`);
     }
   });
 

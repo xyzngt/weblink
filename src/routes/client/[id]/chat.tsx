@@ -45,8 +45,12 @@ import { ChatBar } from "@/routes/client/[id]/components/chat-bar";
 import { sessionService } from "@/libs/services/session-service";
 import {
   DropdownMenu,
+  DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuGroupLabel,
   DropdownMenuItem,
+  DropdownMenuItemLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -67,7 +71,7 @@ import { ConnectionBadge } from "@/components/chat/clientlist";
 import { toast } from "solid-sonner";
 import { PeerSession } from "@/libs/core/session";
 import { v4 } from "uuid";
-import { appOptions } from "@/options";
+import { appOptions, setAppOptions } from "@/options";
 import { createClipboardHistoryDialog } from "@/components/box/clipboard-history";
 import clientInfoDialog from "./components/chat-client-info";
 import { handleDropItems } from "./components/process-file";
@@ -265,79 +269,108 @@ export default function ClientPage(
                   >
                     <IconMenu class="size-6" />
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent class="w-48">
-                    <DropdownMenuItem
-                      class="gap-2"
-                      onSelect={() => {
-                        openClientInfoDialog(
-                          client().clientId,
-                        );
-                      }}
-                    >
-                      <IconDataInfoAlert class="size-4" />
-                      {t("chat.menu.connection_status")}
-                    </DropdownMenuItem>
-                    <Show
-                      when={
-                        clientInfo()?.onlineStatus ===
-                        "offline"
-                      }
-                    >
+                  <DropdownMenuContent class="min-w-48">
+                    <DropdownMenuGroup>
+                      <DropdownMenuGroupLabel>
+                        {t("chat.menu.client_options")}
+                      </DropdownMenuGroupLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        class="gap-2"
+                        onSelect={() => {
+                          openClientInfoDialog(
+                            client().clientId,
+                          );
+                        }}
+                      >
+                        <IconDataInfoAlert class="size-4" />
+                        {t("chat.menu.connection_status")}
+                      </DropdownMenuItem>
+                      <Show
+                        when={
+                          clientInfo()?.onlineStatus ===
+                          "offline"
+                        }
+                      >
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={async () => {
+                            const session =
+                              sessionService.sessions[
+                                client().clientId
+                              ];
+                            if (session) {
+                              try {
+                                await session.listen();
+                                if (!session.polite)
+                                  await session.connect();
+                              } catch (error) {
+                                console.error(error);
+                                if (
+                                  error instanceof Error
+                                ) {
+                                  toast.error(
+                                    error.message,
+                                  );
+                                }
+                              }
+                            }
+                          }}
+                        >
+                          <IconConnectWithoutContract class="size-4" />
+                          {t("chat.menu.connect")}
+                        </DropdownMenuItem>
+                      </Show>
+                      <Show when={clientInfo()?.clipboard}>
+                        {(clipboard) => (
+                          <DropdownMenuItem
+                            class="gap-2"
+                            onSelect={() => {
+                              openClipboardHistoryDialog(
+                                clipboard,
+                              );
+                            }}
+                          >
+                            <IconAssignment class="size-4" />
+                            {t("chat.menu.clipboard")}
+                          </DropdownMenuItem>
+                        )}
+                      </Show>
+
                       <DropdownMenuItem
                         class="gap-2"
                         onSelect={async () => {
-                          const session =
-                            sessionService.sessions[
-                              client().clientId
-                            ];
-                          if (session) {
-                            try {
-                              await session.listen();
-                              if (!session.polite)
-                                await session.connect();
-                            } catch (error) {
-                              console.error(error);
-                              if (error instanceof Error) {
-                                toast.error(error.message);
-                              }
-                            }
+                          if (!(await open()).cancel) {
+                            messageStores.deleteClient(
+                              client().clientId,
+                            );
                           }
                         }}
                       >
-                        <IconConnectWithoutContract class="size-4" />
-                        {t("chat.menu.connect")}
+                        <IconDelete class="size-4" />
+                        {t("chat.menu.delete_client")}
                       </DropdownMenuItem>
-                    </Show>
-                    <Show when={clientInfo()?.clipboard}>
-                      {(clipboard) => (
-                        <DropdownMenuItem
+                      <DropdownMenuSeparator />
+                      <DropdownMenuGroup>
+                        <DropdownMenuCheckboxItem
                           class="gap-2"
-                          onSelect={() => {
-                            openClipboardHistoryDialog(
-                              clipboard,
+                          checked={
+                            appOptions.redirectToClient ===
+                            client().clientId
+                          }
+                          onChange={(checked) => {
+                            setAppOptions(
+                              "redirectToClient",
+                              checked
+                                ? client().clientId
+                                : undefined,
                             );
                           }}
                         >
-                          <IconAssignment class="size-4" />
-                          {t("chat.menu.clipboard")}
-                        </DropdownMenuItem>
-                      )}
-                    </Show>
-
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      class="gap-2"
-                      onSelect={async () => {
-                        if (!(await open()).cancel) {
-                          messageStores.deleteClient(
-                            client().clientId,
-                          );
-                        }
-                      }}
-                    >
-                      <IconDelete class="size-4" />
-                      {t("chat.menu.delete_client")}
-                    </DropdownMenuItem>
+                          {t("chat.menu.redirect")}
+                        </DropdownMenuCheckboxItem>
+                      </DropdownMenuGroup>
+                    </DropdownMenuGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>

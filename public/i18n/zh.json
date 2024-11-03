@@ -155,7 +155,9 @@
       "connect": "连接",
       "connection_status": "连接状态",
       "delete_client": "删除客户端",
-      "clipboard": "剪贴板"
+      "clipboard": "剪贴板",
+      "client_options": "客户端选项",
+      "redirect": "连接后自动跳转"
     },
     "index": {
       "description": "扫描二维码或分享链接以连接到此房间，右键点击复制链接",
@@ -190,7 +192,8 @@
     "scan_qrcode_dialog": {
       "title": "扫描二维码",
       "description": "扫描二维码以连接到此房间",
-      "tip": "右键或长按复制链接"
+      "tip": "右键或长按复制链接",
+      "invite": "邀请你加入房间 {{room}}"
     },
     "theme_toggle": {
       "light": "浅色模式",

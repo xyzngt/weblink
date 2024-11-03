@@ -1,32 +1,15 @@
-import { Accessor, createSignal, Setter } from "solid-js";
 import {
   EventHandler,
   MultiEventEmitter,
 } from "../utils/event-emitter";
 import { formatBtyeSize } from "../utils/format-filesize";
 import { ChunkRange, getSubRanges } from "../utils/range";
-import { appOptions } from "@/options";
-
-export interface ChunkMetaData {
-  id: string;
-  fileName: string;
-  fileSize: number;
-  lastModified?: number;
-  mimetype?: string;
-  chunkSize: number;
-}
-
-export interface FileMetaData extends ChunkMetaData {
-  file?: File;
-  createdAt?: number;
-}
-
-export type ChunkCacheEventMap = {
-  cleanup: void;
-  update: FileMetaData | null;
-  merged: File;
-  merging: void;
-};
+import MergeChunkWorker from "@/libs/workers/merge-chunk?worker";
+import {
+  ChunkCacheEventMap,
+  DBNAME_PREFIX,
+  FileMetaData,
+} from ".";
 
 export interface ChunkCache {
   addEventListener<K extends keyof ChunkCacheEventMap>(
@@ -61,10 +44,10 @@ export interface ChunkCache {
 
 export interface IDBChunkCacheOptions {
   id: string;
+  maxMomeryCacheSize: number;
 }
 
 export class IDBChunkCache implements ChunkCache {
-  static DBNAME_PREFIX: string = "file-";
   private db: IDBDatabase | null = null;
   private status: "storing" | "merging" | "done" | "error" =
     "storing";
@@ -77,10 +60,10 @@ export class IDBChunkCache implements ChunkCache {
   private memoryCache: Array<[number, ArrayBufferLike]> =
     [];
 
-  private maxMomeryCacheSize: number =
-    appOptions.maxMomeryCacheSlices;
+  private maxMomeryCacheSize: number;
   constructor(options: IDBChunkCacheOptions) {
     this.id = options.id;
+    this.maxMomeryCacheSize = options.maxMomeryCacheSize;
   }
 
   async initialize() {
@@ -204,7 +187,7 @@ export class IDBChunkCache implements ChunkCache {
     return await new Promise<IDBDatabase>(
       (resolve, reject) => {
         const request = indexedDB.open(
-          `${IDBChunkCache.DBNAME_PREFIX}${this.id}`,
+          `${DBNAME_PREFIX}${this.id}`,
         );
 
         request.onupgradeneeded = () => {
@@ -307,7 +290,7 @@ export class IDBChunkCache implements ChunkCache {
     });
   }
 
-  // 将内存缓存批量写入到数据库
+  // flush memory cache to db
   async flush() {
     if (this.memoryCache.length === 0) return;
 
@@ -353,7 +336,7 @@ export class IDBChunkCache implements ChunkCache {
     const info = await this.getInfo();
     const file = info?.file;
     if (info && file) {
-      // 发送特定的数据块
+      // Send specific data blocks
       const start = chunkIndex * info.chunkSize;
       const end = Math.min(
         start + info.chunkSize,
@@ -366,7 +349,7 @@ export class IDBChunkCache implements ChunkCache {
       return new Promise((reslove, reject) => {
         reader.onload = () => {
           if (reader.result) {
-            // 构造包含块编号和数据的 ArrayBuffer
+            // Construct an ArrayBuffer containing the block number and data
             const chunkData = reader.result as ArrayBuffer;
             reslove(chunkData);
           }
@@ -434,44 +417,78 @@ export class IDBChunkCache implements ChunkCache {
 
   async getFile(): Promise<File | null> {
     await this.flush();
+
+    const info = await this.getInfo();
+    if (!info) {
+      console.warn("info is not found");
+      return null;
+    }
+    if (info.file) {
+      return info.file;
+    }
+    return await this.mergeFile();
+  }
+
+  async mergeFile() {
+    await this.flush();
     if (this.status === "merging") {
       console.warn(`cache is ${this.status} already`);
       return null;
     }
 
     const info = await this.getInfo();
+
     if (!info) {
-      throw new Error(
-        "can not get file, file info is empty",
-      );
-    }
-    if (info.file) {
-      return info.file;
-    }
-    const done = await this.isDone();
-    if (!done) {
-      console.error(`transmissin is not done`);
+      console.warn("info is not found");
       return null;
     }
 
-    this.dispatchEvent("merging", undefined);
-    this.status = "merging";
+    const isWorker =
+      typeof WorkerGlobalScope !== "undefined" &&
+      self instanceof WorkerGlobalScope;
+    if (!isWorker) {
+      // use worker to merge chunks
+      const worker = new MergeChunkWorker();
 
-    const store = await this.getChunkStore("readwrite");
-
-    const limit = 128 * 1024 * 1024;
-    if (info.fileSize <= limit) {
-      console.log(
-        `file size lower than ${formatBtyeSize(limit)}, use getAll to merge chunks`,
+      return await new Promise<File | null>(
+        (resolve, reject) => {
+          this.status = "merging";
+          this.dispatchEvent("merging", undefined);
+          worker.onmessage = (event) => {
+            const { data, error } = event.data;
+            if (error) {
+              this.status = "error";
+              console.error(error);
+              reject(error);
+            } else {
+              this.status = "done";
+              console.log("merge file done", data);
+              this.dispatchEvent("merged", data);
+              info.file = data as File;
+              this.setInfo(info);
+              resolve(data as File);
+            }
+          };
+          worker.postMessage({ fileId: this.id });
+        },
       );
+    }
 
-      const request = store.getAll();
-      return await new Promise<File>((reslove, reject) => {
-        request.onsuccess = () => {
-          const blobParts: BlobPart[] = request.result.map(
-            (res) => new Blob([res.data as ArrayBuffer]),
+    // current scope is worker
+    const store = await this.getChunkStore("readwrite");
+    const blobParts: BlobPart[] = [];
+    const request = store.openCursor();
+
+    const time = Date.now();
+    return await new Promise<File>((reslove, reject) => {
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          blobParts.push(
+            new Blob([cursor.value.data as ArrayBuffer]),
           );
-
+          cursor.continue();
+        } else {
           const file = new File(blobParts, info.fileName, {
             type: info.mimetype,
             lastModified: info.lastModified,
@@ -480,50 +497,16 @@ export class IDBChunkCache implements ChunkCache {
 
           this.setInfo(info);
           store.clear();
-
           reslove(file);
           this.status = "done";
           this.dispatchEvent("merged", file);
-        };
+          console.log(
+            `merge file cost ${Date.now() - time}ms`,
+          );
+        }
+      };
 
-        request.onerror = (err) => reject(err);
-      });
-    } else {
-      console.log(
-        `file size larger than ${formatBtyeSize(limit)}, use cursor to merge chunks`,
-      );
-      const blobParts: BlobPart[] = [];
-      const request = store.openCursor();
-
-      return await new Promise<File>((reslove, reject) => {
-        request.onsuccess = () => {
-          const cursor = request.result;
-          if (cursor) {
-            blobParts.push(
-              new Blob([cursor.value.data as ArrayBuffer]),
-            );
-            cursor.continue();
-          } else {
-            const file = new File(
-              blobParts,
-              info.fileName,
-              {
-                type: info.mimetype,
-                lastModified: info.lastModified,
-              },
-            );
-            info.file = file;
-
-            this.setInfo(info);
-            store.clear();
-            reslove(file);
-            this.status = "done";
-            this.dispatchEvent("merged", file);
-          }
-        };
-
-        request.onerror = (err) => reject(err);
-      });
-    }
+      request.onerror = (err) => reject(err);
+    });
   }
 }

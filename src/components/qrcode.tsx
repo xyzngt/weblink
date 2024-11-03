@@ -7,6 +7,9 @@ export interface QRCodeProps
   dark?: string;
   light?: string;
   width?: number;
+  logo?: string;
+  logoSize?: number;
+  logoShape?: "square" | "circle";
 }
 
 export const QRCode = (props: QRCodeProps) => {
@@ -20,6 +23,38 @@ export const QRCode = (props: QRCodeProps) => {
         },
         width: props.width ?? 256,
       });
+
+      if (props.logo) {
+        const ctx = canvasRef.getContext("2d");
+        if (ctx) {
+          const img = new Image();
+          img.onload = () => {
+            const size =
+              props.logoSize ?? canvasRef.width! / 6;
+            const x = (canvasRef!.width - size) / 2;
+            const y = (canvasRef!.height - size) / 2;
+
+            if (props.logoShape === "circle") {
+              ctx.save();
+              ctx.beginPath();
+              ctx.arc(
+                x + size / 2,
+                y + size / 2,
+                size / 2,
+                0,
+                2 * Math.PI,
+              );
+              ctx.closePath();
+              ctx.clip();
+              ctx.drawImage(img, x, y, size, size);
+              ctx.restore();
+            } else {
+              ctx.drawImage(img, x, y, size, size);
+            }
+          };
+          img.src = props.logo;
+        }
+      }
     }
   });
   return <canvas ref={canvasRef} {...props} />;

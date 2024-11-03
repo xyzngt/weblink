@@ -24,10 +24,7 @@ import {
   ProgressValueLabel,
 } from "@/components/ui/progress";
 import { clientProfile } from "@/libs/core/store";
-import {
-  ChunkCache,
-  FileMetaData,
-} from "@/libs/cache/chunk-cache";
+import { ChunkCache } from "@/libs/cache/chunk-cache";
 import {
   FileTransferer,
   TransferMode,
@@ -74,6 +71,7 @@ import { t } from "@/i18n";
 import { Dynamic } from "solid-js/web";
 
 import { createTimeAgo } from "@/libs/utils/timeago";
+import { FileMetaData } from "@/libs/cache";
 export interface MessageCardProps
   extends ComponentProps<"li"> {
   message: StoreMessage;

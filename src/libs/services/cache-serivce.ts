@@ -1,6 +1,5 @@
 import {
   ChunkCache,
-  FileMetaData,
   IDBChunkCache,
 } from "../cache/chunk-cache";
 import {
@@ -20,6 +19,7 @@ import {
   Setter,
 } from "solid-js";
 import { appOptions } from "@/options";
+import { DBNAME_PREFIX, FileMetaData } from "../cache";
 
 type EventMap = {
   update: string;
@@ -92,13 +92,9 @@ class FileCacheFactory {
     const databases = await indexedDB.databases();
 
     const fileDBs = databases
-      .filter((db) =>
-        db.name?.startsWith(IDBChunkCache.DBNAME_PREFIX),
-      )
+      .filter((db) => db.name?.startsWith(DBNAME_PREFIX))
       .map((db) =>
-        db.name!.substring(
-          IDBChunkCache.DBNAME_PREFIX.length,
-        ),
+        db.name!.substring(DBNAME_PREFIX.length),
       );
 
     await Promise.all(
@@ -136,6 +132,7 @@ class FileCacheFactory {
 
     const cache = new IDBChunkCache({
       id,
+      maxMomeryCacheSize: appOptions.maxMomeryCacheSlices,
     });
     cache.addEventListener("update", (ev) => {
       this.setCacheInfo(id, ev.detail ?? undefined!);

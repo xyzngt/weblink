@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2024-11-03
+
+### New Features
+
+- Add redirect option after connection in client menu 在客户端菜单中添加连接后重定向选项
+
+### Improvements
+
+- QR code dialog now displays your name 二维码对话框现在会显示自己的用户名
+
+- Move the file chunk merge process to Web Worker to improve performance 将文件区块合并流程转移到 Web Worker 中提高性能
+
 ## [0.4.0] - 2024-11-01
 
 ### New Features

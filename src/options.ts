@@ -1,6 +1,6 @@
 import { makePersisted } from "@solid-primitives/storage";
 import { createStore } from "solid-js/store";
-import { FileID } from "./libs/core/type";
+import { ClientID, FileID } from "./libs/core/type";
 import { createEffect, createSignal } from "solid-js";
 import { cacheManager } from "./libs/services/cache-serivce";
 
@@ -56,6 +56,7 @@ export type AppOption = {
   showAboutDialog: boolean;
   backgroundImage?: FileID;
   backgroundImageOpacity: number;
+  redirectToClient?: ClientID;
 
   // Stream
   videoMaxBitrate: number;

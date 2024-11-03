@@ -1,9 +1,7 @@
 import { waitBufferedAmountLowThreshold } from "./utils/channel";
-import {
-  ChunkCache,
-  FileMetaData,
-  ChunkMetaData,
-} from "../cache/chunk-cache";
+import { FileMetaData, ChunkMetaData } from "../cache";
+
+import { ChunkCache } from "../cache/chunk-cache";
 import {
   EventHandler,
   MultiEventEmitter,

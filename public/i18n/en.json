@@ -155,7 +155,9 @@
       "connect": "Connect",
       "connection_status": "Connection Status",
       "delete_client": "Delete Client",
-      "clipboard": "Clipboard"
+      "clipboard": "Clipboard",
+      "client_options": "Client Options",
+      "redirect": "Redirect after connection"
     },
     "index": {
       "description": "Scan the QR code or share the link to connect to this room, right-click to copy the link",
@@ -260,7 +262,8 @@
     "scan_qrcode_dialog": {
       "title": "Scan QR Code",
       "description": "Scan QR Code to connect to this room",
-      "tip": "Right-click or long press to copy the link"
+      "tip": "Right-click or long press to copy the link",
+      "invite": "Invite you to join the room {{room}}"
     },
     "action": {
       "copy": "Copy",

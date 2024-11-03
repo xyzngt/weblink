@@ -38,9 +38,8 @@ import {
 import { sessionService } from "../services/session-service";
 import { WebSocketClientService } from "./services/client/ws-client-service";
 import { appOptions } from "@/options";
-import { aw } from "vitest/dist/chunks/reporters.DAfKSDh5.js";
-import { FileMetaData } from "../cache/chunk-cache";
 import { toast } from "solid-sonner";
+import { FileMetaData } from "../cache";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));

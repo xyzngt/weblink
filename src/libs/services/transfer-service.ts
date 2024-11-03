@@ -7,12 +7,10 @@ import {
   TransferMode,
 } from "../core/file-transferer";
 import { FileID } from "../core/type";
-import {
-  ChunkCache,
-  FileMetaData,
-} from "../cache/chunk-cache";
+import { ChunkCache } from "../cache/chunk-cache";
 import { waitBufferedAmountLowThreshold } from "../core/utils/channel";
 import { appOptions } from "@/options";
+import { FileMetaData } from "../cache";
 
 class TransfererFactory {
   readonly transferers: Record<FileID, FileTransferer>;
