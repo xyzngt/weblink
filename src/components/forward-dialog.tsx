@@ -91,6 +91,9 @@ export const createForwardDialog = () => {
     const shares: ShareDataType[] = [];
     if (shareData.text)
       shares.push({ type: "text", data: shareData.text });
+    if (shareData.url) {
+      shares.push({ type: "text", data: shareData.url });
+    }
     if (shareData.files) {
       for (const file of shareData.files) {
         shares.push({ type: "file", data: file });
