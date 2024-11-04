@@ -50,12 +50,28 @@ const pwaOptions: Partial<VitePWAOptions> = {
         purpose: "maskable",
       },
     ],
+    share_target: {
+      action: "/share",
+      method: "POST",
+      enctype: "multipart/form-data",
+      params: {
+        title: "name",
+        text: "description",
+        url: "link",
+        files: [
+          {
+            name: "files",
+            accept: ["*/*"],
+          },
+        ],
+      },
+    },
   },
   base: "/",
   workbox: {},
   injectManifest: { swSrc: "src/sw.ts" },
   devOptions: {
-    enabled: false,
+    enabled: true,
     /* when using generateSW the PWA plugin will switch to classic */
     type: "module",
     navigateFallback: "index.html",
@@ -68,6 +84,7 @@ export default defineConfig({
       "@": "/src",
     },
   },
+  server: {},
   build: {
     rollupOptions: {
       treeshake: true,

@@ -407,7 +407,7 @@ class MessageStores {
     } else if (sessionMsg.type === "send-file") {
       index = this.messages.findIndex(
         (msg) =>
-          msg.type === "file" && msg.fid === sessionMsg.fid,
+          msg.type === "file" && msg.id === sessionMsg.id,
       );
       if (index === -1) {
         const message = {

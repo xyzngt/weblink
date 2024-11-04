@@ -72,6 +72,7 @@ import { Dynamic } from "solid-js/web";
 
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { FileMetaData } from "@/libs/cache";
+import { FileMessageTitle } from "@/components/message-title";
 export interface MessageCardProps
   extends ComponentProps<"li"> {
   message: StoreMessage;
@@ -82,54 +83,6 @@ export interface FileMessageCardProps {
   message: FileTransferMessage;
   onLoad?: () => void;
 }
-
-const FileTitle = {
-  image: (props: { name: string }) => (
-    <p class="relative">
-      {" "}
-      <span
-        class="absolute left-0 right-0 overflow-hidden text-ellipsis
-          whitespace-nowrap"
-      >
-        <IconPhotoFilled class="inline size-4 align-middle" />{" "}
-        {props.name}
-      </span>
-    </p>
-  ),
-  video: (props: { name: string }) => (
-    <p class="relative">
-      {" "}
-      <span
-        class="absolute left-0 right-0 overflow-hidden text-ellipsis
-          whitespace-nowrap"
-      >
-        <IconVideoFileFilled class="inline size-4 align-middle" />{" "}
-        {props.name}
-      </span>
-    </p>
-  ),
-  audio: (props: { name: string }) => (
-    <p class="relative">
-      {" "}
-      <span
-        class="absolute left-0 right-0 overflow-hidden text-ellipsis
-          whitespace-nowrap"
-      >
-        <IconAudioFileFilled class="inline size-4 align-middle" />{" "}
-        {props.name}
-      </span>
-    </p>
-  ),
-  default: (props: { name: string }) => (
-    <div class="flex items-center gap-1">
-      <div>
-        <IconInsertDriveFile class="size-8" />
-      </div>
-
-      <p> {props.name}</p>
-    </div>
-  ),
-};
 
 const FileMessageCard: Component<FileMessageCardProps> = (
   props,
@@ -176,8 +129,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
       <Show
         when={cacheData()}
         fallback={
-          <Dynamic
-            component={FileTitle["default"]}
+          <FileMessageTitle
+            type="default"
             name={props.message.fileName}
           />
         }
@@ -236,8 +189,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         "image/",
                       )}
                     >
-                      <Dynamic
-                        component={FileTitle["image"]}
+                      <FileMessageTitle
+                        type="image"
                         name={props.message.fileName}
                       />
 
@@ -272,8 +225,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         "video/",
                       )}
                     >
-                      <Dynamic
-                        component={FileTitle["video"]}
+                      <FileMessageTitle
+                        type="video"
                         name={props.message.fileName}
                       />
                       <video
@@ -288,8 +241,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         "audio/",
                       )}
                     >
-                      <Dynamic
-                        component={FileTitle["audio"]}
+                      <FileMessageTitle
+                        type="audio"
                         name={props.message.fileName}
                       />
                       <audio

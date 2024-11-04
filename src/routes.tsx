@@ -37,6 +37,10 @@ const routes = [
     component: lazy(() => import("@/routes/setting")),
   },
   {
+    path: "/share",
+    component: lazy(() => import("@/routes/share")),
+  },
+  {
     path: "*path",
     component: lazy(() => import("@/routes/[...404]")),
   },

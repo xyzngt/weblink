@@ -53,6 +53,8 @@ import IconVisibilityOff from "@material-symbols/svg-400/outlined/visibility_off
 import IconWallpaper from "@material-symbols/svg-400/outlined/wallpaper.svg?component-solid";
 import IconExpandAll from "@material-symbols/svg-400/outlined/expand_all.svg?component-solid";
 import IconAssignment from "@material-design-icons/svg/outlined/assignment.svg?component-solid";
+import IconShare from "@material-symbols/svg-400/outlined/share.svg?component-solid";
+import IconForward from "@material-symbols/svg-400/outlined/forward.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -109,4 +111,6 @@ export {
   IconWallpaper,
   IconExpandAll,
   IconAssignment,
+  IconShare,
+  IconForward,
 };

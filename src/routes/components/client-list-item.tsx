@@ -15,36 +15,26 @@ import {
 import { cn } from "@/libs/cn";
 import { A } from "@solidjs/router";
 import { Client, ClientInfo } from "@/libs/core/type";
-import { Badge } from "../ui/badge";
-
 import {
   messageStores,
   StoreMessage,
 } from "@/libs/core/messge";
-import { PortableContextMenu } from "../portable-contextmenu";
-import { ContextMenuItem } from "../ui/context-menu";
+import { PortableContextMenu } from "../../components/portable-contextmenu";
+import { ContextMenuItem } from "../../components/ui/context-menu";
 import {
   IconAudioFileFilled,
-  IconCameraFilled,
-  IconCameraVideoFilled,
   IconDelete,
   IconDraftFilled,
-  IconInsertDriveFile,
   IconPhotoFilled,
   IconVideoFileFilled,
-} from "../icons";
+} from "../../components/icons";
 
 import { sessionService } from "@/libs/services/session-service";
-import { createComfirmDeleteClientDialog } from "../box/confirm-delete-dialog";
+import { createComfirmDeleteClientDialog } from "../../components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
 import { createTimeAgo } from "@/libs/utils/timeago";
-export const getInitials = (name = "") =>
-  name
-    .split(" ")
-    .map((part) => part[0])
-    .splice(0, 2)
-    .join("")
-    .toUpperCase();
+import { getInitials } from "@/libs/utils/name";
+import { ConnectionBadge } from "./connection-badge";
 
 export interface UserItemProps
   extends ComponentProps<"li"> {
@@ -211,22 +201,5 @@ export const UserItem: Component<UserItemProps> = (
         )}
       />
     </>
-  );
-};
-
-export const ConnectionBadge: Component<{
-  client?: ClientInfo;
-}> = (props) => {
-  return (
-    <Badge class="text-xs" variant="secondary">
-      <Show
-        when={props.client?.onlineStatus}
-        fallback={t("common.status.leave")}
-      >
-        {(status) => (
-          <span>{t(`common.status.${status()}`)}</span>
-        )}
-      </Show>
-    </Badge>
   );
 };

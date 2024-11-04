@@ -215,8 +215,7 @@
       "avatar_url": "头像 URL",
       "password": {
         "title": "房间密码",
-        "description": "房间的密码，可以为空",
-        "placeholder": "输入房间密码"
+        "description": "房间的密码，可以为空，请设置密码以保护您的房间"
       },
       "auto_join": "下次自动加入"
     },
@@ -292,10 +291,17 @@
       "desc": "降序",
       "hide": "隐藏",
       "set_as_background": "设置为背景",
-      "test": "测试"
+      "test": "测试",
+      "share": "分享",
+      "forward": "转发"
     },
     "clipboard_history": {
       "title": "剪贴板历史"
+    },
+    "share_dialog": {
+      "title": "转发",
+      "placeholder": "查找客户端以转发...",
+      "no_results_found": "没有找到结果"
     },
     "about_dialog": {
       "title": "关于 Weblink",

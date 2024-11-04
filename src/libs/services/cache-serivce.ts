@@ -55,7 +55,7 @@ class FileCacheFactory {
     >({});
     this.cacheInfo = cacheInfo;
     this.setCacheInfo = setCacheInfo;
-    this.update();
+    this.initialize();
   }
 
   addEventListener<K extends keyof EventMap>(
@@ -88,24 +88,28 @@ class FileCacheFactory {
     );
   }
 
-  async update() {
-    const databases = await indexedDB.databases();
+  async initialize() {
+    try {
+      const databases = await indexedDB.databases();
 
-    const fileDBs = databases
-      .filter((db) => db.name?.startsWith(DBNAME_PREFIX))
-      .map((db) =>
-        db.name!.substring(DBNAME_PREFIX.length),
+      const fileDBs = databases
+        .filter((db) => db.name?.startsWith(DBNAME_PREFIX))
+        .map((db) =>
+          db.name!.substring(DBNAME_PREFIX.length),
+        );
+
+      const caches = await Promise.all(
+        fileDBs.map((id) => this.loadCache(id)),
       );
 
-    await Promise.all(
-      fileDBs.map((id) => this.createCache(id)),
-    )
-      .catch((e) => {
-        console.error(e);
-      })
-      .finally(() => {
-        this.setStatus("ready");
-      });
+      for (const cache of caches) {
+        this.addCache(cache.id, cache);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      this.setStatus("ready");
+    }
   }
 
   getCache(id: FileID): ChunkCache | null {
@@ -124,9 +128,8 @@ class FileCacheFactory {
     return;
   }
 
-  async createCache(id: FileID): Promise<ChunkCache> {
+  private async loadCache(id: FileID): Promise<ChunkCache> {
     if (this.caches[id]) {
-      console.warn(`cache ${id} has already created`);
       return this.caches[id];
     }
 
@@ -151,7 +154,16 @@ class FileCacheFactory {
       }
     });
     await cache.initialize();
+    return cache;
+  }
+
+  private async addCache(id: FileID, cache: ChunkCache) {
     this.setCaches(id, cache);
+  }
+
+  async createCache(id: FileID): Promise<ChunkCache> {
+    const cache = await this.loadCache(id);
+    this.addCache(id, cache);
     return cache;
   }
 }

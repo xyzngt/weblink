@@ -116,6 +116,9 @@ importers:
       workbox-cacheable-response:
         specifier: ^7.1.0
         version: 7.1.0
+      workbox-core:
+        specifier: ^7.3.0
+        version: 7.3.0
       workbox-expiration:
         specifier: ^7.1.0
         version: 7.1.0
@@ -4627,6 +4630,9 @@ packages:
 
   workbox-core@7.1.0:
     resolution: {integrity: sha512-5KB4KOY8rtL31nEF7BfvU7FMzKT4B5TkbYa2tzkS+Peqj0gayMT9SytSFtNzlrvMaWgv6y/yvP9C0IbpFjV30Q==}
+
+  workbox-core@7.3.0:
+    resolution: {integrity: sha512-Z+mYrErfh4t3zi7NVTvOuACB0A/jA3bgxUN3PwtAVHvfEsZxV9Iju580VEETug3zYJRc0Dmii/aixI/Uxj8fmw==}
 
   workbox-expiration@7.1.0:
     resolution: {integrity: sha512-m5DcMY+A63rJlPTbbBNtpJ20i3enkyOtSgYfv/l8h+D6YbbNiA0zKEkCUaMsdDlxggla1oOfRkyqTvl5Ni5KQQ==}
@@ -10074,6 +10080,8 @@ snapshots:
       workbox-core: 7.1.0
 
   workbox-core@7.1.0: {}
+
+  workbox-core@7.3.0: {}
 
   workbox-expiration@7.1.0:
     dependencies:

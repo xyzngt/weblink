@@ -206,7 +206,10 @@
       },
       "name": "Name",
       "avatar_url": "Avatar URL",
-      "password": "Room Password",
+      "password": {
+        "title": "Room Password",
+        "description": "Optional, the password of the room, please set a password to secure your room"
+      },
       "auto_join": "Auto Join Next Time"
     },
     "file_table": {
@@ -286,7 +289,9 @@
       "desc": "Desc",
       "hide": "Hide",
       "set_as_background": "Set as Background",
-      "test": "Test"
+      "test": "Test",
+      "share": "Share",
+      "forward": "Forward"
     },
     "notification": {
       "copy_success": "Copy success",
@@ -294,6 +299,11 @@
       "copy_failed": "Failed to copy link",
       "reset_options_success": "Options reset successfully",
       "unknown_error": "Unknown error"
+    },
+    "share_dialog": {
+      "title": "Forward",
+      "placeholder": "Search for clients to forward...",
+      "no_results_found": "No results found"
     },
     "about_dialog": {
       "title": "About Weblink",

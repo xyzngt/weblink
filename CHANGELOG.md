@@ -2,15 +2,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.5.0] - 2024-11-04
+
+### New Features
+
+- Add Share Target API support, you can share files to Weblink from other apps 添加 Share Target API 支持，可以从其他应用分享文件到 Weblink
+
+- Add forward menu option in file table 在文件表中添加转发菜单选项
+
+### Bug Fixes
+
+- Fix some i18n issues 修复一些 i18n 问题
+
 ## [0.4.1] - 2024-11-03
 
 ### New Features
 
 - Add redirect option after connection in client menu 在客户端菜单中添加连接后重定向选项
 
-### Improvements
-
 - QR code dialog now displays your name 二维码对话框现在会显示自己的用户名
+
+### Improvements
 
 - Move the file chunk merge process to Web Worker to improve performance 将文件区块合并流程转移到 Web Worker 中提高性能
 

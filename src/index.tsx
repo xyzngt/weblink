@@ -21,6 +21,15 @@ if (import.meta.env.DEV && !(root instanceof HTMLElement)) {
 }
 
 render(() => {
+  if (window.location.pathname === "/close-window") {
+    try {
+      window.close();
+    } catch (e) {
+      console.warn(e);
+    }
+    window.location.replace("about:blank");
+    return <></>;
+  }
   let reasons = [];
 
   if (!checkBrowserSupport()) {
@@ -44,7 +53,10 @@ render(() => {
         <h2 class="p-2 font-mono text-xl font-bold">
           Weblink
         </h2>
-        <div class="flex h-screen flex-col items-center justify-center gap-4 text-center">
+        <div
+          class="flex h-screen flex-col items-center justify-center gap-4
+            text-center"
+        >
           <h1 class="text-4xl font-bold">
             {t("browser_unsupported.title")}
           </h1>

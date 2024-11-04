@@ -1,4 +1,3 @@
-import { FileMetaData } from "@/libs/cache/chunk-cache";
 import {
   batch,
   createEffect,
@@ -65,6 +64,7 @@ import {
   IconClose700,
   IconDelete,
   IconDownload,
+  IconForward,
   IconMenu,
   IconMoreHoriz,
   IconPageInfo,
@@ -82,7 +82,10 @@ import {
 import { createStore } from "solid-js/store";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { setAppOptions } from "@/options";
-
+import { createForwardDialog } from "@/components/forward-dialog";
+import { FileID } from "@/libs/core/type";
+import { FileMetaData } from "@/libs/cache";
+import { ChunkCache } from "@/libs/cache/chunk-cache";
 const createComfirmDialog = () => {
   const { open, close, submit, Component } = createDialog({
     title: () =>
@@ -158,6 +161,9 @@ export default function File() {
   onMount(() => {
     reset();
   });
+
+  const { forwardCache: shareCache, Component: ForwardDialogComponent } =
+    createForwardDialog();
 
   const columns = [
     columnHelper.display({
@@ -313,6 +319,15 @@ export default function File() {
                       <IconPreview class="size-4" />
                       {t("common.action.preview")}
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      class="gap-2"
+                      onSelect={() => {
+                        shareCache([row.original]);
+                      }}
+                    >
+                      <IconForward class="size-4" />
+                      {t("common.action.forward")}
+                    </DropdownMenuItem>
                     <Show
                       when={file().type.startsWith(
                         "image/",
@@ -442,6 +457,7 @@ export default function File() {
     <>
       <DialogComponent />
       <PreviewDialogComponent class="w-full" />
+      <ForwardDialogComponent />
       <div
         class="container pointer-events-none fixed inset-0 z-[-1]
           backdrop-blur"
@@ -482,7 +498,7 @@ export default function File() {
                         a.download = row.original.fileName;
                         a.click();
                       });
-                    table?.resetRowSelection();
+                    table.resetRowSelection();
                   }}
                 >
                   <IconDownload class="size-4" />
@@ -494,6 +510,20 @@ export default function File() {
                 >
                   <IconClose700 class="size-4" />
                   {t("common.action.cancel")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  class="gap-2"
+                  onSelect={() => {
+                    shareCache(
+                      table
+                        .getSelectedRowModel()
+                        .rows.map((row) => row.original),
+                    );
+                    table.resetRowSelection();
+                  }}
+                >
+                  <IconForward class="size-4" />
+                  {t("common.action.forward")}
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   class="gap-2"

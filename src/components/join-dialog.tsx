@@ -20,7 +20,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "./ui/avatar";
-import { getInitials } from "./chat/clientlist";
 import {
   Switch,
   SwitchControl,
@@ -32,6 +31,7 @@ import { toast } from "solid-sonner";
 import { t } from "@/i18n";
 import { sessionService } from "@/libs/services/session-service";
 import { appOptions } from "@/options";
+import { getInitials } from "@/libs/utils/name";
 
 export const createRoomDialog = () => {
   const { open, close, submit, Component } = createDialog({
@@ -154,6 +154,9 @@ export const createRoomDialog = () => {
               }
               class="col-span-2 md:col-span-3"
             />
+            <p class="muted">
+              {t("common.join_form.password.description")}
+            </p>
           </label>
           <Switch
             class="flex items-center justify-between"

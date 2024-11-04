@@ -27,7 +27,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
-import { createDialog } from "@/components/dialogs/dialog";
 
 import { FloatingButton } from "@/components/floating-button";
 import { createElementSize } from "@solid-primitives/resize-observer";
@@ -67,7 +66,7 @@ import {
 } from "@/components/icons";
 import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
-import { ConnectionBadge } from "@/components/chat/clientlist";
+import { ConnectionBadge } from "@/routes/components/connection-badge";
 import { toast } from "solid-sonner";
 import { PeerSession } from "@/libs/core/session";
 import { v4 } from "uuid";

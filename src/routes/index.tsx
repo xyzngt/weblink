@@ -34,11 +34,11 @@ import {
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { makePersisted } from "@solid-primitives/storage";
 import { IconPerson } from "@/components/icons";
-import { UserItem } from "@/components/chat/clientlist";
 import { messageStores } from "@/libs/core/messge";
 import { t } from "@/i18n";
 import { sessionService } from "@/libs/services/session-service";
 import { appOptions } from "@/options";
+import { UserItem } from "./components/client-list-item";
 
 export interface UserItemProps
   extends ComponentProps<"li"> {

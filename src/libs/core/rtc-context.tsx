@@ -94,6 +94,7 @@ export interface WebRTCContextProps {
     text: string | File,
     options: SendOptions,
   ) => Promise<boolean>;
+  shareFile: (fileId: FileID, target: ClientID) => void;
   roomStatus: RoomStatus;
   remoteStreams: Record<string, MediaStream>;
 }
@@ -681,6 +682,48 @@ export const WebRTCProvider: Component<
     return true;
   };
 
+  const shareFile = async (
+    fileId: FileID,
+    target: ClientID,
+  ) => {
+    const cache = cacheManager.getCache(fileId);
+    if (!cache) {
+      console.warn(`cache ${fileId} not exist`);
+      return;
+    }
+    const session = sessionService.sessions[target];
+    if (!session) {
+      console.warn(`session ${target} not exist`);
+      return;
+    }
+    const info = await cache.getInfo();
+    if (!info) {
+      console.warn(`cache ${fileId} info not exist`);
+      return;
+    }
+
+    if (!info.file) {
+      console.warn(`cache ${fileId} file not exist`);
+      return;
+    }
+
+    const message = {
+      id: v4(),
+      type: "send-file",
+      client: session.clientId,
+      target: session.targetClientId,
+      fid: fileId,
+      fileName: info.fileName,
+      fileSize: info.fileSize,
+      mimeType: info.mimetype,
+      lastModified: info.lastModified,
+      createdAt: Date.now(),
+      chunkSize: appOptions.chunkSize,
+    } satisfies SendFileMessage;
+    messageStores.handleReceiveMessage(message);
+    session.sendMessage(message);
+  };
+
   const requestFile = async (
     target: ClientID,
     fileId: string,
@@ -747,6 +790,7 @@ export const WebRTCProvider: Component<
       value={{
         joinRoom,
         leaveRoom,
+        shareFile,
         send,
         requestFile,
         roomStatus,
