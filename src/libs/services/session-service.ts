@@ -55,7 +55,7 @@ class SessionService {
     this.setClientServiceStatus = setClientServiceStatus;
   }
 
-  handleReceiveMessage(message: SessionMessage) {
+  setClipboard(message: SessionMessage) {
     if (message.type === "send-clipboard") {
       this.setClientInfo(
         message.client,

@@ -28,6 +28,7 @@ import {
 
 import {
   CheckMessage,
+  ErrorMessage,
   messageStores,
   RequestFileMessage,
   SendClipboardMessage,
@@ -176,123 +177,87 @@ export const WebRTCProvider: Component<
     session: PeerSession,
     message: SessionMessage,
   ) {
-    messageStores.handleReceiveMessage(message);
-    sessionService.handleReceiveMessage(message);
+    try {
+      let sendReplyMessage: SessionMessage | null = null;
 
-    if (message.type === "send-text") {
-      const replyMessage = {
-        type: "check-message",
-        id: message.id,
-        createdAt: Date.now(),
-        client: message.target,
-        target: message.client,
-      } satisfies CheckMessage;
-
-      session.sendMessage(replyMessage);
-    } else if (message.type === "send-clipboard") {
-      window.focus();
-      if (navigator.clipboard) {
-        navigator.clipboard
-          .writeText(message.data)
-          .then(() => {
-            toast.success(message.data);
-          })
-          .catch((err) => {
-            clipboardCacheData.push(message);
-            if (err instanceof Error) {
-              console.warn(
-                `can not write ${message.data} to clipboard, ${err.message}`,
-              );
-            }
-          });
-      }
-    } else if (message.type === "send-file") {
-      const cache = await cacheManager.createCache(
-        message.fid,
-      );
-
-      const receiveInfo = {
-        fileName: message.fileName,
-        fileSize: message.fileSize,
-        mimetype: message.mimeType,
-        lastModified: message.lastModified,
-        chunkSize: message.chunkSize,
-        createdAt: message.createdAt,
-        id: message.fid,
-      } satisfies FileMetaData;
-
-      const transferer = transferManager.createTransfer(
-        cache,
-        TransferMode.Receive,
-        receiveInfo,
-      );
-
-      messageStores.addTransfer(transferer);
-      await transferer.initialize();
-
-      const replyMessage = {
-        type: "check-message",
-        id: message.id,
-        createdAt: Date.now(),
-        client: message.target,
-        target: message.client,
-      } satisfies CheckMessage;
-
-      session.sendMessage(replyMessage);
-    } else if (message.type === "request-file") {
-      const cache = cacheManager.getCache(message.fid);
-      // if (!cache?.getInfo()?.file) return;
-      if (!cache) {
-        console.warn(`cache ${message.fid} not found`);
-
-        return;
-      }
-
-      const transferer = transferManager.createTransfer(
-        cache,
-        TransferMode.Send,
-      );
-      messageStores.addTransfer(transferer);
-
-      for (let i = 0; i < appOptions.channelsNumber; i++) {
-        const channel = await session.createChannel(
-          `${TRANSFER_CHANNEL_PREFIX}${transferer.id}${v4()}`,
-        );
-
-        if (channel) {
-          transferManager.addChannel(cache.id, channel);
+      if (message.type === "send-text") {
+        messageStores.handleReceiveMessage(message);
+        sendReplyMessage = {
+          type: "check-message",
+          id: message.id,
+          createdAt: Date.now(),
+          client: message.target,
+          target: message.client,
+        } satisfies CheckMessage;
+      } else if (message.type === "send-clipboard") {
+        sessionService.setClipboard(message);
+        window.focus();
+        if (navigator.clipboard) {
+          navigator.clipboard
+            .writeText(message.data)
+            .then(() => {
+              toast.success(message.data);
+            })
+            .catch((err) => {
+              clipboardCacheData.push(message);
+              if (err instanceof Error) {
+                console.warn(
+                  `can not write ${message.data} to clipboard, ${err.message}`,
+                );
+              }
+            });
         }
-      }
-
-      await transferer.initialize();
-      transferer.setSendStatus(message);
-      await transferer.sendFile(message.ranges);
-    } else if (message.type === "check-message") {
-      const index = messageStores.messages.findIndex(
-        (msg) => msg.id === message.id,
-      );
-      if (index === -1) {
-        console.warn(
-          `check message ${message.id} not found`,
-        );
-        return;
-      }
-      const storeMessage = messageStores.messages[index];
-      if (storeMessage.type === "file") {
-        const cache = cacheManager.getCache(
-          storeMessage.fid,
-        );
-        if (!cache) {
-          console.warn(
-            `cache ${storeMessage.fid} not found`,
+      } else if (message.type === "send-file") {
+        if (cacheManager.getCache(message.fid)) {
+          throw new Error(
+            `cache ${message.fid} already exists`,
           );
-          return;
         }
+        messageStores.handleReceiveMessage(message);
+
+        const cache = await cacheManager.createCache(
+          message.fid,
+        );
+
+        const receiveInfo = {
+          fileName: message.fileName,
+          fileSize: message.fileSize,
+          mimetype: message.mimeType,
+          lastModified: message.lastModified,
+          chunkSize: message.chunkSize,
+          createdAt: message.createdAt,
+          id: message.fid,
+        } satisfies FileMetaData;
+
+        const transferer = transferManager.createTransfer(
+          cache,
+          TransferMode.Receive,
+          receiveInfo,
+        );
+
+        messageStores.addTransfer(transferer);
+        await transferer.initialize();
+
+        const replyMessage = {
+          type: "check-message",
+          id: message.id,
+          createdAt: Date.now(),
+          client: message.target,
+          target: message.client,
+        } satisfies CheckMessage;
+
+        sendReplyMessage = replyMessage;
+      } else if (message.type === "request-file") {
+        messageStores.handleReceiveMessage(message);
+        const cache = cacheManager.getCache(message.fid);
+        if (!cache) {
+          throw new Error(`cache ${message.fid} not found`);
+        }
+
         const transferer = transferManager.createTransfer(
           cache,
           TransferMode.Send,
         );
-
         messageStores.addTransfer(transferer);
 
         for (
@@ -303,18 +268,84 @@ export const WebRTCProvider: Component<
           const channel = await session.createChannel(
             `${TRANSFER_CHANNEL_PREFIX}${transferer.id}${v4()}`,
           );
-          // console.log(`create channel`, channel);
 
           if (channel) {
-            transferManager.addChannel(
-              storeMessage.fid,
-              channel,
-            );
+            transferManager.addChannel(cache.id, channel);
           }
         }
 
         await transferer.initialize();
-        await transferer.sendFile();
+        transferer.setSendStatus(message);
+        await transferer.sendFile(message.ranges);
+      } else if (message.type === "check-message") {
+        messageStores.handleReceiveMessage(message);
+        const index = messageStores.messages.findIndex(
+          (msg) => msg.id === message.id,
+        );
+        if (index === -1) {
+          console.warn(
+            `check message ${message.id} not found`,
+          );
+          return;
+        }
+        const storeMessage = messageStores.messages[index];
+        if (storeMessage.type === "file") {
+          const cache = cacheManager.getCache(
+            storeMessage.fid,
+          );
+          if (!cache) {
+            console.warn(
+              `cache ${storeMessage.fid} not found`,
+            );
+            return;
+          }
+          const transferer = transferManager.createTransfer(
+            cache,
+            TransferMode.Send,
+          );
+
+          messageStores.addTransfer(transferer);
+
+          for (
+            let i = 0;
+            i < appOptions.channelsNumber;
+            i++
+          ) {
+            const channel = await session.createChannel(
+              `${TRANSFER_CHANNEL_PREFIX}${transferer.id}${v4()}`,
+            );
+
+            if (channel) {
+              transferManager.addChannel(
+                storeMessage.fid,
+                channel,
+              );
+            }
+          }
+
+          await transferer.initialize();
+          await transferer.sendFile();
+        }
+      } else if (message.type === "error") {
+        messageStores.handleReceiveMessage(message);
+        console.warn(message.error);
+      }
+
+      if (sendReplyMessage) {
+        session.sendMessage(sendReplyMessage);
+      }
+    } catch (err) {
+      console.error(err);
+      if (err instanceof Error) {
+        const errorMessage = {
+          type: "error",
+          id: message.id,
+          client: message.target,
+          target: message.client,
+          createdAt: Date.now(),
+          error: err.message,
+        } satisfies ErrorMessage;
+        session.sendMessage(errorMessage);
       }
     }
   }

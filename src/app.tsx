@@ -197,24 +197,26 @@ const InnerApp = (props: ParentProps) => {
     Component: ForwardDialogComponent,
   } = createForwardDialog();
 
-  onMount(() => {
-    const onMessage = (ev: MessageEvent) => {
-      if (ev.data.action === "share-target") {
-        window.focus();
-        shareTarget(ev.data.data as ShareData);
-      }
-    };
-    navigator.serviceWorker.addEventListener(
-      "message",
-      onMessage,
-    );
-    onCleanup(() => {
-      navigator.serviceWorker.removeEventListener(
+  if (navigator.serviceWorker) {
+    onMount(() => {
+      const onMessage = (ev: MessageEvent) => {
+        if (ev.data.action === "share-target") {
+          window.focus();
+          shareTarget(ev.data.data as ShareData);
+        }
+      };
+      navigator.serviceWorker.addEventListener(
         "message",
         onMessage,
       );
+      onCleanup(() => {
+        navigator.serviceWorker.removeEventListener(
+          "message",
+          onMessage,
+        );
+      });
     });
-  });
+  }
 
   return (
     <>

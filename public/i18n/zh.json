@@ -168,7 +168,8 @@
     "message_editor": {
       "placeholder": "Ctrl + Enter 或 Shift + Enter 发送消息",
       "paste_tip": "剪贴板粘贴已启用"
-    }
+    },
+    "message_error": "发生错误"
   },
   "video": {
     "title": "视频通话",

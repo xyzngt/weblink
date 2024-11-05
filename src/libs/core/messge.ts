@@ -63,7 +63,7 @@ export interface FileTransferMessage
 
 export type StoreMessage =
   | TextMessage
-  | FileTransferMessage
+  | FileTransferMessage;
 
 export type SendTextMessage = BaseExchangeMessage & {
   type: "send-text";
@@ -101,13 +101,20 @@ export type SendClipboardMessage = BaseExchangeMessage & {
   data: string;
 };
 
+export type ErrorMessage = BaseExchangeMessage & {
+  type: "error";
+  fid?: FileID;
+  error: string;
+};
+
 export type SessionMessage =
   | SendTextMessage
   | CheckMessage
   | ReadTextMessage
   | RequestFileMessage
   | SendFileMessage
-  | SendClipboardMessage;
+  | SendClipboardMessage
+  | ErrorMessage;
 
 class MessageStores {
   readonly messages: StoreMessage[];
@@ -355,9 +362,7 @@ class MessageStores {
     return controller;
   }
 
-  handleReceiveMessage(
-    sessionMsg: SessionMessage,
-  ): SessionMessage | null {
+  handleReceiveMessage(sessionMsg: SessionMessage) {
     let index: number = -1;
     const isSender =
       this.localClientId === sessionMsg.client;
@@ -401,8 +406,13 @@ class MessageStores {
       );
       if (index !== -1) {
         this.clearTimeout(sessionMsg.id);
-        this.setMessages(index, "status", "received");
-        this.setMessageDB(this.messages[index]);
+        this.setMessages(
+          index,
+          produce((state) => {
+            state.status = "received";
+            this.setMessageDB(state);
+          }),
+        );
       }
     } else if (sessionMsg.type === "send-file") {
       index = this.messages.findIndex(
@@ -429,8 +439,20 @@ class MessageStores {
           `can not request file ${sessionMsg.fid}, message not exist`,
         );
       }
+    } else if (sessionMsg.type === "error") {
+      index = this.messages.findIndex(
+        (msg) => msg.id === sessionMsg.id,
+      );
+      this.clearTimeout(sessionMsg.id);
+      this.setMessages(
+        index,
+        produce((state) => {
+          state.status = "error";
+          state.error = sessionMsg.error;
+          this.setMessageDB(state);
+        }),
+      );
     }
-    return null;
   }
 
   setClient(client: Client) {
@@ -532,7 +554,7 @@ class MessageStores {
         `transferer ${transferer.id} has been added`,
       );
     }
-    const index = this.messages.findIndex(
+    const index = this.messages.findLastIndex(
       (msg) =>
         msg.type === "file" && msg.fid === transferer.id,
     );

@@ -4,19 +4,12 @@ import {
   ComponentProps,
   createEffect,
   createMemo,
-  createSignal,
   Match,
-  onMount,
   Show,
   splitProps,
   Switch,
 } from "solid-js";
-
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Client } from "@/libs/core/type";
-import { textareaAutoResize } from "@/libs/hooks/input-resize";
 import { cn } from "@/libs/cn";
 import {
   Progress,
@@ -32,14 +25,11 @@ import {
 import createTransferSpeed from "@/libs/hooks/transfer-speed";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
 import { ContextMenuItem } from "@/components/ui/context-menu";
-
 import { convertImageToPNG } from "@/libs/utils/conver-to-png";
-
 import "photoswipe/style.css";
 import {
   FileTransferMessage,
   messageStores,
-  SendClipboardMessage,
   SendFileMessage,
   SendTextMessage,
   SessionMessage,
@@ -49,8 +39,6 @@ import { cacheManager } from "@/libs/services/cache-serivce";
 import { transferManager } from "@/libs/services/transfer-service";
 import { PortableContextMenu } from "@/components/portable-contextmenu";
 import {
-  IconAttachFile,
-  IconAudioFileFilled,
   IconCheck,
   IconClose,
   IconContentCopy,
@@ -60,19 +48,21 @@ import {
   IconFileCopy,
   IconFileUpload,
   IconInsertDriveFile,
-  IconPhotoFilled,
   IconRestore,
   IconSchedule,
-  IconSend,
-  IconVideoFileFilled,
 } from "@/components/icons";
 import { sessionService } from "@/libs/services/session-service";
 import { t } from "@/i18n";
 import { Dynamic } from "solid-js/web";
-
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { FileMetaData } from "@/libs/cache";
 import { FileMessageTitle } from "@/components/message-title";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 export interface MessageCardProps
   extends ComponentProps<"li"> {
   message: StoreMessage;
@@ -522,9 +512,16 @@ export const MessageContent: Component<MessageCardProps> = (
             </Switch>
           </article>
           <div class="flex items-center justify-end gap-2">
-            <p class="text-xs text-destructive">
-              {props.message.error}
-            </p>
+            <Show when={props.message.error}>
+              {(error) => (
+                <Tooltip>
+                  <TooltipTrigger class="text-xs text-destructive">
+                    {t("chat.message_error")}
+                  </TooltipTrigger>
+                  <TooltipContent>{error()}</TooltipContent>
+                </Tooltip>
+              )}
+            </Show>
             <Show when={props.message.status === "error"}>
               <Show
                 when={
@@ -578,7 +575,6 @@ export const MessageContent: Component<MessageCardProps> = (
               </Show>
             </Show>
           </div>
-
           <div
             class="flex justify-end gap-1 self-end text-xs
               text-muted-foreground"

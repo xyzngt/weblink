@@ -9,6 +9,7 @@ import {
   ChunkCacheEventMap,
   DBNAME_PREFIX,
   FileMetaData,
+  getTotalChunkCount,
 } from ".";
 
 export interface ChunkCache {
@@ -125,9 +126,10 @@ export class IDBChunkCache implements ChunkCache {
     if (!info) {
       return null;
     }
-    const totalLength = Math.ceil(
-      info.fileSize / info.chunkSize,
-    );
+    if (!info.chunkSize) {
+      return null;
+    }
+    const totalLength = getTotalChunkCount(info);
 
     const hasLast = async () => {
       const lastKey = totalLength - 1;
@@ -168,6 +170,10 @@ export class IDBChunkCache implements ChunkCache {
   async getReqRanges(): Promise<ChunkRange[] | null> {
     const info = await this.getInfo();
     if (!info) {
+      return null;
+    }
+
+    if (!info.chunkSize) {
       return null;
     }
 
@@ -227,9 +233,7 @@ export class IDBChunkCache implements ChunkCache {
         break end;
       }
       const count = await this.getChunkCount();
-      const total = Math.ceil(
-        info.fileSize / info.chunkSize,
-      );
+      const total = getTotalChunkCount(info);
 
       console.log(
         `check file ${info.fileName} done:${done} total:${total} count:${count}`,
@@ -334,8 +338,14 @@ export class IDBChunkCache implements ChunkCache {
   ): Promise<ArrayBuffer | null> {
     await this.flush();
     const info = await this.getInfo();
-    const file = info?.file;
-    if (info && file) {
+    if (!info) {
+      throw new Error("info is not found");
+    }
+    if (!info.chunkSize) {
+      throw new Error("chunkSize is not found");
+    }
+    const file = info.file;
+    if (file) {
       // Send specific data blocks
       const start = chunkIndex * info.chunkSize;
       const end = Math.min(
@@ -343,32 +353,19 @@ export class IDBChunkCache implements ChunkCache {
         file.size,
       );
       const chunk = file.slice(start, end);
-
-      const reader = new FileReader();
-
-      return new Promise((reslove, reject) => {
-        reader.onload = () => {
-          if (reader.result) {
-            // Construct an ArrayBuffer containing the block number and data
-            const chunkData = reader.result as ArrayBuffer;
-            reslove(chunkData);
-          }
+      return await chunk.arrayBuffer();
+    } else {
+      const store = await this.getChunkStore("readonly");
+      const request = store.get(chunkIndex);
+      return new Promise((resolve, reject) => {
+        request.onsuccess = () => {
+          resolve(
+            request.result ? request.result.data : null,
+          );
         };
-        reader.onerror = reject;
-        reader.readAsArrayBuffer(chunk);
+        request.onerror = () => reject(request.error);
       });
     }
-
-    const store = await this.getChunkStore("readonly");
-    const request = store.get(chunkIndex);
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => {
-        resolve(
-          request.result ? request.result.data : null,
-        );
-      };
-      request.onerror = () => reject(request.error);
-    });
   }
 
   async getChunkCount(): Promise<number> {
@@ -411,6 +408,7 @@ export class IDBChunkCache implements ChunkCache {
       };
       request.onblocked = () => {
         console.warn(`Database deletion blocked.`);
+        reject(new Error("Database deletion blocked."));
       };
     });
   }

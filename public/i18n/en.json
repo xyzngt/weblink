@@ -168,7 +168,8 @@
     "message_editor": {
       "placeholder": "Ctrl + Enter or Shift + Enter to send the message",
       "paste_tip": "Clipboard paste enabled"
-    }
+    },
+    "message_error": "Error occurred"
   },
   "video": {
     "device": {
