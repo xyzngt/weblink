@@ -517,7 +517,7 @@ export const MessageContent: Component<MessageCardProps> = (
               {(error) => (
                 <Tooltip>
                   <TooltipTrigger class="text-xs text-destructive">
-                    {t("chat.message_error")}
+                    {t("client.message_error")}
                   </TooltipTrigger>
                   <TooltipContent>{error()}</TooltipContent>
                 </Tooltip>

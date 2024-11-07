@@ -270,6 +270,7 @@ export const WebRTCProvider: Component<
           TransferMode.Send,
         );
         messageStores.addTransfer(transferer);
+        await transferer.initialize();
         transferer.setSendStatus(message);
 
         for (
@@ -286,8 +287,6 @@ export const WebRTCProvider: Component<
             transferManager.addChannel(cache.id, channel);
           }
         }
-
-        await transferer.initialize();
         const replyMessage = {
           type: "check-message",
           id: message.id,

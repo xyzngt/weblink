@@ -756,21 +756,15 @@ export class FileTransferer {
         ) as TransferMessage;
 
         if (message.type === "request-content") {
-          if (this.status() !== TransferStatus.Process) {
-            if (this.sendData) {
-              rangesIterator(message.ranges).forEach(
-                (index) =>
-                  this.sendData?.indexes.delete(index),
-              );
-
-              this.updateProgress();
-            }
-            this.sendFile(message.ranges);
-          } else {
-            console.log(
-              "send not complete, ignore request-content message",
+          if (this.sendData) {
+            rangesIterator(message.ranges).forEach(
+              (index) =>
+                this.sendData?.indexes.delete(index),
             );
+
+            this.updateProgress();
           }
+          this.sendFile(message.ranges);
         } else if (message.type === "complete") {
           this.setStatus(TransferStatus.Complete);
           this.dispatchEvent("complete", undefined);
