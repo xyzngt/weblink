@@ -10,6 +10,7 @@ import {
 import { SessionMessage } from "./messge";
 import { waitChannel } from "./utils/channel";
 import { appOptions } from "@/options";
+import { Accessor, Setter, createSignal } from "solid-js";
 
 export interface PeerSessionOptions {
   polite?: boolean;
@@ -24,6 +25,7 @@ export type PeerSessionEventMap = {
   message: SessionMessage;
   error: Error;
   disconnect: void;
+  messageChannelChange: "ready" | "closed";
 };
 
 export class PeerSession {
@@ -117,6 +119,7 @@ export class PeerSession {
       this.makingOffer = false;
       this.channels.length = 0;
       this.messageChannel = null;
+      this.dispatchEvent("messageChannelChange", "closed");
       if (this.peerConnection) {
         this.peerConnection.close();
         this.peerConnection = null;
@@ -225,6 +228,10 @@ export class PeerSession {
           );
 
           this.messageChannel = ev.channel;
+          this.dispatchEvent(
+            "messageChannelChange",
+            "ready",
+          );
         }
 
         this.dispatchEvent("channel", ev.channel);
@@ -275,7 +282,7 @@ export class PeerSession {
               `${this.clientId} connection established`,
             );
             this.dispatchEvent("connected", undefined);
-            this.createChannel("message");
+            this.createChannel("message", "message");
             break;
           case "failed":
           case "closed":
@@ -390,7 +397,7 @@ export class PeerSession {
     );
   }
 
-  async createChannel(label: string) {
+  async createChannel(label: string, protocol: string) {
     if (!this.peerConnection) {
       console.error(
         `failed to create channel, peer connection is null`,
@@ -401,6 +408,7 @@ export class PeerSession {
       label,
       {
         ordered: appOptions.ordered,
+        protocol,
       },
     );
 
@@ -418,6 +426,10 @@ export class PeerSession {
 
         if (channel.label === "message") {
           this.messageChannel = null;
+          this.dispatchEvent(
+            "messageChannelChange",
+            "closed",
+          );
         }
       },
 
@@ -441,6 +453,16 @@ export class PeerSession {
       );
 
       this.messageChannel = channel;
+      channel.addEventListener(
+        "open",
+        () => {
+          this.dispatchEvent(
+            "messageChannelChange",
+            "ready",
+          );
+        },
+        { signal: this.controller?.signal },
+      );
     }
 
     await waitChannel(channel);
@@ -450,7 +472,7 @@ export class PeerSession {
   sendMessage(message: SessionMessage) {
     if (!this.messageChannel) {
       console.error(
-        `failed to send message, peer connection is null`,
+        `failed to send message, message channel is null`,
       );
       return;
     }

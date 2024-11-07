@@ -9,6 +9,9 @@ import {
 } from "solid-js";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
+import { downloadFile } from "@/libs/utils/download-file";
+import { IconDownload } from "./icons";
+import { formatBtyeSize } from "@/libs/utils/format-filesize";
 
 export type PreviewDialogProps = {
   src: File | Blob;
@@ -81,8 +84,22 @@ export const createPreviewDialog = () => {
 
   const { open, Component } = createDialog({
     title: () => t("common.preview_dialog.title"),
-    description: () => src()?.name ?? "",
+    description: () => (
+      <p class="flex items-center justify-between gap-2">
+        <span>{src()?.name}</span>
+        <span>{formatBtyeSize(src()?.size ?? 0)}</span>
+      </p>
+    ),
     content: () => <PreviewContent src={src()} />,
+    confirm: (
+      <Button
+        disabled={!src()}
+        onClick={() => downloadFile(src()!)}
+      >
+        <IconDownload class="mr-1 size-4" />
+        {t("common.action.download")}
+      </Button>
+    ),
   });
 
   const handleOpen = (src: File) => {

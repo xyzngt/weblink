@@ -61,13 +61,17 @@ import {
   CheckboxControl,
 } from "@/components/ui/checkbox";
 import {
+  IconAdd,
+  IconClose,
   IconClose700,
   IconDelete,
   IconDownload,
+  IconFolder,
   IconForward,
   IconMenu,
   IconMoreHoriz,
   IconPageInfo,
+  IconPlaceItem,
   IconPreview,
   IconSearch700,
   IconWallpaper,
@@ -81,19 +85,43 @@ import {
 } from "@solid-primitives/resize-observer";
 import { createStore } from "solid-js/store";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { setAppOptions } from "@/options";
+import { appOptions, setAppOptions } from "@/options";
 import { createForwardDialog } from "@/components/forward-dialog";
-import { FileID } from "@/libs/core/type";
 import { FileMetaData } from "@/libs/cache";
-import { ChunkCache } from "@/libs/cache/chunk-cache";
-const createComfirmDialog = () => {
-  const { open, close, submit, Component } = createDialog({
+import { downloadFile } from "@/libs/utils/download-file";
+import DataTableColumnVisibility from "@/components/data-table/data-table-column-visibility";
+import { makePersisted } from "@solid-primitives/storage";
+import { PortableContextMenu } from "@/components/portable-contextmenu";
+import { ContextMenuItem } from "@/components/ui/context-menu";
+import {
+  handleDropItems,
+  handleSelectFolder,
+} from "@/libs/utils/process-file";
+import DropArea from "@/components/drop-area";
+
+const createComfirmDeleteDialog = () => {
+  const [names, setNames] = createSignal<string[]>([]);
+  const {
+    open: openDeleteDialog,
+    close,
+    submit,
+    Component,
+  } = createDialog({
     title: () =>
       t("common.confirm_delete_files_dialog.title"),
     description: () =>
-      t("common.confirm_delete_files_dialog.description"),
-    content: () =>
-      t("common.confirm_delete_files_dialog.content"),
+      t("common.confirm_delete_files_dialog.description", {
+        count: names().length,
+      }),
+    content: () => (
+      <div class="overflow-y-auto">
+        <ul class="text-ellipsis text-nowrap">
+          <For each={names()}>
+            {(name) => <li class="text-sm">{name}</li>}
+          </For>
+        </ul>
+      </div>
+    ),
 
     cancel: (
       <Button onClick={() => close()}>
@@ -109,6 +137,11 @@ const createComfirmDialog = () => {
       </Button>
     ),
   });
+
+  const open = (names: string[]) => {
+    setNames(names);
+    return openDeleteDialog();
+  };
 
   return { open, Component };
 };
@@ -162,8 +195,10 @@ export default function File() {
     reset();
   });
 
-  const { forwardCache: shareCache, Component: ForwardDialogComponent } =
-    createForwardDialog();
+  const {
+    forwardCache: shareCache,
+    Component: ForwardDialogComponent,
+  } = createForwardDialog();
 
   const columns = [
     columnHelper.display({
@@ -214,7 +249,6 @@ export default function File() {
         </p>
       ),
       enableGlobalFilter: true,
-      enableSorting: false,
     }),
     columnHelper.accessor("fileSize", {
       header: ({ column }) => (
@@ -278,8 +312,11 @@ export default function File() {
           title={t("common.file_table.columns.mime_type")}
         />
       ),
-      cell: (info) => info.getValue() ?? "-",
-      enableSorting: false,
+      cell: (info) => (
+        <p class="max-w-xs overflow-hidden text-ellipsis">
+          {info.getValue() ?? "-"}
+        </p>
+      ),
     }),
     columnHelper.display({
       id: "actions",
@@ -292,75 +329,83 @@ export default function File() {
                 <IconMoreHoriz class="size-6" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-48">
-              <Show when={row.original.file}>
-                {(file) => (
-                  <>
-                    <DropdownMenuItem
-                      class="gap-2"
-                      onSelect={() => {
-                        const a =
-                          document.createElement("a");
-                        a.href =
-                          URL.createObjectURL(file());
-                        a.download = file().name;
-                        a.click();
-                      }}
-                    >
-                      <IconDownload class="size-4" />
-                      {t("common.action.download")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      class="gap-2"
-                      onSelect={() => {
-                        openPreviewDialog(file());
-                      }}
-                    >
-                      <IconPreview class="size-4" />
-                      {t("common.action.preview")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      class="gap-2"
-                      onSelect={() => {
-                        shareCache([row.original]);
-                      }}
-                    >
-                      <IconForward class="size-4" />
-                      {t("common.action.forward")}
-                    </DropdownMenuItem>
-                    <Show
-                      when={file().type.startsWith(
-                        "image/",
-                      )}
-                    >
+            <DropdownMenuContent class="min-w-48">
+              <DropdownMenuGroup>
+                <DropdownMenuGroupLabel>
+                  {t("common.action.actions")}
+                </DropdownMenuGroupLabel>
+                <Show when={row.original.file}>
+                  {(file) => (
+                    <>
                       <DropdownMenuItem
                         class="gap-2"
                         onSelect={() => {
-                          setAppOptions({
-                            backgroundImage:
-                              row.original.id,
-                          });
+                          downloadFile(file());
                         }}
                       >
-                        <IconWallpaper class="size-4" />
-                        {t(
-                          "common.action.set_as_background",
-                        )}
+                        <IconDownload class="size-4" />
+                        {t("common.action.download")}
                       </DropdownMenuItem>
-                    </Show>
-                  </>
-                )}
-              </Show>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                class="gap-2"
-                onSelect={async () => {
-                  cacheManager.remove(row.original.id);
-                }}
-              >
-                <IconDelete class="size-4" />
-                {t("common.action.delete")}
-              </DropdownMenuItem>
+                      <DropdownMenuItem
+                        class="gap-2"
+                        onSelect={() => {
+                          openPreviewDialog(file());
+                        }}
+                      >
+                        <IconPreview class="size-4" />
+                        {t("common.action.preview")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        class="gap-2"
+                        onSelect={() => {
+                          shareCache([row.original]);
+                        }}
+                      >
+                        <IconForward class="size-4" />
+                        {t("common.action.forward")}
+                      </DropdownMenuItem>
+                      <Show
+                        when={file().type.startsWith(
+                          "image/",
+                        )}
+                      >
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={() => {
+                            setAppOptions({
+                              backgroundImage:
+                                row.original.id,
+                            });
+                          }}
+                        >
+                          <IconWallpaper class="size-4" />
+                          {t(
+                            "common.action.set_as_background",
+                          )}
+                        </DropdownMenuItem>
+                      </Show>
+                    </>
+                  )}
+                </Show>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  class="gap-2"
+                  onSelect={async () => {
+                    if (
+                      (
+                        await openDeleteDialog([
+                          row.original.fileName,
+                        ])
+                      ).result
+                    ) {
+                      cacheManager.remove(row.original.id);
+                    }
+                  }}
+                >
+                  <IconDelete class="size-4" />
+                  {t("common.action.delete")}
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
         </>
@@ -371,9 +416,26 @@ export default function File() {
     }),
   ];
 
-  const [columnFilters, setColumnFilters] =
-    createSignal<ColumnFiltersState>([]);
+  const [columnFilters, setColumnFilters] = makePersisted(
+    createSignal<ColumnFiltersState>([]),
+    {
+      name: "file-column-filters",
+      storage: sessionStorage,
+    },
+  );
+  const [columnVisibility, setColumnVisibility] =
+    makePersisted(createSignal<VisibilityState>({}), {
+      name: "file-column-visibility",
+      storage: sessionStorage,
+    });
 
+  const [sorting, setSorting] = makePersisted(
+    createSignal<SortingState>([]),
+    {
+      name: "file-sorting",
+      storage: sessionStorage,
+    },
+  );
   const [globalFilter, setGlobalFilter] = createSignal("");
   const [rowSelection, setRowSelection] =
     createSignal<RowSelectionState>({});
@@ -382,12 +444,6 @@ export default function File() {
       left: ["select"],
       right: ["actions"],
     });
-  const [columnVisibility, setColumnVisibility] =
-    createSignal<VisibilityState>({});
-
-  const [sorting, setSorting] = createSignal<SortingState>(
-    [],
-  );
 
   const data = createMemo(() =>
     cacheManager.status() === "ready"
@@ -451,13 +507,87 @@ export default function File() {
     Size[]
   >([]);
 
-  const { open, Component: DialogComponent } =
-    createComfirmDialog();
+  const {
+    open: openDeleteDialog,
+    Component: DeleteDialogComponent,
+  } = createComfirmDeleteDialog();
   return (
     <>
-      <DialogComponent />
-      <PreviewDialogComponent class="w-full" />
+      <DeleteDialogComponent />
+      <PreviewDialogComponent />
       <ForwardDialogComponent />
+      <PortableContextMenu
+        menu={() => (
+          <>
+            <ContextMenuItem as="label" class="gap-2">
+              <input
+                class="hidden"
+                type="file"
+                // @ts-expect-error
+                webkitdirectory
+                mozdirectory
+                directory
+                onChange={async (ev) => {
+                  if (!ev.currentTarget.files) return;
+                  const file = await handleSelectFolder(
+                    ev.currentTarget.files,
+                  );
+
+                  const cache =
+                    await cacheManager.createCache();
+                  cache.setInfo({
+                    fileName: file.name,
+                    fileSize: file.size,
+                    mimetype: file.type,
+                    lastModified: file.lastModified,
+                    chunkSize: appOptions.chunkSize,
+                    createdAt: Date.now(),
+                    file,
+                  });
+                }}
+              />
+              <IconFolder class="size-4" />
+              {t("common.action.add_folder")}
+            </ContextMenuItem>
+          </>
+        )}
+      >
+        {(p) => (
+          <label
+            class="fixed bottom-4 right-4 z-50 flex size-12 items-center
+              justify-center rounded-full bg-muted/80 shadow-md
+              backdrop-blur"
+            style={{
+              right:
+                "calc(1rem + var(--scrollbar-width, 0px))",
+            }}
+            {...p}
+          >
+            <input
+              type="file"
+              class="hidden"
+              multiple
+              onChange={async (ev) => {
+                const files = ev.currentTarget.files;
+                for (const file of files ?? []) {
+                  const cache =
+                    await cacheManager.createCache();
+                  cache.setInfo({
+                    fileName: file.name,
+                    fileSize: file.size,
+                    mimetype: file.type,
+                    lastModified: file.lastModified,
+                    chunkSize: appOptions.chunkSize,
+                    createdAt: Date.now(),
+                    file,
+                  });
+                }
+              }}
+            />
+            <IconAdd class="size-8" />
+          </label>
+        )}
+      </PortableContextMenu>
       <div
         class="container pointer-events-none fixed inset-0 z-[-1]
           backdrop-blur"
@@ -476,72 +606,87 @@ export default function File() {
               <DropdownMenuTrigger>
                 <Button
                   variant="outline"
+                  size="sm"
                   class="text-nowrap"
                 >
                   <IconMenu class="mr-2 size-4" />
                   {t("common.action.actions")}
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent class="w-48">
-                <DropdownMenuItem
-                  class="gap-2"
-                  onSelect={() => {
-                    table
-                      ?.getSelectedRowModel()
-                      .rows.forEach((row) => {
-                        const a =
-                          document.createElement("a");
-                        if (!row.original.file) return;
-                        a.href = URL.createObjectURL(
-                          row.original.file,
-                        );
-                        a.download = row.original.fileName;
-                        a.click();
-                      });
-                    table.resetRowSelection();
-                  }}
-                >
-                  <IconDownload class="size-4" />
-                  {t("common.action.download")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  class="gap-2"
-                  onSelect={() => table.resetRowSelection()}
-                >
-                  <IconClose700 class="size-4" />
-                  {t("common.action.cancel")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  class="gap-2"
-                  onSelect={() => {
-                    shareCache(
+              <DropdownMenuContent class="min-w-48">
+                <DropdownMenuGroup>
+                  <DropdownMenuGroupLabel>
+                    {t("common.action.actions")}
+                  </DropdownMenuGroupLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    class="gap-2"
+                    onSelect={() => {
                       table
-                        .getSelectedRowModel()
-                        .rows.map((row) => row.original),
-                    );
-                    table.resetRowSelection();
-                  }}
-                >
-                  <IconForward class="size-4" />
-                  {t("common.action.forward")}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  class="gap-2"
-                  onSelect={async () => {
-                    if ((await open()).cancel) return;
-                    table
-                      .getSelectedRowModel()
-                      .rows.forEach((row) => {
-                        cacheManager.remove(
-                          row.original.id,
-                        );
-                      });
-                    table.resetRowSelection();
-                  }}
-                >
-                  <IconDelete class="size-4" />
-                  {t("common.action.delete")}
-                </DropdownMenuItem>
+                        ?.getSelectedRowModel()
+                        .rows.forEach((row) => {
+                          if (!row.original.file) return;
+                          downloadFile(row.original.file);
+                        });
+                      table.resetRowSelection();
+                    }}
+                  >
+                    <IconDownload class="size-4" />
+                    {t("common.action.download")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    class="gap-2"
+                    onSelect={() =>
+                      table.resetRowSelection()
+                    }
+                  >
+                    <IconClose700 class="size-4" />
+                    {t("common.action.cancel")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    class="gap-2"
+                    onSelect={() => {
+                      shareCache(
+                        table
+                          .getSelectedRowModel()
+                          .rows.map((row) => row.original),
+                      );
+                      table.resetRowSelection();
+                    }}
+                  >
+                    <IconForward class="size-4" />
+                    {t("common.action.forward")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    class="gap-2"
+                    onSelect={async () => {
+                      if (
+                        (
+                          await openDeleteDialog(
+                            table
+                              .getSelectedRowModel()
+                              .rows.map(
+                                (row) =>
+                                  row.original.fileName,
+                              ),
+                          )
+                        ).result
+                      ) {
+                        table
+                          .getSelectedRowModel()
+                          .rows.forEach((row) => {
+                            cacheManager.remove(
+                              row.original.id,
+                            );
+                          });
+                        table.resetRowSelection();
+                      }
+                    }}
+                  >
+                    <IconDelete class="size-4" />
+                    {t("common.action.delete")}
+                  </DropdownMenuItem>
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           </Show>
@@ -549,7 +694,7 @@ export default function File() {
             tabIndex="0"
             class={cn(
               inputClass,
-              `flex w-full max-w-md items-center gap-2 bg-background/80
+              `flex h-8 w-full max-w-md items-center gap-2 bg-background/80
               px-2 focus-within:ring-1 focus-within:ring-ring`,
             )}
           >
@@ -565,57 +710,64 @@ export default function File() {
               }
             />
           </label>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              as={Button}
-              variant="outline"
-              class="ml-auto gap-2"
-            >
-              <IconPageInfo class="size-4" />
-              <span class="text-nowrap">
-                {t("common.action.view")}
-              </span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="w-48">
-              <DropdownMenuGroup>
-                <DropdownMenuGroupLabel>
-                  {t("common.file_table.toggle_columns")}
-                </DropdownMenuGroupLabel>
-
-                <DropdownMenuSeparator />
-                <For
-                  each={table
-                    .getAllColumns()
-                    .filter((column) =>
-                      column.getCanHide(),
-                    )}
-                >
-                  {(column) => (
-                    <DropdownMenuCheckboxItem
-                      checked={column.getIsVisible()}
-                      onChange={(isChecked) =>
-                        column.toggleVisibility(!!isChecked)
-                      }
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  )}
-                </For>
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                class="gap-2"
-                onSelect={() =>
-                  table.resetColumnVisibility()
-                }
-              >
-                <IconClose700 class="size-4" />
-                {t("common.action.reset")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <DataTableColumnVisibility
+            table={table}
+            class="ml-auto"
+          />
         </div>
-        <div class="flex flex-1 flex-col-reverse">
+
+        <DropArea
+          class="relative flex flex-1 flex-col-reverse"
+          overlay={(ev) => {
+            if (!ev) return;
+            if (ev.dataTransfer) {
+              const hasFiles =
+                ev.dataTransfer?.types.includes("Files");
+
+              if (hasFiles) {
+                ev.dataTransfer.dropEffect = "move";
+              } else {
+                ev.dataTransfer.dropEffect = "none";
+              }
+            }
+            return (
+              <div class="pointer-events-none absolute inset-0 bg-muted/50">
+                <span
+                  class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                    text-muted-foreground/20"
+                >
+                  <Show
+                    when={
+                      ev.dataTransfer?.dropEffect === "move"
+                    }
+                    fallback={<IconClose class="size-32" />}
+                  >
+                    <IconPlaceItem class="size-32" />
+                  </Show>
+                </span>
+              </div>
+            );
+          }}
+          onDrop={async (ev) => {
+            if (!ev.dataTransfer) return;
+            const files = await handleDropItems(
+              ev.dataTransfer.items,
+            );
+            for (const file of files) {
+              const cache =
+                await cacheManager.createCache();
+              cache.setInfo({
+                fileName: file.name,
+                fileSize: file.size,
+                mimetype: file.type,
+                lastModified: file.lastModified,
+                chunkSize: appOptions.chunkSize,
+                createdAt: Date.now(),
+                file,
+              });
+            }
+          }}
+        >
           <div
             data-sync-scroll="file-table"
             class="h-full w-full flex-1 overflow-x-auto scrollbar-none"
@@ -732,7 +884,7 @@ export default function File() {
               </TableHeader>
             </Table>
           </div>
-        </div>
+        </DropArea>
       </div>
     </>
   );

@@ -33,7 +33,10 @@ class TransfererFactory {
     return null;
   }
 
-  addChannel(fileId: FileID, channel: RTCDataChannel) {
+  addChannel(
+    fileId: FileID,
+    channel: RTCDataChannel,
+  ) {
     console.log(`addChannel`, fileId, channel.label);
 
     const transfer = this.transferers[fileId];

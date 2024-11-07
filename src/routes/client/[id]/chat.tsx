@@ -4,6 +4,7 @@ import {
 } from "@solidjs/router";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import {
+  Component,
   createEffect,
   createMemo,
   createSignal,
@@ -14,7 +15,10 @@ import {
   Show,
 } from "solid-js";
 
-import { Button } from "@/components/ui/button";
+import {
+  Button,
+  buttonVariants,
+} from "@/components/ui/button";
 import {
   createScrollEnd,
   keepBottom,
@@ -63,6 +67,7 @@ import {
   IconDelete,
   IconMenu,
   IconPlaceItem,
+  IconStorage,
 } from "@/components/icons";
 import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
@@ -73,18 +78,192 @@ import { v4 } from "uuid";
 import { appOptions, setAppOptions } from "@/options";
 import { createClipboardHistoryDialog } from "@/components/box/clipboard-history";
 import clientInfoDialog from "./components/chat-client-info";
-import { handleDropItems } from "./components/process-file";
+import { handleDropItems } from "../../../libs/utils/process-file";
+import { ClientInfo, Client } from "@/libs/core/type";
+
+const ChatHeader: Component<{
+  info?: ClientInfo;
+  client: Client;
+  class?: string;
+}> = (props) => {
+  const {
+    open: openClipboardHistoryDialog,
+    Component: ClipboardHistoryDialogComponent,
+  } = createClipboardHistoryDialog();
+  const {
+    open: openConfirmDeleteClientDialog,
+    Component: ConfirmDeleteClientDialogComponent,
+  } = createComfirmDeleteClientDialog();
+  const {
+    open: openClientInfoDialog,
+    Component: ClientInfoDialogComponent,
+  } = clientInfoDialog();
+
+  return (
+    <>
+      <ClipboardHistoryDialogComponent />
+      <ConfirmDeleteClientDialogComponent />
+      <ClientInfoDialogComponent />
+      <div class={props.class}>
+        <div class="flex w-full items-center gap-2">
+          <Button
+            class="sm:hidden"
+            as={A}
+            href="/"
+            size="icon"
+            variant="ghost"
+          >
+            <IconChevronLeft class="size-8" />
+          </Button>
+
+          <Avatar>
+            <AvatarImage
+              src={props.client.avatar ?? undefined}
+            />
+            <AvatarFallback>
+              {getInitials(props.client.name)}
+            </AvatarFallback>
+          </Avatar>
+          <h4 class={cn("h4")}>{props.client.name}</h4>
+          <ConnectionBadge client={props.info} />
+          <div class="ml-auto" />
+          <Button
+            as={A}
+            variant="ghost"
+            size="icon"
+            href={`../sync`}
+          >
+            <IconStorage class="size-6" />
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              as={Button}
+              size="icon"
+              variant="ghost"
+            >
+              <IconMenu class="size-6" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="min-w-48">
+              <DropdownMenuGroup>
+                <DropdownMenuGroupLabel>
+                  {t("client.menu.client_options")}
+                </DropdownMenuGroupLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  class="gap-2"
+                  onSelect={() => {
+                    openClientInfoDialog(
+                      props.client.clientId,
+                    );
+                  }}
+                >
+                  <IconDataInfoAlert class="size-4" />
+                  {t("client.menu.connection_status")}
+                </DropdownMenuItem>
+                <Show
+                  when={
+                    props.info?.onlineStatus === "offline"
+                  }
+                >
+                  <DropdownMenuItem
+                    class="gap-2"
+                    onSelect={async () => {
+                      const session =
+                        sessionService.sessions[
+                          props.client.clientId
+                        ];
+                      if (session) {
+                        try {
+                          await session.listen();
+                          if (!session.polite)
+                            await session.connect();
+                        } catch (error) {
+                          console.error(error);
+                          if (error instanceof Error) {
+                            toast.error(error.message);
+                          }
+                        }
+                      }
+                    }}
+                  >
+                    <IconConnectWithoutContract class="size-4" />
+                    {t("client.menu.connect")}
+                  </DropdownMenuItem>
+                </Show>
+                <Show when={props.info?.clipboard}>
+                  {(clipboard) => (
+                    <DropdownMenuItem
+                      class="gap-2"
+                      onSelect={() => {
+                        openClipboardHistoryDialog(
+                          clipboard,
+                        );
+                      }}
+                    >
+                      <IconAssignment class="size-4" />
+                      {t("client.menu.clipboard")}
+                    </DropdownMenuItem>
+                  )}
+                </Show>
+
+                <DropdownMenuItem
+                  class="gap-2"
+                  onSelect={async () => {
+                    if (
+                      !(
+                        await openConfirmDeleteClientDialog()
+                      ).cancel
+                    ) {
+                      messageStores.deleteClient(
+                        props.client.clientId,
+                      );
+                    }
+                  }}
+                >
+                  <IconDelete class="size-4" />
+                  {t("client.menu.delete_client")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuGroup>
+                  <DropdownMenuCheckboxItem
+                    class="gap-2"
+                    checked={
+                      appOptions.redirectToClient ===
+                      props.client.clientId
+                    }
+                    onChange={(checked) => {
+                      setAppOptions(
+                        "redirectToClient",
+                        checked
+                          ? props.client.clientId
+                          : undefined,
+                      );
+                    }}
+                  >
+                    {t("client.menu.redirect")}
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuGroup>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+    </>
+  );
+};
+
 export default function ClientPage(
   props: RouteSectionProps,
 ) {
   const navigate = useNavigate();
   const { send, roomStatus } = useWebRTC();
-  const client = createMemo(() =>
-    messageStores.clients.find(
-      (client) => client.clientId === props.params.id,
-    ),
+  const client = createMemo<Client | null>(
+    () =>
+      messageStores.clients.find(
+        (client) => client.clientId === props.params.id,
+      ) ?? null,
   );
-  const clientInfo = createMemo(
+  const clientInfo = createMemo<ClientInfo | undefined>(
     () => sessionService.clientInfo[props.params.id],
   );
   createEffect(() => {
@@ -92,11 +271,6 @@ export default function ClientPage(
       navigate("/", { replace: true });
     }
   });
-
-  const {
-    open: openClientInfoDialog,
-    Component: ClientInfoDialogComponent,
-  } = clientInfoDialog();
 
   const position = createScrollEnd(document);
 
@@ -155,18 +329,12 @@ export default function ClientPage(
     createSignal<HTMLElement>();
   const size = createElementSize(bottomElem);
 
-  const { open, Component } =
-    createComfirmDeleteClientDialog();
-  const session = createMemo<PeerSession | undefined>(
+  const session = createMemo<PeerSession | null>(
     () =>
-      clientInfo() &&
-      sessionService.sessions[clientInfo()!.clientId],
+      (clientInfo() &&
+        sessionService.sessions[clientInfo()!.clientId]) ??
+      null,
   );
-
-  const {
-    open: openClipboardHistoryDialog,
-    Component: ClipboardHistoryDialogComponent,
-  } = createClipboardHistoryDialog();
 
   const onClipboard = (ev: ClipboardEvent) => {
     const s = session();
@@ -204,8 +372,6 @@ export default function ClientPage(
 
   return (
     <div class="flex h-full w-full flex-col">
-      <Component />
-      <ClipboardHistoryDialogComponent />
       <Show when={client()}>
         {(client) => (
           <div
@@ -232,151 +398,16 @@ export default function ClientPage(
             >
               <IconArrowDownward class="size-6 sm:size-8" />
             </FloatingButton>
-
-            <ClientInfoDialogComponent class="flex max-h-[90%] flex-col" />
-            <div
+            <ChatHeader
+              info={clientInfo()}
+              client={client()}
               class="sticky top-12 z-10 flex items-center justify-between gap-1
                 border-b border-border bg-background/80 backdrop-blur"
-            >
-              <div class="flex w-full items-center gap-2">
-                <Button
-                  as={A}
-                  href="/"
-                  size="icon"
-                  variant="ghost"
-                >
-                  <IconChevronLeft class="size-8" />
-                </Button>
-
-                <Avatar>
-                  <AvatarImage
-                    src={client().avatar ?? undefined}
-                  />
-                  <AvatarFallback>
-                    {getInitials(client().name)}
-                  </AvatarFallback>
-                </Avatar>
-                <h4 class={cn("h4")}>{client().name}</h4>
-                <ConnectionBadge client={clientInfo()} />
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    as={Button}
-                    size="icon"
-                    variant="ghost"
-                    class="ml-auto"
-                  >
-                    <IconMenu class="size-6" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent class="min-w-48">
-                    <DropdownMenuGroup>
-                      <DropdownMenuGroupLabel>
-                        {t("chat.menu.client_options")}
-                      </DropdownMenuGroupLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={() => {
-                          openClientInfoDialog(
-                            client().clientId,
-                          );
-                        }}
-                      >
-                        <IconDataInfoAlert class="size-4" />
-                        {t("chat.menu.connection_status")}
-                      </DropdownMenuItem>
-                      <Show
-                        when={
-                          clientInfo()?.onlineStatus ===
-                          "offline"
-                        }
-                      >
-                        <DropdownMenuItem
-                          class="gap-2"
-                          onSelect={async () => {
-                            const session =
-                              sessionService.sessions[
-                                client().clientId
-                              ];
-                            if (session) {
-                              try {
-                                await session.listen();
-                                if (!session.polite)
-                                  await session.connect();
-                              } catch (error) {
-                                console.error(error);
-                                if (
-                                  error instanceof Error
-                                ) {
-                                  toast.error(
-                                    error.message,
-                                  );
-                                }
-                              }
-                            }
-                          }}
-                        >
-                          <IconConnectWithoutContract class="size-4" />
-                          {t("chat.menu.connect")}
-                        </DropdownMenuItem>
-                      </Show>
-                      <Show when={clientInfo()?.clipboard}>
-                        {(clipboard) => (
-                          <DropdownMenuItem
-                            class="gap-2"
-                            onSelect={() => {
-                              openClipboardHistoryDialog(
-                                clipboard,
-                              );
-                            }}
-                          >
-                            <IconAssignment class="size-4" />
-                            {t("chat.menu.clipboard")}
-                          </DropdownMenuItem>
-                        )}
-                      </Show>
-
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={async () => {
-                          if (!(await open()).cancel) {
-                            messageStores.deleteClient(
-                              client().clientId,
-                            );
-                          }
-                        }}
-                      >
-                        <IconDelete class="size-4" />
-                        {t("chat.menu.delete_client")}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuGroup>
-                        <DropdownMenuCheckboxItem
-                          class="gap-2"
-                          checked={
-                            appOptions.redirectToClient ===
-                            client().clientId
-                          }
-                          onChange={(checked) => {
-                            setAppOptions(
-                              "redirectToClient",
-                              checked
-                                ? client().clientId
-                                : undefined,
-                            );
-                          }}
-                        >
-                          {t("chat.menu.redirect")}
-                        </DropdownMenuCheckboxItem>
-                      </DropdownMenuGroup>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </div>
+            />
             <DropArea
               class="relative flex-1"
-              onDragOver={(ev) => {
+              overlay={(ev) => {
+                if (!ev) return;
                 if (ev.dataTransfer) {
                   const hasFiles =
                     ev.dataTransfer?.types.includes(
@@ -392,7 +423,7 @@ export default function ClientPage(
                 return (
                   <div class="pointer-events-none absolute inset-0 bg-muted/50 text-center">
                     <span
-                      class="fixed top-1/2 -translate-x-1/2 text-muted/50"
+                      class="fixed top-1/2 -translate-x-1/2 text-muted-foreground/20"
                       style={{
                         "--tw-translate-y": `-${(size.height ?? 0) / 2}px`,
                       }}

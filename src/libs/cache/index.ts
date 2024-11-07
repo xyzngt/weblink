@@ -1,13 +1,14 @@
-import { ClientID } from "@/libs/core/type";
+import { ClientID, FileID } from "@/libs/core/type";
 
 export interface ChunkMetaData {
-  id: string;
+  id: FileID;
   fileName: string;
   fileSize: number;
   lastModified?: number;
   mimetype?: string;
   chunkSize?: number;
   from?: ClientID;
+  createdAt?: number;
 }
 
 export type ChunkCacheEventMap = {
@@ -19,7 +20,6 @@ export type ChunkCacheEventMap = {
 
 export interface FileMetaData extends ChunkMetaData {
   file?: File;
-  createdAt?: number;
 }
 
 export const DBNAME_PREFIX: string = "file-";

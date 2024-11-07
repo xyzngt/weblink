@@ -15,7 +15,7 @@ const createAboutDialog = () => {
         <div class="space-y-4 overflow-y-auto">
           <p>{t("common.about_dialog.description1")}</p>
           <p>{t("common.about_dialog.description2")}</p>
-          <p>{t("common.about_dialog.features")}</p>
+          <p>{t("common.about_dialog.description3")}</p>
           <p class="font-bold">
             {t("common.about_dialog.disclaimer")}
           </p>

@@ -149,8 +149,7 @@
     "description": "The page you are looking for does not exist, path: {{path}}",
     "home": "Go to Home"
   },
-  "chat": {
-    "title": "Chat",
+  "client": {
     "menu": {
       "connect": "Connect",
       "connection_status": "Connection Status",
@@ -169,7 +168,10 @@
       "placeholder": "Ctrl + Enter or Shift + Enter to send the message",
       "paste_tip": "Clipboard paste enabled"
     },
-    "message_error": "Error occurred"
+    "message_error": "Error occurred",
+    "sync": {
+      "title": "File Sync"
+    }
   },
   "video": {
     "device": {
@@ -222,13 +224,22 @@
         "created_at": "Created At",
         "mime_type": "MIME Type"
       },
+      "status": {
+        "not_started": "Not Started",
+        "stopped": "Stopped",
+        "transferring": "Transferring",
+        "done": "Done"
+      },
+      "filter": {
+        "clear_filters": "Clear Filters",
+        "selected": "Selected"
+      },
       "toggle_columns": "Toggle Columns",
       "no_data": "No Data"
     },
     "confirm_delete_files_dialog": {
       "title": "Delete Files",
-      "description": "This operation deletes selected files",
-      "content": "Are you really sure you want to delete these files?"
+      "description": "Confirm delete these {{count}} files?"
     },
     "client_info_dialog": {
       "title": "Client {{name}} Info",
@@ -292,7 +303,10 @@
       "set_as_background": "Set as Background",
       "test": "Test",
       "share": "Share",
-      "forward": "Forward"
+      "forward": "Forward",
+      "request_download": "Request Download",
+      "resume": "Resume",
+      "add_folder": "Add Folder"
     },
     "notification": {
       "copy_success": "Copy success",
@@ -301,16 +315,16 @@
       "reset_options_success": "Options reset successfully",
       "unknown_error": "Unknown error"
     },
-    "share_dialog": {
-      "title": "Forward",
+    "forward_dialog": {
+      "title": "Forward items",
       "placeholder": "Search for clients to forward...",
       "no_results_found": "No results found"
     },
     "about_dialog": {
       "title": "About Weblink",
-      "description1": "Weblink is a WebRTC-based file transfer tool that helps you transfer files quickly and securely.",
-      "description2": "This project provides end-to-end encryption, serverless architecture, and various advanced features to ensure your data security and privacy.",
-      "features": "Key features include real-time text chat, file transfer, file cache, video calls.",
+      "description1": "Weblink is a WebRTC-based P2P chat and file transfer tool. It helps you quickly and securely transfer files.",
+      "description2": "It provides progress display, resume, folder transfer, clipboard transfer, file cache, video calls, and other features.",
+      "description3": "This project is a pure Web application, no installation is required. If you encounter any instability, please try to refresh the page.",
       "disclaimer": "Disclaimer: This application is for learning and research purposes only. The server does not store any user data, and users should bear the risks of using it at their own risk, and the developers are not responsible for any data loss or privacy breaches.",
       "star_repo": "If you like this project, please give me a ⭐ on GitHub!",
       "version": "Version",

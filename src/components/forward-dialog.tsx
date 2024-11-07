@@ -28,7 +28,7 @@ import {
   Checkbox,
   CheckboxControl,
 } from "@/components/ui/checkbox";
-import { IconInsertDriveFile, IconShare } from "./icons";
+import { IconForward, IconInsertDriveFile, IconShare } from "./icons";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import { toast } from "solid-sonner";
 import { FileMetaData } from "@/libs/cache";
@@ -132,12 +132,12 @@ export const createForwardDialog = () => {
     Component: () => (
       <CommandDialog open={open()} onOpenChange={setOpen}>
         <CommandInput
-          placeholder={t("common.share_dialog.placeholder")}
+          placeholder={t("common.forward_dialog.placeholder")}
         />
 
         <CommandList>
           <CommandEmpty>
-            {t("common.share_dialog.no_results_found")}
+            {t("common.forward_dialog.no_results_found")}
           </CommandEmpty>
           <CommandGroup>
             <For each={availableClients()}>
@@ -163,7 +163,7 @@ export const createForwardDialog = () => {
         </CommandList>
         <div class="flex flex-col gap-2 px-4">
           <p class="text-lg font-semibold">
-            {t("common.share_dialog.title")}
+            {t("common.forward_dialog.title")}
           </p>
           <For each={shareData()}>
             {(data) => (
@@ -247,8 +247,8 @@ export const createForwardDialog = () => {
               setOpen(false);
             }}
           >
-            <IconShare class="mr-2 size-4" />
-            {t("common.action.share")}
+            <IconForward class="mr-2 size-4" />
+            {t("common.action.forward")}
           </Button>
         </div>
       </CommandDialog>

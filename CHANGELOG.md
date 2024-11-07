@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.6.0] - 2024-11-07
+
+### New Features
+
+- Add file sync feature, now you can get the files cached by the peer 添加文件同步功能，现在可以获取对方缓存的文件
+
+### Improvements
+
+- Improve the file search function 优化文件搜索功能
+
 ## [0.5.0] - 2024-11-04
 
 ### New Features

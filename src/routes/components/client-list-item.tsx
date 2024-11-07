@@ -20,12 +20,16 @@ import {
   StoreMessage,
 } from "@/libs/core/messge";
 import { PortableContextMenu } from "../../components/portable-contextmenu";
-import { ContextMenuItem } from "../../components/ui/context-menu";
+import {
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from "../../components/ui/context-menu";
 import {
   IconAudioFileFilled,
   IconDelete,
   IconDraftFilled,
   IconPhotoFilled,
+  IconStorage,
   IconVideoFileFilled,
 } from "../../components/icons";
 
@@ -136,6 +140,15 @@ export const UserItem: Component<UserItemProps> = (
         menu={(close) => (
           <>
             <ContextMenuItem
+              as={A}
+              href={`/client/${local.client.clientId}/sync`}
+              class="gap-2"
+            >
+              <IconStorage class="size-4" />
+              {t("client.sync.title")}
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuItem
               class="gap-2"
               onSelect={async () => {
                 if (!(await open()).cancel) {
@@ -151,7 +164,8 @@ export const UserItem: Component<UserItemProps> = (
             </ContextMenuItem>
           </>
         )}
-        content={(p) => (
+      >
+        {(p) => (
           <li
             class={cn(
               "flex w-full flex-col transition-colors hover:bg-muted/50",
@@ -199,7 +213,7 @@ export const UserItem: Component<UserItemProps> = (
             </A>
           </li>
         )}
-      />
+      </PortableContextMenu>
     </>
   );
 };

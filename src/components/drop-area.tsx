@@ -9,16 +9,8 @@ import {
 
 interface DropAreaProps
   extends ParentProps,
-    Omit<
-      ComponentProps<"div">,
-      | "onDragEnter"
-      | "onDragOver"
-      | "onDragLeave"
-      | "onDrop"
-    > {
-  onDragEnter?: (event: DragEvent) => JSX.Element;
-  onDragOver?: (event: DragEvent) => JSX.Element;
-  onDragLeave?: (event: DragEvent) => JSX.Element;
+    Omit<ComponentProps<"div">, "onDrop"> {
+  overlay?: (event: DragEvent | null) => JSX.Element;
   onDrop?: (event: DragEvent) => void;
 }
 
@@ -26,40 +18,32 @@ export default function DropArea(props: DropAreaProps) {
   const [local, other] = splitProps(props, [
     "class",
     "children",
-    "onDragEnter",
-    "onDragOver",
-    "onDragLeave",
+    "overlay",
     "onDrop",
   ]);
 
-  const [dragging, setDragging] = createSignal<
-    "enter" | "over" | "leave" | null
-  >(null);
   const [eventInfo, setEventInfo] =
     createSignal<DragEvent | null>(null);
 
   const handleDragEnter = (event: DragEvent) => {
     event.preventDefault();
-    setDragging("enter");
     setEventInfo(event);
   };
 
   const handleDragOver = (event: DragEvent) => {
     event.preventDefault();
-    setDragging("over");
     setEventInfo(event);
   };
 
   const handleDragLeave = (event: DragEvent) => {
     event.preventDefault();
-    setDragging("leave");
-    setEventInfo(event);
+    setEventInfo(null);
   };
 
   const handleDrop = (event: DragEvent) => {
     event.preventDefault();
     local.onDrop?.(event);
-    setDragging(null);
+    setEventInfo(null);
   };
 
   return (
@@ -72,15 +56,7 @@ export default function DropArea(props: DropAreaProps) {
       {...other}
     >
       {local.children}
-      {dragging() === "enter" &&
-        local.onDragEnter &&
-        local.onDragEnter(eventInfo()!)}
-      {dragging() === "over" &&
-        local.onDragOver &&
-        local.onDragOver(eventInfo()!)}
-      {dragging() === "leave" &&
-        local.onDragLeave &&
-        local.onDragLeave(eventInfo()!)}
+      {local.overlay?.(eventInfo())}
     </div>
   );
 }

@@ -13,7 +13,7 @@ import {
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 
 export interface PortableContextMenuProps {
-  content: Component<ComponentProps<"">>;
+  children: Component<ComponentProps<"">>;
   menu: (close: () => void) => JSX.Element;
 }
 
@@ -31,7 +31,7 @@ export const PortableContextMenu: Component<
     ),
   });
 
-  const Child = props.content;
+  const Child = props.children;
 
   return (
     <Show

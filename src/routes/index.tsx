@@ -168,7 +168,7 @@ export default function Home(props: RouteSectionProps) {
                         >
                           <p class="muted sm:hidden">
                             {t(
-                              "chat.index.guide_description",
+                              "client.index.guide_description",
                             )}
                           </p>
                         </Show>

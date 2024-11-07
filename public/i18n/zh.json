@@ -149,8 +149,7 @@
     "description": "页面未找到，路径为 {{path}}",
     "home": "返回首页"
   },
-  "chat": {
-    "title": "聊天",
+  "client": {
     "menu": {
       "connect": "连接",
       "connection_status": "连接状态",
@@ -168,6 +167,9 @@
     "message_editor": {
       "placeholder": "Ctrl + Enter 或 Shift + Enter 发送消息",
       "paste_tip": "剪贴板粘贴已启用"
+    },
+    "sync": {
+      "title": "文件同步"
     },
     "message_error": "发生错误"
   },
@@ -222,8 +224,7 @@
     },
     "confirm_delete_files_dialog": {
       "title": "确认删除",
-      "description": "删除后将无法恢复，请谨慎操作",
-      "content": "确认删除选中的文件？"
+      "description": "确认删除以下 {{count}} 个文件？"
     },
     "preview_dialog": {
       "title": "预览",
@@ -247,6 +248,16 @@
         "status": "状态",
         "created_at": "创建时间",
         "mime_type": "MIME 类型"
+      },
+      "status": {
+        "not_started": "未开始",
+        "stopped": "已停止",
+        "transferring": "传输中",
+        "done": "完成"
+      },
+      "filter": {
+        "clear_filters": "清空过滤器",
+        "selected": "已选"
       },
       "toggle_columns": "切换列",
       "no_data": "没有数据"
@@ -294,21 +305,25 @@
       "set_as_background": "设置为背景",
       "test": "测试",
       "share": "分享",
-      "forward": "转发"
+      "forward": "转发",
+      "request_download": "请求下载",
+      "resume": "恢复",
+      "add_folder": "添加文件夹"
     },
     "clipboard_history": {
       "title": "剪贴板历史"
     },
-    "share_dialog": {
-      "title": "转发",
+    "forward_dialog": {
+      "title": "转发项目",
       "placeholder": "查找客户端以转发...",
       "no_results_found": "没有找到结果"
     },
     "about_dialog": {
       "title": "关于 Weblink",
-      "description1": "Weblink 是一款基于 WebRTC 的文件传输工具，它可以帮助你快速、安全地传输文件。",
-      "description2": "此项目提供端到端加密、无服务器架构和多种高级功能，确保您的数据安全和隐私。",
-      "features": "主要功能包括实时文本聊天、文件传输、文件缓存、视频通话。",
+      "description1": "Weblink 是一款基于 WebRTC 的P2P聊天和文件传输工具，它可以帮助你快速、安全地传输文件。",
+      "description2": "提供进度显示、断点续传、文件夹传输、剪贴板传输、文件缓存、视频通话等多种功能。",
+      "description3": "此项目是纯Web应用，无需安装。如果遇到不稳定的情况，请尝试刷新页面。",
+
       "disclaimer": "免责声明：本项目仅供学习和研究使用。服务器不存储任何用户数据，用户应自行承担使用风险，开发者不对任何数据丢失或隐私泄露负责。",
       "star_repo": "如果您喜欢这个项目，欢迎在 GitHub 上给我一个 ⭐！",
       "version": "版本",

@@ -55,6 +55,13 @@ import IconExpandAll from "@material-symbols/svg-400/outlined/expand_all.svg?com
 import IconAssignment from "@material-design-icons/svg/outlined/assignment.svg?component-solid";
 import IconShare from "@material-symbols/svg-400/outlined/share.svg?component-solid";
 import IconForward from "@material-symbols/svg-400/outlined/forward.svg?component-solid";
+import IconStorage from "@material-symbols/svg-400/outlined/storage.svg?component-solid";
+import IconCloudDownload from "@material-symbols/svg-400/outlined/cloud_download.svg?component-solid";
+import IconResume from "@material-symbols/svg-400/outlined/resume.svg?component-solid";
+import IconSync from "@material-symbols/svg-400/outlined/sync.svg?component-solid";
+import IconChatBubble from "@material-symbols/svg-400/outlined/chat_bubble.svg?component-solid";
+import IconAdd from "@material-symbols/svg-400/outlined/add.svg?component-solid";
+import IconAddCircle from "@material-symbols/svg-400/outlined/add_circle.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -113,4 +120,11 @@ export {
   IconAssignment,
   IconShare,
   IconForward,
+  IconStorage,
+  IconCloudDownload,
+  IconResume,
+  IconSync,
+  IconChatBubble,
+  IconAdd,
+  IconAddCircle,
 };

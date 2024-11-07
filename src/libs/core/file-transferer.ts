@@ -1,5 +1,9 @@
 import { waitBufferedAmountLowThreshold } from "./utils/channel";
-import { FileMetaData, ChunkMetaData } from "../cache";
+import {
+  FileMetaData,
+  ChunkMetaData,
+  getTotalChunkCount,
+} from "../cache";
 
 import { ChunkCache } from "../cache/chunk-cache";
 import {
@@ -190,12 +194,14 @@ export class FileTransferer {
 
       return;
     }
-    const chunkLength = Math.ceil(
-      info.fileSize / info.chunkSize,
-    );
-    rangesIterator(
-      getSubRanges(chunkLength, message.ranges),
-    ).forEach((index) => this.sendData?.indexes.add(index));
+    const chunkLength = getTotalChunkCount(info);
+    if (message.ranges) {
+      rangesIterator(
+        getSubRanges(chunkLength, message.ranges),
+      ).forEach((index) =>
+        this.sendData?.indexes.add(index),
+      );
+    }
 
     this.updateProgress();
   }
@@ -446,7 +452,7 @@ export class FileTransferer {
       if (!this.receivedData) {
         return;
       }
-      const done = await this.cache.isDone();
+      const done = await this.cache.isComplete();
 
       if (!done) {
         const ranges = await this.cache.getReqRanges();
@@ -478,9 +484,7 @@ export class FileTransferer {
     const info = this.info;
     if (!info) return false;
 
-    const chunkslength = Math.ceil(
-      info.fileSize / info.chunkSize,
-    );
+    const chunkslength = getTotalChunkCount(info);
 
     const complete =
       this.receivedData.indexes.size === chunkslength;
@@ -590,9 +594,7 @@ export class FileTransferer {
       return;
     }
 
-    const totalChunks = Math.ceil(
-      info.fileSize / info.chunkSize,
-    );
+    const totalChunks = getTotalChunkCount(info);
 
     let transferRange = ranges;
     if (!transferRange) {
@@ -827,11 +829,13 @@ function getRequestContentSize(
   info: FileMetaData,
   ranges: ChunkRange[],
 ) {
+  if (!info.chunkSize) {
+    throw new Error("chunkSize is not found");
+  }
   let requestBytes =
     getRangesLength(ranges) * info.chunkSize;
   const lastRangeIndex = getLastIndex(ranges);
-  const lastChunkIndex =
-    Math.ceil(info.fileSize / info.chunkSize) - 1;
+  const lastChunkIndex = getTotalChunkCount(info) - 1;
   if (lastRangeIndex === lastChunkIndex) {
     requestBytes =
       requestBytes -

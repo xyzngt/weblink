@@ -1,3 +1,4 @@
+import { ChunkMetaData } from "../cache";
 import { SendClipboardMessage } from "./messge";
 import { TransferClient } from "./services/type";
 
@@ -27,6 +28,8 @@ export interface ClientInfo extends TransferClient {
   candidateType?: string;
   onlineStatus: "offline" | "online" | "connecting";
   clipboard?: SendClipboardMessage[];
+  storage?: ChunkMetaData[];
+  messageChannel: boolean;
 }
 export type RoomID = string;
 export type ClientID = string;

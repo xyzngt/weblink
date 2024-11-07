@@ -16,6 +16,7 @@ import { v4 } from "uuid";
 import { PeerSession } from "./session";
 import { Accessor, createSignal, Setter } from "solid-js";
 import { clientProfile } from "./store";
+import { ChunkMetaData, FileMetaData } from "../cache";
 
 export type MessageID = string;
 
@@ -72,6 +73,7 @@ export type SendTextMessage = BaseExchangeMessage & {
 
 export type CheckMessage = BaseExchangeMessage & {
   type: "check-message";
+  mode: "send" | "receive";
   id: MessageID;
 };
 
@@ -83,7 +85,12 @@ export type ReadTextMessage = BaseExchangeMessage & {
 export type RequestFileMessage = BaseExchangeMessage & {
   type: "request-file";
   fid: FileID;
-  ranges: ChunkRange[];
+  ranges?: ChunkRange[];
+  fileName: string;
+  fileSize: number;
+  mimeType?: string;
+  lastModified?: number;
+  chunkSize: number;
 };
 
 export type SendFileMessage = BaseExchangeMessage & {
@@ -107,6 +114,15 @@ export type ErrorMessage = BaseExchangeMessage & {
   error: string;
 };
 
+export type StorageMessage = BaseExchangeMessage & {
+  type: "storage";
+  data: ChunkMetaData[];
+};
+
+export type RequestStorageMessage = BaseExchangeMessage & {
+  type: "request-storage";
+};
+
 export type SessionMessage =
   | SendTextMessage
   | CheckMessage
@@ -114,13 +130,14 @@ export type SessionMessage =
   | RequestFileMessage
   | SendFileMessage
   | SendClipboardMessage
-  | ErrorMessage;
+  | ErrorMessage
+  | StorageMessage
+  | RequestStorageMessage;
 
 class MessageStores {
   readonly messages: StoreMessage[];
   readonly clients: Client[];
   readonly db: Promise<IDBDatabase> | IDBDatabase;
-  private localClientId: ClientID = clientProfile.clientId;
   private setMessages: SetStoreFunction<StoreMessage[]>;
   private setClients: SetStoreFunction<Client[]>;
   status: Accessor<"initializing" | "ready">;
@@ -362,35 +379,27 @@ class MessageStores {
     return controller;
   }
 
-  handleReceiveMessage(sessionMsg: SessionMessage) {
-    let index: number = -1;
-    const isSender =
-      this.localClientId === sessionMsg.client;
+  setSendMessage(sessionMsg: SessionMessage) {
+    let index: number = this.messages.findLastIndex(
+      (msg) => msg.id === sessionMsg.id,
+    );
     const setStatus = (message: StoreMessage) => {
       this.setMessages(index, "error", undefined);
       this.setMessageDB(this.messages[index]);
-      if (!isSender) {
-        return;
-      } else {
-        if (message.status === "received") return;
 
-        this.setTimeout(message.id, 3000, () => {
-          this.setMessages(index, "status", "error");
-          this.setMessages(index, "status", "error");
-          this.setMessages(index, "error", "send timeout");
-          this.setMessageDB(this.messages[index]);
-        });
-      }
+      this.setTimeout(message.id, 3000, () => {
+        this.setMessages(index, "status", "error");
+        this.setMessages(index, "status", "error");
+        this.setMessages(index, "error", "send timeout");
+        this.setMessageDB(this.messages[index]);
+      });
     };
     if (sessionMsg.type === "send-text") {
-      index = this.messages.findIndex(
-        (msg) => msg.id === sessionMsg.id,
-      );
       if (index === -1) {
         const message = {
           ...sessionMsg,
           type: "text",
-          status: isSender ? "sending" : "received",
+          status: "received",
         } satisfies TextMessage;
         this.setMessages(
           produce((state) => {
@@ -399,31 +408,12 @@ class MessageStores {
           }),
         );
       }
-      setStatus(this.messages[index]);
-    } else if (sessionMsg.type === "check-message") {
-      const index = this.messages.findIndex(
-        (msg) => msg.id === sessionMsg.id,
-      );
-      if (index !== -1) {
-        this.clearTimeout(sessionMsg.id);
-        this.setMessages(
-          index,
-          produce((state) => {
-            state.status = "received";
-            this.setMessageDB(state);
-          }),
-        );
-      }
     } else if (sessionMsg.type === "send-file") {
-      index = this.messages.findIndex(
-        (msg) =>
-          msg.type === "file" && msg.id === sessionMsg.id,
-      );
       if (index === -1) {
         const message = {
           ...sessionMsg,
           type: "file",
-          status: isSender ? "sending" : "received",
+          status: "received",
         } satisfies FileTransferMessage;
         this.setMessages(
           produce((state) => {
@@ -435,14 +425,112 @@ class MessageStores {
       setStatus(this.messages[index]);
     } else if (sessionMsg.type === "request-file") {
       if (index === -1) {
-        console.warn(
-          `can not request file ${sessionMsg.fid}, message not exist`,
+        const message = {
+          id: sessionMsg.id,
+          type: "file",
+          status: "sending",
+          fid: sessionMsg.fid,
+          fileName: sessionMsg.fileName,
+          fileSize: sessionMsg.fileSize,
+          chunkSize: sessionMsg.chunkSize,
+          createdAt: sessionMsg.createdAt,
+          client: sessionMsg.target,
+          target: sessionMsg.client,
+        } satisfies FileTransferMessage;
+        this.setMessages(
+          produce((state) => {
+            index = state.push(message) - 1;
+            this.setMessageDB(message);
+          }),
+        );
+      }
+    } else if (sessionMsg.type === "check-message") {
+      if (index !== -1) {
+        this.clearTimeout(sessionMsg.id);
+        this.setMessages(
+          index,
+          produce((state) => {
+            state.status = "received";
+            this.setMessageDB(state);
+          }),
+        );
+      }
+    }
+  }
+
+  setReceiveMessage(sessionMsg: SessionMessage) {
+    let index: number = this.messages.findIndex(
+      (msg) => msg.id === sessionMsg.id,
+    );
+
+    const setStatus = (index: number) => {
+      this.setMessages(index, "error", undefined);
+      this.setMessageDB(this.messages[index]);
+    };
+
+    if (sessionMsg.type === "send-text") {
+      if (index === -1) {
+        const message = {
+          ...sessionMsg,
+          type: "text",
+          status: "received",
+        } satisfies TextMessage;
+        this.setMessages(
+          produce((state) => {
+            index = state.push(message) - 1;
+            this.setMessageDB(message);
+          }),
+        );
+      }
+      setStatus(index);
+    } else if (sessionMsg.type === "check-message") {
+      if (index !== -1) {
+        this.clearTimeout(sessionMsg.id);
+        this.setMessages(
+          index,
+          produce((state) => {
+            state.status = "received";
+            this.setMessageDB(state);
+          }),
+        );
+      }
+    } else if (sessionMsg.type === "send-file") {
+      if (index === -1) {
+        const message = {
+          ...sessionMsg,
+          type: "file",
+          status: "received",
+        } satisfies FileTransferMessage;
+        this.setMessages(
+          produce((state) => {
+            index = state.push(message) - 1;
+            this.setMessageDB(message);
+          }),
+        );
+      }
+      setStatus(index);
+    } else if (sessionMsg.type === "request-file") {
+      if (index === -1) {
+        const message = {
+          id: sessionMsg.id,
+          type: "file",
+          status: "received",
+          fid: sessionMsg.fid,
+          fileName: sessionMsg.fileName,
+          fileSize: sessionMsg.fileSize,
+          chunkSize: sessionMsg.chunkSize,
+          createdAt: sessionMsg.createdAt,
+          client: sessionMsg.target,
+          target: sessionMsg.client,
+        } satisfies FileTransferMessage;
+        this.setMessages(
+          produce((state) => {
+            index = state.push(message) - 1;
+            this.setMessageDB(message);
+          }),
         );
       }
     } else if (sessionMsg.type === "error") {
-      index = this.messages.findIndex(
-        (msg) => msg.id === sessionMsg.id,
-      );
       this.clearTimeout(sessionMsg.id);
       this.setMessages(
         index,

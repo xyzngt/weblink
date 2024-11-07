@@ -34,7 +34,7 @@ export const CommandList = (props: CommandListProps) => {
   return (
     <CommandPrimitive.List
       class={cn(
-        "max-h-[300px] overflow-y-auto overflow-x-hidden p-1",
+        "max-h-[300px] overflow-y-auto overflow-x-hidden w-full",
         local.class,
       )}
       {...rest}
@@ -49,13 +49,13 @@ export const CommandInput = (
 
   return (
     <div
-      class="flex items-center border-b px-3"
+      class="flex items-center border-b px-3 gap-2"
       cmdk-input-wrapper=""
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
         viewBox="0 0 24 24"
-        class="mr-2 h-4 w-4 shrink-0 opacity-50"
+        class="size-4 shrink-0 opacity-50"
       >
         <path
           fill="none"

@@ -1,5 +1,636 @@
-const Sync = () => {
-  return <div>Sync</div>;
+import {
+  IconChatBubble,
+  IconChevronLeft,
+  IconCloudDownload,
+  IconDownload,
+  IconMoreHoriz,
+  IconPreview,
+  IconResume,
+  IconSearch700,
+  IconSync,
+} from "@/components/icons";
+import { createPreviewDialog } from "@/components/preview-dialog";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+  DropdownMenuGroupLabel,
+} from "@/components/ui/dropdown-menu";
+import { inputClass } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { t } from "@/i18n";
+import { ChunkMetaData } from "@/libs/cache";
+import { cn } from "@/libs/cn";
+import { messageStores } from "@/libs/core/messge";
+import { useWebRTC } from "@/libs/core/rtc-context";
+import { ClientInfo, Client } from "@/libs/core/type";
+import { cacheManager } from "@/libs/services/cache-serivce";
+import { sessionService } from "@/libs/services/session-service";
+import { transferManager } from "@/libs/services/transfer-service";
+import { downloadFile } from "@/libs/utils/download-file";
+import { formatBtyeSize } from "@/libs/utils/format-filesize";
+import { getInitials } from "@/libs/utils/name";
+import { ConnectionBadge } from "@/routes/components/connection-badge";
+import { makePersisted } from "@solid-primitives/storage";
+import { A, RouteSectionProps } from "@solidjs/router";
+import {
+  createColumnHelper,
+  createSolidTable,
+  flexRender,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  SortingState,
+  ColumnFiltersState,
+  ColumnPinningState,
+  type Table as SolidTable,
+  VisibilityState,
+} from "@tanstack/solid-table";
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import DataTableColumnVisibility from "@/components/data-table/data-table-column-visibility";
+import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
+import { getCommonPinningStyles } from "@/components/data-table/data-table-pin-style";
+import {
+  createEffect,
+  createMemo,
+  createSignal,
+  For,
+  Show,
+} from "solid-js";
+import { v4 } from "uuid";
+
+type ChunkStatus =
+  | "not_started"
+  | "stopped"
+  | "transferring"
+  | "done";
+
+const Sync = (props: RouteSectionProps) => {
+  const { requestFile } = useWebRTC();
+
+  const columnHelper = createColumnHelper<ChunkMetaData>();
+
+  const columns = [
+    // columnHelper.display({
+    //   id: "select",
+    //   size: 0,
+    //   header: ({ table }) => (
+    //     <Checkbox
+    //       role="checkbox"
+    //       checked={table.getIsAllPageRowsSelected()}
+    //       indeterminate={table.getIsSomePageRowsSelected()}
+    //       onChange={(value) =>
+    //         table.toggleAllPageRowsSelected(!!value)
+    //       }
+    //       aria-label="Select all"
+    //     >
+    //       <CheckboxControl />
+    //     </Checkbox>
+    //   ),
+    //   cell: ({ row }) => (
+    //     <Checkbox
+    //       role="checkbox"
+    //       checked={row.getIsSelected()}
+    //       disabled={!row.getCanSelect()}
+    //       onChange={(value) => row.toggleSelected(!!value)}
+    //       aria-label="Select row"
+    //     >
+    //       <CheckboxControl />
+    //     </Checkbox>
+    //   ),
+    //   enableSorting: false,
+    //   enableHiding: false,
+    //   enablePinning: true,
+
+    //   enableColumnFilter: false,
+    //   enableGlobalFilter: false,
+    // }),
+    columnHelper.accessor("fileName", {
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t("common.file_table.columns.name")}
+        />
+      ),
+      cell: (info) => (
+        <p class="max-w-xs overflow-hidden text-ellipsis">
+          {info.getValue()}
+        </p>
+      ),
+    }),
+    columnHelper.display({
+      id: "status",
+      header: t("common.file_table.columns.status"),
+      filterFn: (row, id, filterValue) => {
+        const status = statuses()[row.index]();
+        return filterValue.length
+          ? filterValue.includes(status)
+          : true;
+      },
+      cell: ({ row }) => {
+        const status = statuses()[row.index];
+        return (
+          <Badge variant="outline">
+            {t(`common.file_table.status.${status()}`)}
+          </Badge>
+        );
+      },
+    }),
+    columnHelper.accessor("fileSize", {
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t("common.file_table.columns.size")}
+        />
+      ),
+      cell: (info) => formatBtyeSize(info.getValue(), 1),
+    }),
+    columnHelper.accessor("createdAt", {
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t("common.file_table.columns.created_at")}
+        />
+      ),
+      cell: (info) => {
+        const value = info.getValue();
+        return value
+          ? new Date(value).toLocaleString()
+          : "";
+      },
+      enableGlobalFilter: true,
+    }),
+    columnHelper.accessor("lastModified", {
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t(
+            "common.file_table.columns.last_modified",
+          )}
+        />
+      ),
+      cell: (info) => {
+        const value = info.getValue();
+        return value
+          ? new Date(value).toLocaleString()
+          : "";
+      },
+    }),
+    columnHelper.accessor("mimetype", {
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t("common.file_table.columns.mime_type")}
+        />
+      ),
+      cell: (info) => (
+        <p class="max-w-xs overflow-hidden text-ellipsis">
+          {info.getValue()}
+        </p>
+      ),
+    }),
+    columnHelper.display({
+      id: "actions",
+      header: () => <div class="w-9" />,
+      cell: ({ row }) => {
+        const localCache = createMemo(
+          () => cacheManager.caches[row.original.id],
+        );
+
+        const status = statuses()[row.index];
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Button variant="ghost" size="icon">
+                <IconMoreHoriz class="size-6" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent class="min-w-48">
+              <DropdownMenuGroup>
+                <DropdownMenuGroupLabel>
+                  {t("common.action.actions")}
+                </DropdownMenuGroupLabel>
+                <Show
+                  when={localCache()}
+                  fallback={
+                    <>
+                      <DropdownMenuItem
+                        class="gap-2"
+                        onSelect={() => {
+                          requestFile(
+                            props.params.id,
+                            row.original,
+                          );
+                        }}
+                      >
+                        <IconCloudDownload class="size-4" />
+                        {t(
+                          "common.action.request_download",
+                        )}
+                      </DropdownMenuItem>
+                    </>
+                  }
+                >
+                  {(cache) => (
+                    <>
+                      <Show
+                        when={cache().status() === "done"}
+                      >
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={() => {
+                            cache()
+                              .getFile()
+                              .then((file) => {
+                                file && openPreview(file);
+                              });
+                          }}
+                        >
+                          <IconPreview class="size-4" />
+                          {t("common.action.preview")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={async () => {
+                            const file =
+                              await cache().getFile();
+                            if (file) {
+                              downloadFile(file);
+                            }
+                          }}
+                        >
+                          <IconDownload class="size-4" />
+                          {t("common.action.download")}
+                        </DropdownMenuItem>
+                      </Show>
+                      <Show when={status() === "stopped"}>
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={() => {
+                            requestFile(
+                              props.params.id,
+                              row.original,
+                            );
+                          }}
+                        >
+                          <IconResume class="size-4" />
+                          {t("common.action.resume")}
+                        </DropdownMenuItem>
+                      </Show>
+                    </>
+                  )}
+                </Show>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+      enableHiding: false,
+    }),
+  ];
+
+  const [storage, setStorage] = createSignal<
+    ChunkMetaData[]
+  >([]);
+
+  createEffect(() => {
+    const storage = clientInfo()?.storage;
+    if (!storage) return;
+
+    setStorage(
+      storage?.map((chunk) => {
+        return {
+          ...chunk,
+        };
+      }),
+    );
+  });
+
+  const [columnPinning, setColumnPinning] =
+    createSignal<ColumnPinningState>({
+      left: ["select"],
+      right: ["actions"],
+    });
+  const [sorting, setSorting] = makePersisted(
+    createSignal<SortingState>([]),
+    {
+      name: "storage-sorting",
+      storage: sessionStorage,
+    },
+  );
+  const [columnFilters, setColumnFilters] = makePersisted(
+    createSignal<ColumnFiltersState>([]),
+    {
+      name: "storage-column-filters",
+      storage: sessionStorage,
+    },
+  );
+
+  const [columnVisibility, setColumnVisibility] =
+    makePersisted(createSignal<VisibilityState>({}), {
+      name: "storage-column-visibility",
+      storage: sessionStorage,
+    });
+
+  const [globalFilter, setGlobalFilter] = createSignal("");
+  const { open: openPreview, Component: PreviewDialog } =
+    createPreviewDialog();
+  const table: SolidTable<ChunkMetaData> = createSolidTable(
+    {
+      get data() {
+        return storage() ?? [];
+      },
+      state: {
+        get columnPinning() {
+          return columnPinning();
+        },
+        get globalFilter() {
+          return globalFilter();
+        },
+        get sorting() {
+          return sorting();
+        },
+        get columnFilters() {
+          return columnFilters();
+        },
+        get columnVisibility() {
+          return columnVisibility();
+        },
+      },
+      columns,
+      onColumnPinningChange: setColumnPinning,
+      onGlobalFilterChange: setGlobalFilter,
+      onColumnFiltersChange: setColumnFilters,
+      onColumnVisibilityChange: setColumnVisibility,
+      getFilteredRowModel: getFilteredRowModel(),
+      getSortedRowModel: getSortedRowModel(),
+      onSortingChange: setSorting,
+      getCoreRowModel: getCoreRowModel(),
+      getRowId: (row) => row.id,
+    },
+  );
+
+  const session = createMemo(
+    () => sessionService.sessions[props.params.id],
+  );
+
+  const client = createMemo<Client | undefined>(() =>
+    messageStores.clients.find(
+      (c) => c.clientId === props.params.id,
+    ),
+  );
+
+  const clientInfo = createMemo<ClientInfo | undefined>(
+    () => sessionService.clientInfo[props.params.id],
+  );
+
+  createEffect(() => {
+    const s = session();
+    if (clientInfo()?.messageChannel) {
+      s.sendMessage({
+        id: v4(),
+        type: "request-storage",
+        createdAt: Date.now(),
+        client: s.clientId,
+        target: s.targetClientId,
+      });
+    }
+  });
+
+  const createStatus = (chunk: ChunkMetaData) => {
+    const cache = createMemo(
+      () => cacheManager.caches[chunk.id],
+    );
+
+    const transfer = createMemo(
+      () => transferManager.transferers[chunk.id],
+    );
+
+    const [status, setStatus] =
+      createSignal<ChunkStatus>("not_started");
+
+    createEffect(() => {
+      const c = cache();
+      if (!c) {
+        setStatus("not_started");
+        return;
+      }
+      if (c.status() === "done") {
+        setStatus("done");
+      } else if (c.status() === "writing") {
+        if (transfer()) {
+          setStatus("transferring");
+        } else {
+          setStatus("stopped");
+        }
+      } else {
+        setStatus("not_started");
+      }
+    });
+
+    return status;
+  };
+
+  const statuses = createMemo(() => {
+    return storage().map(createStatus);
+  });
+
+  return (
+    <>
+      <PreviewDialog />
+      <div class="flex h-full w-full flex-col gap-2 p-0">
+        <div class="flex items-center gap-2 p-2">
+          <Button
+            as={A}
+            href="/"
+            size="icon"
+            variant="ghost"
+            class="sm:hidden"
+          >
+            <IconChevronLeft class="size-8" />
+          </Button>
+
+          <Avatar>
+            <AvatarImage
+              src={client()?.avatar ?? undefined}
+            />
+            <AvatarFallback>
+              {getInitials(client()?.name ?? "")}
+            </AvatarFallback>
+          </Avatar>
+          <h4 class={cn("h4")}>{client()?.name}</h4>
+          <ConnectionBadge client={clientInfo()} />
+          <div class="ml-auto"></div>
+          <Button
+            as={A}
+            href={`../chat`}
+            variant="ghost"
+            size="icon"
+          >
+            <IconChatBubble class="size-6" />
+          </Button>
+          <Button
+            disabled={!clientInfo()?.messageChannel}
+            onClick={() => {
+              sessionService.requestStorage(
+                props.params.id,
+              );
+            }}
+            variant="outline"
+            size="icon"
+          >
+            <IconSync class="size-6" />
+          </Button>
+        </div>
+        <div class="flex items-center gap-2 p-2">
+          <label
+            tabIndex="0"
+            class={cn(
+              inputClass,
+              `flex h-8 w-full max-w-md items-center gap-2 bg-background/80
+              px-2 focus-within:ring-1 focus-within:ring-ring`,
+            )}
+          >
+            <IconSearch700 class="size-5 text-muted-foreground" />
+
+            <input
+              type="search"
+              placeholder={t("cache.search_input")}
+              class="h-full w-full bg-transparent outline-none"
+              value={globalFilter()}
+              onInput={(ev) =>
+                setGlobalFilter(ev.currentTarget.value)
+              }
+            />
+          </label>
+          <DataTableFacetedFilter
+            column={table.getColumn("status")}
+            title={t("common.file_table.columns.status")}
+            options={[
+              {
+                label: t(
+                  "common.file_table.status.not_started",
+                ),
+                value: "not_started",
+              },
+              {
+                label: t(
+                  "common.file_table.status.stopped",
+                ),
+                value: "stopped",
+              },
+              {
+                label: t(
+                  "common.file_table.status.transferring",
+                ),
+                value: "transferring",
+              },
+              {
+                label: t("common.file_table.status.done"),
+                value: "done",
+              },
+            ]}
+          />
+          <DataTableColumnVisibility
+            table={table}
+            class="ml-auto"
+          />
+        </div>
+
+        <div class="relative h-full w-full flex-1 overflow-x-auto">
+          <Table class="absolute inset-0 text-nowrap">
+            <TableHeader class="sticky top-0 z-10 bg-background/50 backdrop-blur">
+              <TableRow>
+                <For each={table.getHeaderGroups()}>
+                  {(headerGroup) => (
+                    <For each={headerGroup.headers}>
+                      {(header) => (
+                        <TableHead
+                          class={cn(
+                            header.column.getIsPinned() &&
+                              `bg-background/50 backdrop-blur transition-colors
+                              [tr:hover_&]:bg-muted`,
+                          )}
+                          style={{
+                            ...getCommonPinningStyles(
+                              header.column,
+                            ),
+                          }}
+                        >
+                          {flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                        </TableHead>
+                      )}
+                    </For>
+                  )}
+                </For>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <For
+                each={table.getRowModel().rows}
+                fallback={
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      class="h-24 text-center text-lg font-bold text-muted-foreground/50"
+                    >
+                      {t("common.file_table.no_data")}
+                    </TableCell>
+                  </TableRow>
+                }
+              >
+                {(row) => (
+                  <TableRow>
+                    <For each={row.getVisibleCells()}>
+                      {(cell) => (
+                        <TableCell
+                          class={cn(
+                            cell.column.getIsPinned() &&
+                              `bg-background/50 backdrop-blur transition-colors
+                              [tr:hover_&]:bg-muted`,
+                          )}
+                          style={{
+                            ...getCommonPinningStyles(
+                              cell.column,
+                            ),
+                          }}
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      )}
+                    </For>
+                  </TableRow>
+                )}
+              </For>
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default Sync;

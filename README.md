@@ -2,11 +2,31 @@
 
 ## Introduction
 
-Weblink is a browser-based chat application built on WebRTC, requiring no downloads and usable directly in your browser. It offers a serverless, P2P architecture with multiple backends, including Firebase and WebSocket. The application supports real-time text chat, file transfer, file storage, video calls, and multi-party communication through a mesh network. Advanced features include chunked and compressed file transfers for efficient and resumable large file sharing, multi-channel data transfer using multiple DataChannels for faster performance, and IndexedDB caching to minimize memory usage during transfers. End-to-end encryption ensures privacy and security with encrypted signaling messages.
+Weblink is a pure web-based file transfer and chat application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase and WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
 
-This project is deployed on Vercel. Check it out at [https://web1ink.vercel.app](https://web1ink.vercel.app).
+The project is deployed on Vercel and can be accessed at [https://web1ink.vercel.app](https://web1ink.vercel.app).
 
-You can also use [https://webl.ink](https://webl.ink) which deployed on aliyun instead.
+Alternatively, you can use the version deployed on Alibaba Cloud at [https://webl.ink](https://webl.ink).
+
+## Features
+
+Weblink currently supports the following features:
+
+| Feature                   | Description                                                                                               |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- |
+| ✅ File Synchronization   | Retrieve cached files from the other party                                                                |
+| ✅ Resume Transfer        | Resume file transfer if the connection is interrupted                                                     |
+| ✅ File Caching           | Transferred files are cached in IndexedDB                                                                 |
+| ✅ File Search            | Search for files cached by you and the other party                                                        |
+| ✅ Video Calling          | Supports video calls                                                                                      |
+| ✅ Clipboard Transfer     | Press `Ctrl + V` in the chat window or paste in the input box on mobile devices to send clipboard content |
+| ✅ Folder Transfer        | Send folders, which will be automatically compressed                                                      |
+| ✅ Compressed Transfer    | Choose to compress files during transfer; files will be compressed in blocks and sent accordingly         |
+| ✅ Multi-Channel Transfer | Improve transfer performance by parallel data transfer through multiple DataChannels                      |
+| ✅ Share and Forward      | After installing as a PWA, you can send text or files via system sharing                                  |
+| ✅ Text Chat              | Send text messages for chatting                                                                           |
+
+More information can be found in [CHANGELOG](CHANGELOG.md).
 
 [**中文介绍**](README_CN.md)
 

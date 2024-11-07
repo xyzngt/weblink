@@ -27,14 +27,20 @@ export const handleSelectFolder = async (
 export const handleDropItems = async (
   items: DataTransferItemList,
 ): Promise<File[]> => {
-  const entries = [];
-
+  const entries: FileSystemEntry[] = [];
+  const files: File[] = [];
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     const entry = item.webkitGetAsEntry();
 
     if (entry) {
       entries.push(entry);
+      continue;
+    }
+
+    const file = item.getAsFile();
+    if (file) {
+      files.push(file);
     }
   }
   if (entries.length > 0) {
@@ -65,14 +71,9 @@ export const handleDropItems = async (
     const compressedFolders =
       compressedFoldersResult.filter(Boolean) as File[];
 
-    const files: File[] = [
-      ...filesMap.files,
-      ...compressedFolders,
-    ];
-
-    return files;
+    files.push(...filesMap.files, ...compressedFolders);
   }
-  return [];
+  return files;
 };
 
 function readEntry(

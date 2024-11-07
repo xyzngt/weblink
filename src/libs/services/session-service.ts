@@ -11,7 +11,13 @@ import {
   TransferClient,
 } from "../core/services/type";
 import { Accessor, createSignal, Setter } from "solid-js";
-import { SessionMessage } from "../core/messge";
+import {
+  SendClipboardMessage,
+  SessionMessage,
+  StorageMessage,
+} from "../core/messge";
+import { ChunkMetaData } from "../cache";
+import { v4 } from "uuid";
 
 class SessionService {
   readonly sessions: Record<ClientID, PeerSession>;
@@ -55,18 +61,25 @@ class SessionService {
     this.setClientServiceStatus = setClientServiceStatus;
   }
 
-  setClipboard(message: SessionMessage) {
-    if (message.type === "send-clipboard") {
-      this.setClientInfo(
-        message.client,
-        produce((state) => {
-          state.clipboard = [
-            ...(state.clipboard ?? []),
-            message,
-          ];
-        }),
-      );
-    }
+  setClipboard(message: SendClipboardMessage) {
+    this.setClientInfo(
+      message.client,
+      produce((state) => {
+        state.clipboard = [
+          ...(state.clipboard ?? []),
+          message,
+        ];
+      }),
+    );
+  }
+
+  setStorage(message: StorageMessage) {
+    this.setClientInfo(
+      message.client,
+      produce((state) => {
+        state.storage = [...(message.data ?? [])];
+      }),
+    );
   }
 
   setClientService(cs: ClientService) {
@@ -105,6 +118,20 @@ class SessionService {
     this.setSessions(target, undefined!);
   }
 
+  requestStorage(client: ClientID) {
+    const session = this.sessions[client];
+    if (!session) {
+      return;
+    }
+    session.sendMessage({
+      type: "request-storage",
+      id: v4(),
+      createdAt: Date.now(),
+      client: session.clientId,
+      target: session.targetClientId,
+    });
+  }
+
   addClient(client: TransferClient) {
     if (!this.service) {
       console.warn(
@@ -136,6 +163,7 @@ class SessionService {
     this.setClientInfo(client.clientId, {
       ...client,
       onlineStatus: "offline",
+      messageChannel: false,
     } satisfies ClientInfo);
     this.setSessions(client.clientId, session);
 
@@ -199,6 +227,17 @@ class SessionService {
         );
       },
       { signal: controller.signal },
+    );
+
+    session.addEventListener(
+      "messageChannelChange",
+      (ev) => {
+        this.setClientInfo(
+          client.clientId,
+          "messageChannel",
+          ev.detail === "ready",
+        );
+      },
     );
 
     controller.signal.addEventListener("abort", () => {

@@ -19,7 +19,12 @@ import {
   Setter,
 } from "solid-js";
 import { appOptions } from "@/options";
-import { DBNAME_PREFIX, FileMetaData } from "../cache";
+import {
+  ChunkMetaData,
+  DBNAME_PREFIX,
+  FileMetaData,
+} from "../cache";
+import { v4 } from "uuid";
 
 type EventMap = {
   update: string;
@@ -161,9 +166,21 @@ class FileCacheFactory {
     this.setCaches(id, cache);
   }
 
-  async createCache(id: FileID): Promise<ChunkCache> {
-    const cache = await this.loadCache(id);
-    this.addCache(id, cache);
+  async getStorages(): Promise<ChunkMetaData[] | null> {
+    let storage = await Promise.all(
+      Object.values(this.caches).map((cache) =>
+        cache.getStorage(),
+      ),
+    ).then(
+      (infos) => infos.filter(Boolean) as ChunkMetaData[],
+    );
+    return storage;
+  }
+
+  async createCache(id?: FileID): Promise<ChunkCache> {
+    const cacheId = id ?? v4();
+    const cache = await this.loadCache(cacheId);
+    this.addCache(cacheId, cache);
     return cache;
   }
 }

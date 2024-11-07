@@ -337,7 +337,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                   onClick={() => {
                     requestFile(
                       props.message.client,
-                      info().id,
+                      info(),
                     );
                   }}
                 >
@@ -469,7 +469,8 @@ export const MessageContent: Component<MessageCardProps> = (
       menu={(close) => (
         <Menu message={props.message} close={close} />
       )}
-      content={(p) => (
+    >
+      {(p) => (
         <li
           class={cn(
             `flex select-none flex-col gap-1 rounded-md p-2 shadow
@@ -564,7 +565,7 @@ export const MessageContent: Component<MessageCardProps> = (
                     }
                     if (!sessionMessage) return;
 
-                    messageStores.handleReceiveMessage(
+                    messageStores.setReceiveMessage(
                       sessionMessage,
                     );
                     session().sendMessage(sessionMessage);
@@ -602,7 +603,7 @@ export const MessageContent: Component<MessageCardProps> = (
           </div>
         </li>
       )}
-    />
+    </PortableContextMenu>
   );
 };
 

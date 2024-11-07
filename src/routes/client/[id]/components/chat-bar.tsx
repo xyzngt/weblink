@@ -27,15 +27,12 @@ import { t } from "@/i18n";
 import { createSendItemPreviewDialog } from "@/components/preview-dialog";
 import { toast } from "solid-sonner";
 import { appOptions } from "@/options";
-import {
-  CompressProgress,
-  createChatFolderCompressDialog,
-} from "./chat-folder-compress-dialog";
+
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import {
   handleDropItems,
   handleSelectFolder,
-} from "./process-file";
+} from "@/libs/utils/process-file";
 
 export const ChatBar: Component<
   ComponentProps<"div"> & { client: Client }
@@ -69,64 +66,6 @@ export const ChatBar: Component<
       }
     }
   };
-
-  async function compressFolder(
-    files: File[],
-  ): Promise<File> {
-    const fileMap: Record<string, Uint8Array> = {};
-
-    let filesProcessed = 0;
-
-    return new Promise<File>((resolve, reject) => {
-      let folderName: string | null = null;
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        console.log(file.webkitRelativePath);
-        if (!folderName) {
-          folderName =
-            file.webkitRelativePath.split("/")[0];
-        }
-        const reader = new FileReader();
-
-        reader.onload = async function (e) {
-          fileMap[file.webkitRelativePath] = new Uint8Array(
-            e.target?.result as ArrayBuffer,
-          );
-
-          filesProcessed++;
-
-          if (filesProcessed === files.length) {
-            const zipped = await new Promise<Uint8Array>(
-              (resolve, reject) => {
-                zip(fileMap, (error, data) => {
-                  if (error) {
-                    reject(error);
-                  }
-                  resolve(data);
-                });
-              },
-            );
-            const file = new File(
-              [zipped],
-              `${folderName ?? Date.now()}.zip`,
-              {
-                type: "application/zip",
-                lastModified: Date.now(),
-              },
-            );
-
-            resolve(file);
-          }
-        };
-
-        reader.onerror = function (e) {
-          reject(e);
-        };
-
-        reader.readAsArrayBuffer(file);
-      }
-    });
-  }
 
   const handleSendFiles = (files: File[] | FileList) => {
     for (let i = 0; i < files.length; i++) {
@@ -177,7 +116,7 @@ export const ChatBar: Component<
               }
             }
           }}
-          placeholder={t("chat.message_editor.placeholder")}
+          placeholder={t("client.message_editor.placeholder")}
           value={text()}
           onInput={(ev) => setText(ev.currentTarget.value)}
           onPaste={async (ev) => {
@@ -222,7 +161,7 @@ export const ChatBar: Component<
           }
         >
           <p class="text-xs text-muted-foreground">
-            {t("chat.message_editor.paste_tip")}
+            {t("client.message_editor.paste_tip")}
           </p>
         </Show>
         <div class="ml-auto"></div>
@@ -230,9 +169,10 @@ export const ChatBar: Component<
         <Button as="label" variant="ghost" size="icon">
           <IconFolder class="size-6" />
           <Input
-            multiple
-            // @ts-ignore
+            // @ts-expect-error
             webkitdirectory
+            mozdirectory
+            directory
             class="hidden"
             type="file"
             onChange={async (ev) => {
