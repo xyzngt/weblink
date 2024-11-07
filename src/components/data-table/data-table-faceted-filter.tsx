@@ -1,6 +1,7 @@
 import { Column } from "@tanstack/solid-table";
 import {
   Component,
+  createEffect,
   createMemo,
   createSignal,
   For,
@@ -49,6 +50,13 @@ export function DataTableFacetedFilter<TData, TValue>(
     string[]
   >((props.column?.getFilterValue() as string[]) ?? []);
 
+  createEffect(() => {
+    const values = props.column?.getFilterValue() as string[];
+    if (values) {
+      setSelectedValues(values);
+    }
+  });
+
   return (
     <Popover gutter={12}>
       <PopoverTrigger
@@ -69,7 +77,7 @@ export function DataTableFacetedFilter<TData, TValue>(
             />
             <Badge
               variant="secondary"
-              class="rounded-sm px-1 font-normal lg:hidden"
+              class="rounded-sm px-1 font-normal lg:hidden font-mono"
             >
               {selectedValues().length}
             </Badge>

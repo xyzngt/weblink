@@ -221,7 +221,13 @@ export class IDBChunkCache implements ChunkCache {
           });
         };
 
-        request.onsuccess = () => resolve(request.result);
+        request.onsuccess = () => {
+          const db = request.result;
+          db.onversionchange = () => {
+            db.close();
+          };
+          resolve(db);
+        };
         request.onerror = () => reject(request.error);
       },
     );
@@ -432,7 +438,6 @@ export class IDBChunkCache implements ChunkCache {
         console.log(
           `Database ${dbName} deleted successfully.`,
         );
-
         this.dispatchEvent("cleanup", undefined);
         resolve();
       };
@@ -445,7 +450,8 @@ export class IDBChunkCache implements ChunkCache {
       };
       request.onblocked = () => {
         console.warn(`Database deletion blocked.`);
-        reject(new Error("Database deletion blocked."));
+        this.dispatchEvent("cleanup", undefined);
+        resolve();
       };
     });
   }

@@ -74,6 +74,7 @@ self.addEventListener("fetch", (event) => {
 
           const clients = await self.clients.matchAll({
             includeUncontrolled: true,
+            type: "window",
           });
           for (const client of clients) {
             client.postMessage({
@@ -82,12 +83,19 @@ self.addEventListener("fetch", (event) => {
             });
           }
 
-          const redirectUrl = new URL(
-            "/close-window",
-            location.origin,
-          );
-
-          return Response.redirect(redirectUrl, 303);
+          if (clients.length === 0) {
+            const redirectUrl = new URL(
+              "/",
+              location.origin,
+            );
+            return Response.redirect(redirectUrl, 303);
+          } else {
+            const redirectUrl = new URL(
+              "/close-window",
+              location.origin,
+            );
+            return Response.redirect(redirectUrl, 303);
+          }
         })(),
       );
     }

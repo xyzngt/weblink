@@ -98,53 +98,8 @@ import {
   handleSelectFolder,
 } from "@/libs/utils/process-file";
 import DropArea from "@/components/drop-area";
+import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 
-const createComfirmDeleteDialog = () => {
-  const [names, setNames] = createSignal<string[]>([]);
-  const {
-    open: openDeleteDialog,
-    close,
-    submit,
-    Component,
-  } = createDialog({
-    title: () =>
-      t("common.confirm_delete_files_dialog.title"),
-    description: () =>
-      t("common.confirm_delete_files_dialog.description", {
-        count: names().length,
-      }),
-    content: () => (
-      <div class="overflow-y-auto">
-        <ul class="text-ellipsis text-nowrap">
-          <For each={names()}>
-            {(name) => <li class="text-sm">{name}</li>}
-          </For>
-        </ul>
-      </div>
-    ),
-
-    cancel: (
-      <Button onClick={() => close()}>
-        {t("common.action.cancel")}
-      </Button>
-    ),
-    confirm: (
-      <Button
-        variant="destructive"
-        onClick={() => submit(true)}
-      >
-        {t("common.action.confirm")}
-      </Button>
-    ),
-  });
-
-  const open = (names: string[]) => {
-    setNames(names);
-    return openDeleteDialog();
-  };
-
-  return { open, Component };
-};
 const columnHelper = createColumnHelper<FileMetaData>();
 
 const StorageStatus = () => {
@@ -517,9 +472,15 @@ export default function File() {
       <PreviewDialogComponent />
       <ForwardDialogComponent />
       <PortableContextMenu
-        menu={() => (
+        menu={(close) => (
           <>
-            <ContextMenuItem as="label" class="gap-2">
+            <ContextMenuItem
+              as="label"
+              class="gap-2"
+              onSelect={() => {
+                close();
+              }}
+            >
               <input
                 class="hidden"
                 type="file"

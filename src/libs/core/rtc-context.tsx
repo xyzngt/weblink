@@ -794,11 +794,11 @@ export const WebRTCProvider: Component<
       console.warn(
         `can not request file from target: ${target}, client status is ${client.onlineStatus}`,
       );
-
       return;
     }
 
     let cache = cacheManager.getCache(info.id);
+    console.log(`get local cache`, cache);
     if (!cache) {
       cache = await cacheManager.createCache(info.id);
       await cache.setInfo({
@@ -806,6 +806,8 @@ export const WebRTCProvider: Component<
         file: undefined,
       });
       console.log(`create cache`, await cache.getInfo());
+    } else {
+      console.log(`get local cache`, cache);
     }
 
     const ranges = await cache.getReqRanges();

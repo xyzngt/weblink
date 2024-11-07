@@ -73,7 +73,9 @@ export default function Home(props: RouteSectionProps) {
 
     const clientInfo = sessionService.clientInfo[clientId];
     if (clientInfo) {
-      navigate(`/client/${clientId}/chat`);
+      navigate(`/client/${clientId}/chat`, {
+        replace: true,
+      });
     }
   });
 

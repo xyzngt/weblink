@@ -2,6 +2,7 @@ import {
   IconChatBubble,
   IconChevronLeft,
   IconCloudDownload,
+  IconDelete,
   IconDownload,
   IconMoreHoriz,
   IconPreview,
@@ -74,6 +75,9 @@ import {
   Show,
 } from "solid-js";
 import { v4 } from "uuid";
+import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { ChunkCache } from "@/libs/cache/chunk-cache";
+import { FileTransferer } from "@/libs/core/file-transferer";
 
 type ChunkStatus =
   | "not_started"
@@ -234,6 +238,10 @@ const Sync = (props: RouteSectionProps) => {
                       <DropdownMenuItem
                         class="gap-2"
                         onSelect={() => {
+                          console.log(
+                            `request download`,
+                            row.original,
+                          );
                           requestFile(
                             props.params.id,
                             row.original,
@@ -280,6 +288,23 @@ const Sync = (props: RouteSectionProps) => {
                           {t("common.action.download")}
                         </DropdownMenuItem>
                       </Show>
+                      <DropdownMenuItem
+                        class="gap-2"
+                        onSelect={async () => {
+                          if (
+                            (
+                              await openDeleteDialog([
+                                row.original.fileName,
+                              ])
+                            ).result
+                          ) {
+                            cache().cleanup();
+                          }
+                        }}
+                      >
+                        <IconDelete class="size-4" />
+                        {t("common.action.delete")}
+                      </DropdownMenuItem>
                       <Show when={status() === "stopped"}>
                         <DropdownMenuItem
                           class="gap-2"
@@ -305,6 +330,11 @@ const Sync = (props: RouteSectionProps) => {
       enableHiding: false,
     }),
   ];
+
+  const {
+    open: openDeleteDialog,
+    Component: DeleteDialog,
+  } = createComfirmDeleteDialog();
 
   const [storage, setStorage] = createSignal<
     ChunkMetaData[]
@@ -415,11 +445,11 @@ const Sync = (props: RouteSectionProps) => {
   });
 
   const createStatus = (chunk: ChunkMetaData) => {
-    const cache = createMemo(
+    const cache = createMemo<ChunkCache | undefined>(
       () => cacheManager.caches[chunk.id],
     );
 
-    const transfer = createMemo(
+    const transfer = createMemo<FileTransferer | undefined>(
       () => transferManager.transferers[chunk.id],
     );
 
@@ -430,9 +460,7 @@ const Sync = (props: RouteSectionProps) => {
       const c = cache();
       if (!c) {
         setStatus("not_started");
-        return;
-      }
-      if (c.status() === "done") {
+      } else if (c.status() === "done") {
         setStatus("done");
       } else if (c.status() === "writing") {
         if (transfer()) {
@@ -449,13 +477,16 @@ const Sync = (props: RouteSectionProps) => {
   };
 
   const statuses = createMemo(() => {
+    table.resetColumnFilters();
     return storage().map(createStatus);
   });
 
   return (
     <>
       <PreviewDialog />
-      <div class="flex h-full w-full flex-col gap-2 p-0">
+      <DeleteDialog />
+      <div class="absolute inset-0 z-[-1] bg-background/50 backdrop-blur"></div>
+      <div class="flex h-full w-full flex-col gap-2 bg-background/50 p-0">
         <div class="flex items-center gap-2 p-2">
           <Button
             as={A}

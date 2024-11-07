@@ -621,6 +621,7 @@ export class PeerSession {
               "connectionstatechange",
               onConnectionStateChange,
             );
+            this.disconnect();
             reject(
               new Error(
                 `Connection failed with state: ${pc.connectionState}`,
@@ -652,9 +653,10 @@ export class PeerSession {
               "icestatechange",
               onIceStateChange,
             );
+            this.disconnect();
             reject(
               new Error(
-                `Connection failed with state: ${pc.iceConnectionState}`,
+                `ICE connection failed with state: ${pc.iceConnectionState}`,
               ),
             );
             break;
@@ -666,6 +668,23 @@ export class PeerSession {
       pc.addEventListener(
         "icestatechange",
         onIceStateChange,
+        { signal: this.controller?.signal },
+      );
+
+      const onSignalingStateChange = () => {
+        if (pc.signalingState === "closed") {
+          this.disconnect();
+          reject(
+            new Error(
+              `Signaling connection failed with state: ${pc.signalingState}`,
+            ),
+          );
+        }
+      };
+
+      pc.addEventListener(
+        "signalingstatechange",
+        onSignalingStateChange,
         { signal: this.controller?.signal },
       );
 

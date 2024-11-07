@@ -143,6 +143,9 @@ export const UserItem: Component<UserItemProps> = (
               as={A}
               href={`/client/${local.client.clientId}/sync`}
               class="gap-2"
+              onSelect={() => {
+                close();
+              }}
             >
               <IconStorage class="size-4" />
               {t("client.sync.title")}
