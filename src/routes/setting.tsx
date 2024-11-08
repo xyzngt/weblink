@@ -104,11 +104,14 @@ export const [devices, setDevices] = makePersisted(
 function parseTurnServers(
   input: string,
 ): TurnServerOptions[] {
+  if (input.trim() === "") return [];
   const lines = input.split("\n");
   const turnServers = lines.map((line) => {
     const parts = line.split("|");
     if (parts.length !== 4)
-      throw Error(`config error: ${line}`);
+      throw Error(
+        `config error, should be 4 parts: ${line}`,
+      );
     const [url, username, password, authMethod] = parts.map(
       (part) => part.trim(),
     );
@@ -205,7 +208,6 @@ export default function Settings() {
                       const cache =
                         await cacheManager.createCache(id);
                       cache.setInfo({
-                        id,
                         fileName: file.name,
                         fileSize: file.size,
                         mimetype: file.type,
@@ -356,13 +358,15 @@ export default function Settings() {
                 });
               }}
               value={appOptions.servers.stuns.join("\n")}
-              onInput={(ev) =>
+              onChange={(ev) =>
                 setAppOptions(
                   "servers",
                   "stuns",
-                  optional(ev.currentTarget.value)?.split(
-                    "\n",
-                  ) ?? [],
+                  reconcile(
+                    optional(ev.currentTarget.value)?.split(
+                      "\n",
+                    ) ?? [],
+                  ),
                 )
               }
             />
@@ -393,17 +397,24 @@ export default function Settings() {
               value={stringifyTurnServers(
                 appOptions.servers.turns ?? [],
               )}
-              onInput={(ev) =>
-                setAppOptions(
-                  "servers",
-                  "turns",
-                  reconcile(
-                    parseTurnServers(
-                      ev.currentTarget.value,
-                    ),
-                  ),
-                )
-              }
+              onChange={(ev) => {
+                try {
+                  const turns = parseTurnServers(
+                    ev.currentTarget.value,
+                  );
+                  setAppOptions(
+                    "servers",
+                    "turns",
+                    reconcile(turns),
+                  );
+                } catch (error) {
+                  if (error instanceof Error) {
+                    toast.error(error.message);
+                  } else {
+                    toast.error("unknown error");
+                  }
+                }
+              }}
             />
             <p class="muted">
               {t(
@@ -415,74 +426,76 @@ export default function Settings() {
                 const [disabled, setDisabled] =
                   createSignal(false);
                 return (
-                  <div class="self-end">
-                    <Button
-                      variant="outline"
-                      disabled={disabled()}
-                      onClick={async () => {
-                        setDisabled(true);
-                        const results: {
-                          server: string;
-                          isAvailable: string;
-                        }[] = [];
+                  <Show when={turns().length > 0}>
+                    <div class="self-end">
+                      <Button
+                        variant="outline"
+                        disabled={disabled()}
+                        onClick={async () => {
+                          setDisabled(true);
+                          const results: {
+                            server: string;
+                            isAvailable: string;
+                          }[] = [];
 
-                        const promises: Promise<void>[] =
-                          [];
+                          const promises: Promise<void>[] =
+                            [];
 
-                        for (const turn of turns()) {
-                          const server =
-                            await parseTurnServer(turn);
-                          if (!server) {
-                            results.push({
-                              server: turn.url,
-                              isAvailable:
-                                "invalid turn server",
-                            });
-                            continue;
+                          for (const turn of turns()) {
+                            const server =
+                              await parseTurnServer(turn);
+                            if (!server) {
+                              results.push({
+                                server: turn.url,
+                                isAvailable:
+                                  "invalid turn server",
+                              });
+                              continue;
+                            }
+                            promises.push(
+                              checkTurnServerAvailability(
+                                server,
+                              )
+                                .then((isAvailable) => {
+                                  results.push({
+                                    server: turn.url,
+                                    isAvailable: isAvailable
+                                      ? "available"
+                                      : "unavailable",
+                                  });
+                                })
+                                .catch((error) => {
+                                  results.push({
+                                    server: turn.url,
+                                    isAvailable:
+                                      error.message,
+                                  });
+                                }),
+                            );
                           }
-                          promises.push(
-                            checkTurnServerAvailability(
-                              server,
-                            )
-                              .then((isAvailable) => {
-                                results.push({
-                                  server: turn.url,
-                                  isAvailable: isAvailable
-                                    ? "available"
-                                    : "unavailable",
-                                });
-                              })
-                              .catch((error) => {
-                                results.push({
-                                  server: turn.url,
-                                  isAvailable:
-                                    error.message,
-                                });
-                              }),
-                          );
-                        }
 
-                        await Promise.all(promises).finally(
-                          () => {
+                          await Promise.all(
+                            promises,
+                          ).finally(() => {
                             setDisabled(false);
-                          },
-                        );
+                          });
 
-                        const resultMessage = results
-                          .map(
-                            (result) =>
-                              `${result.server}: ${result.isAvailable}`,
-                          )
-                          .join("\n");
+                          const resultMessage = results
+                            .map(
+                              (result) =>
+                                `${result.server}: ${result.isAvailable}`,
+                            )
+                            .join("\n");
 
-                        toast.info(resultMessage);
-                      }}
-                    >
-                      {t(
-                        "setting.connection.turn_servers.check_availability",
-                      )}
-                    </Button>
-                  </div>
+                          toast.info(resultMessage);
+                        }}
+                      >
+                        {t(
+                          "setting.connection.turn_servers.check_availability",
+                        )}
+                      </Button>
+                    </div>
+                  </Show>
                 );
               }}
             </Show>
@@ -1001,7 +1014,7 @@ export default function Settings() {
             </CollapsibleContent>
           </Collapsible>
           <Separator />
-          <div class=" place-self-end">
+          <div class="place-self-end">
             <Button
               variant="destructive"
               onClick={async () => {

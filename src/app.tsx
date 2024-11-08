@@ -136,6 +136,11 @@ const InnerApp = (props: ParentProps) => {
       const turnServers = JSON.parse(
         search.turn,
       ) as TurnServerOptions[];
+
+      if (!appOptions.servers.turns) {
+        setAppOptions("servers", "turns", []);
+      }
+
       setAppOptions(
         "servers",
         "turns",

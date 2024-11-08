@@ -15,7 +15,7 @@ export type TurnServerOptions = {
 
 type ConnectionOptions = {
   stuns: string[];
-  turns?: TurnServerOptions[];
+  turns: TurnServerOptions[];
 };
 
 export type CompressionLevel =
@@ -77,6 +77,7 @@ export const getDefaultAppOptions = () => {
     audioMaxBitrate: 512 * 1024,
     servers: {
       stuns: ["stun:stun.l.google.com:19302"],
+      turns: [],
     },
     compressionLevel: 0,
     locale: navigator.language.startsWith("zh")
