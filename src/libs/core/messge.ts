@@ -390,7 +390,6 @@ class MessageStores {
 
       this.setTimeout(message.id, 3000, () => {
         this.setMessages(index, "status", "error");
-        this.setMessages(index, "status", "error");
         this.setMessages(index, "error", "send timeout");
         this.setMessageDB(this.messages[index]);
       });
@@ -400,12 +399,13 @@ class MessageStores {
         const message = {
           ...sessionMsg,
           type: "text",
-          status: "received",
+          status: "sending",
         } satisfies TextMessage;
         this.setMessages(
           produce((state) => {
             index = state.push(message) - 1;
             this.setMessageDB(message);
+            setStatus(message);
           }),
         );
       }
@@ -414,16 +414,16 @@ class MessageStores {
         const message = {
           ...sessionMsg,
           type: "file",
-          status: "received",
+          status: "sending",
         } satisfies FileTransferMessage;
         this.setMessages(
           produce((state) => {
             index = state.push(message) - 1;
             this.setMessageDB(message);
+            setStatus(message);
           }),
         );
       }
-      setStatus(this.messages[index]);
     } else if (sessionMsg.type === "request-file") {
       if (index === -1) {
         const message = {
@@ -442,17 +442,7 @@ class MessageStores {
           produce((state) => {
             index = state.push(message) - 1;
             this.setMessageDB(message);
-          }),
-        );
-      }
-    } else if (sessionMsg.type === "check-message") {
-      if (index !== -1) {
-        this.clearTimeout(sessionMsg.id);
-        this.setMessages(
-          index,
-          produce((state) => {
-            state.status = "received";
-            this.setMessageDB(state);
+            setStatus(message);
           }),
         );
       }
@@ -484,17 +474,6 @@ class MessageStores {
         );
       }
       setStatus(index);
-    } else if (sessionMsg.type === "check-message") {
-      if (index !== -1) {
-        this.clearTimeout(sessionMsg.id);
-        this.setMessages(
-          index,
-          produce((state) => {
-            state.status = "received";
-            this.setMessageDB(state);
-          }),
-        );
-      }
     } else if (sessionMsg.type === "send-file") {
       if (index === -1) {
         const message = {
@@ -532,6 +511,7 @@ class MessageStores {
         );
       }
     } else if (sessionMsg.type === "error") {
+      console.warn(`clearTimeout`, sessionMsg.id);
       this.clearTimeout(sessionMsg.id);
       this.setMessages(
         index,
@@ -541,6 +521,17 @@ class MessageStores {
           this.setMessageDB(state);
         }),
       );
+    } else if (sessionMsg.type === "check-message") {
+      if (index !== -1) {
+        this.clearTimeout(sessionMsg.id);
+        this.setMessages(
+          index,
+          produce((state) => {
+            state.status = "received";
+            this.setMessageDB(state);
+          }),
+        );
+      }
     }
   }
 
@@ -698,6 +689,7 @@ class MessageStores {
         if (transferer.mode === TransferMode.Send) {
           controller.abort();
           setter((state) => {
+            state.status = "received";
             state.transferStatus = "complete";
             state.error = undefined;
           });

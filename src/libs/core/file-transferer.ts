@@ -269,12 +269,21 @@ export class FileTransferer {
         );
         return;
       }
+      let sendIndexes: number[];
+
+      try {
+        sendIndexes = this.sendData.indexes
+          .values()
+          .toArray();
+      } catch (err) {
+        sendIndexes = Array.from(this.sendData.indexes);
+      }
+
+      const ranges = mergeRanges(sendIndexes);
+
       this.dispatchEvent("progress", {
         total: info.fileSize,
-        received: getRequestContentSize(
-          info,
-          this.sendData.indexes.values().toArray(),
-        ),
+        received: getRequestContentSize(info, ranges),
       });
     }
   }

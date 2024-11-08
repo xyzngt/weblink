@@ -40,7 +40,7 @@ export class WebSocketClientService
 
   private maxReconnectAttempts = 3;
   private reconnectAttempts = 0;
-  private reconnectInterval = 5000;
+  private reconnectInterval = 3000;
   private websocketUrl: string;
 
   get info() {
@@ -77,7 +77,7 @@ export class WebSocketClientService
       (ev) => {
         if (document.visibilityState === "visible") {
           if (this.socket?.readyState !== WebSocket.OPEN) {
-            this.handleDisconnect();
+            this.reconnect();
           }
         }
       },
@@ -136,7 +136,7 @@ export class WebSocketClientService
       }
     }
     const socket = new WebSocket(wsUrl);
-    this.dispatchEvent("status-change", "connecting");
+
     socket.addEventListener("message", (ev) => {
       const signal: RawSignal = JSON.parse(ev.data);
       switch (signal.type) {
@@ -155,7 +155,7 @@ export class WebSocketClientService
 
     socket.addEventListener(
       "close",
-      this.handleDisconnect,
+      () => this.reconnect(),
       {
         signal: this.controller.signal,
       },
@@ -168,6 +168,17 @@ export class WebSocketClientService
     this.socket = socket;
 
     return new Promise<WebSocket>((resolve, reject) => {
+      this.dispatchEvent("status-change", "connecting");
+      let timer = window.setTimeout(() => {
+        reject(new Error("WebSocket connection timeout"));
+        this.destroy();
+      }, 10000);
+      socket.addEventListener(
+        "open",
+        () => clearTimeout(timer),
+        { once: true },
+      );
+
       socket.addEventListener(
         "error",
         () => {
@@ -227,22 +238,6 @@ export class WebSocketClientService
       );
     });
   }
-
-  private handleDisconnect = () => {
-    if (this.socket?.readyState === WebSocket.OPEN) return;
-    if (
-      this.reconnectAttempts < this.maxReconnectAttempts
-    ) {
-      console.log(`WebSocket closed, reconnecting...`);
-      setTimeout(
-        () => this.reconnect(),
-        this.reconnectInterval,
-      );
-    } else {
-      console.log(`Reconnect failed, send leave message`);
-      this.destroy();
-    }
-  };
 
   private async reconnect() {
     try {
@@ -323,15 +318,19 @@ export class WebSocketClientService
     );
     this.eventListeners.clear();
 
-    this.socket?.send(
-      JSON.stringify({
-        type: "leave",
-        data: this.client,
-      }),
-    );
+    if (this.socket) {
+      if (this.socket.readyState === WebSocket.OPEN) {
+        this.socket.send(
+          JSON.stringify({
+            type: "leave",
+            data: this.client,
+          }),
+        );
+      }
+      this.socket = null;
+    }
 
     this.controller.abort();
-    this.socket = null;
   }
   private emit(event: string, data: any) {
     const listeners = this.eventListeners.get(event) || [];

@@ -86,10 +86,21 @@ export class WebSocketSignalingService
     );
     this.socket = socket;
     this.socket.addEventListener("message", this.onMessage);
-    this.messageQueue.forEach((signal) => {
-      this.sendSignal(signal);
-    });
-    this.messageQueue.length = 0;
+
+    const sendQueue = () => {
+      this.messageQueue.forEach((signal) => {
+        this.sendSignal(signal);
+      });
+      this.messageQueue.length = 0;
+    };
+
+    if (this.socket.readyState === WebSocket.OPEN) {
+      sendQueue;
+    } else {
+      this.socket.addEventListener("open", sendQueue, {
+        once: true,
+      });
+    }
   }
 
   get sessionId(): SessionID {

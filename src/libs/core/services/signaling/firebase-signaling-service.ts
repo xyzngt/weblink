@@ -24,7 +24,7 @@ import { SessionID } from "../../type";
 import {
   decryptData,
   encryptData,
-} from "../../utils/encrypt";
+} from "@/libs/core/utils/encrypt";
 import { EventHandler } from "@/libs/utils/event-emitter";
 
 export class FirebaseSignalingService
