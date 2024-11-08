@@ -78,14 +78,13 @@ const FileMessageCard: Component<FileMessageCardProps> = (
   props,
 ) => {
   const { requestFile } = useWebRTC();
-  const fileCache = createMemo<ChunkCache | null>(
-    () => cacheManager.caches[props.message.fid] ?? null,
-  );
 
   const transferer = createMemo<FileTransferer | null>(
     () =>
-      transferManager.transferers[props.message.fid] ??
-      null,
+      props.message.fid
+        ? (transferManager.transferers[props.message.fid] ??
+          null)
+        : null,
   );
 
   const clientInfo = createMemo(
@@ -93,7 +92,10 @@ const FileMessageCard: Component<FileMessageCardProps> = (
   );
 
   const cacheData = createMemo<FileMetaData | undefined>(
-    () => cacheManager.cacheInfo[props.message.fid],
+    () =>
+      props.message.fid
+        ? cacheManager.cacheInfo[props.message.fid]
+        : undefined,
   );
 
   // createEffect(async () => {
@@ -338,6 +340,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                     requestFile(
                       props.message.client,
                       info(),
+                      true,
                     );
                   }}
                 >
@@ -414,6 +417,7 @@ export const MessageContent: Component<MessageCardProps> = (
             class="gap-2"
             onSelect={async () => {
               if (local.message.type === "file") {
+                if (!local.message.fid) return;
                 const cache = cacheManager.getCache(
                   local.message.fid,
                 );
@@ -550,6 +554,7 @@ export const MessageContent: Component<MessageCardProps> = (
                     } else if (
                       props.message.type === "file"
                     ) {
+                      if (!props.message.fid) return;
                       sessionMessage = {
                         id: props.message.id,
                         type: "send-file",

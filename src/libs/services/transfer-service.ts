@@ -5,6 +5,7 @@ import {
 import {
   FileTransferer,
   TransferMode,
+  TransferStatus,
 } from "../core/file-transferer";
 import { FileID } from "../core/type";
 import { ChunkCache } from "../cache/chunk-cache";
@@ -33,18 +34,16 @@ class TransfererFactory {
     return null;
   }
 
-  addChannel(
-    fileId: FileID,
-    channel: RTCDataChannel,
-  ) {
+  addChannel(fileId: FileID, channel: RTCDataChannel) {
     console.log(`addChannel`, fileId, channel.label);
 
     const transfer = this.transferers[fileId];
     if (transfer) {
       transfer.addChannel(channel);
     } else {
-      if (!this.channels[fileId])
+      if (!this.channels[fileId]) {
         this.channels[fileId] = [];
+      }
       this.channels[fileId].push(channel);
     }
   }
@@ -83,12 +82,6 @@ class TransfererFactory {
     const flushInterval = setInterval(() => {
       cache.flush();
     }, 1000);
-
-    let channel = this.channels[fileId]?.pop();
-    while (channel) {
-      transferer.addChannel(channel);
-      channel = this.channels[fileId].pop();
-    }
 
     const controller = new AbortController();
 
@@ -135,6 +128,23 @@ class TransfererFactory {
           waitBufferedAmountLowThreshold(channel, 0).then(
             () => channel.close(),
           );
+        }
+      },
+      {
+        once: true,
+        signal: controller.signal,
+      },
+    );
+
+    transferer.addEventListener(
+      "ready",
+      () => {
+        const channels = this.channels[fileId];
+        if (channels) {
+          for (const channel of channels) {
+            transferer.addChannel(channel);
+          }
+          this.channels[fileId] = [];
         }
       },
       {

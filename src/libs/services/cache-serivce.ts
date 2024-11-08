@@ -150,6 +150,7 @@ class FileCacheFactory {
       this.setCaches(id, undefined!);
     });
     cache.addEventListener("merged", (ev) => {
+      this.setCacheInfo(id, "file", ev.detail);
       if (appOptions.automaticDownload) {
         const file = ev.detail;
         const a = document.createElement("a");

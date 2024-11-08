@@ -43,7 +43,7 @@ export interface TextMessage extends BaseStorageMessage {
 export interface FileTransferMessage
   extends BaseStorageMessage {
   type: "file";
-  fid: FileID;
+  fid?: FileID;
   fileName: string;
   fileSize: number;
   mimeType?: string;
@@ -91,6 +91,7 @@ export type RequestFileMessage = BaseExchangeMessage & {
   mimeType?: string;
   lastModified?: number;
   chunkSize: number;
+  resume: boolean;
 };
 
 export type SendFileMessage = BaseExchangeMessage & {
@@ -594,7 +595,7 @@ class MessageStores {
 
   addCache(cache: ChunkCache) {
     const controller = this.getController(cache.id);
-    const index = this.messages.findIndex(
+    const index = this.messages.findLastIndex(
       (msg) => msg.type === "file" && msg.fid === cache.id,
     );
     if (index === -1) {
@@ -677,6 +678,7 @@ class MessageStores {
     transferer.addEventListener(
       "progress",
       (event: CustomEvent<ProgressValue>) => {
+        // console.log(`progress`, event.detail);
         const { total, received } = event.detail;
         setter((state) => {
           state.progress = {

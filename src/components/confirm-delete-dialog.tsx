@@ -29,7 +29,12 @@ export const createComfirmDeleteDialog = () => {
     ),
 
     cancel: (
-      <Button onClick={() => close()}>
+      <Button
+        onClick={() => {
+          close();
+          setNames([]);
+        }}
+      >
         {t("common.action.cancel")}
       </Button>
     ),
@@ -43,9 +48,12 @@ export const createComfirmDeleteDialog = () => {
     ),
   });
 
-  const open = (names: string[]) => {
+  const open = async (names: string[]) => {
     setNames(names);
-    return openDeleteDialog();
+    return openDeleteDialog().then((result) => {
+      setNames([]);
+      return result;
+    });
   };
 
   return { open, Component };

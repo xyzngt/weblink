@@ -15,6 +15,7 @@ import {
   getLastIndex,
   getRangesLength,
   getSubRanges,
+  mergeRanges,
   rangesIterator,
 } from "../utils/range";
 import { Accessor, createSignal, Setter } from "solid-js";
@@ -150,7 +151,7 @@ export class FileTransferer {
 
   private controller: AbortController =
     new AbortController();
-
+  private unzipWorker?: Worker;
   private timer?: number;
 
   get id() {
@@ -175,6 +176,7 @@ export class FileTransferer {
       options.compressionLevel ?? this.compressionLevel;
     this.mode = options.mode ?? TransferMode.Receive;
     this.info = options.info ?? null;
+
     this.controller.signal.addEventListener(
       "abort",
       () => {
@@ -182,90 +184,6 @@ export class FileTransferer {
       },
       { once: true },
     );
-  }
-
-  public async setSendStatus(message: RequestFileMessage) {
-    if (!this.sendData) return;
-    const info = this.info;
-    if (!info) {
-      console.error(
-        `can not set send status, info is null`,
-      );
-
-      return;
-    }
-    const chunkLength = getTotalChunkCount(info);
-    if (message.ranges) {
-      rangesIterator(
-        getSubRanges(chunkLength, message.ranges),
-      ).forEach((index) =>
-        this.sendData?.indexes.add(index),
-      );
-    }
-
-    this.updateProgress();
-  }
-  private updateProgress() {
-    const info = this.info;
-    if (!info) {
-      return;
-    }
-    if (this.mode === TransferMode.Receive) {
-      if (!this.receivedData) return;
-      this.dispatchEvent("progress", {
-        total: info.fileSize,
-        received: this.receivedData.receiveBytes,
-      });
-    } else {
-      if (!this.sendData) return;
-      this.dispatchEvent("progress", {
-        total: info.fileSize,
-        received: getRequestContentSize(
-          info,
-          this.sendData.indexes.values().toArray(),
-        ),
-      });
-    }
-  }
-
-  public async initialize() {
-    if (this.initialized) {
-      console.warn(
-        `transfer ${this.cache.id} is already initialized`,
-      );
-    }
-    this.initialized = true;
-
-    if (!this.info) {
-      this.info = await this.cache.getInfo();
-    } else {
-      this.cache.setInfo(this.info);
-    }
-
-    if (!this.info) {
-      throw Error(
-        "transfer file info is not set correctly",
-      );
-    }
-
-    if (this.mode === TransferMode.Receive) {
-      const receivedData = {
-        receiveBytes: 0,
-        indexes: new Set(),
-      } satisfies ReceiveData;
-      this.receivedData = receivedData;
-      const keys = await this.cache.getCachedKeys();
-      keys.forEach((key) => receivedData.indexes.add(key));
-
-      const bytes = await this.cache.calcCachedBytes();
-      receivedData.receiveBytes += bytes ?? 0;
-    } else if (this.mode === TransferMode.Send) {
-      this.sendData = {
-        indexes: new Set(),
-      };
-    }
-    this.updateProgress();
-    this.dispatchEvent("ready", undefined);
   }
 
   addEventListener<K extends keyof FileTransfererEventMap>(
@@ -302,9 +220,159 @@ export class FileTransferer {
     );
   }
 
-  public addChannel(channel: RTCDataChannel) {
-    console.log(`receiver add channel`, channel);
+  public async setSendStatus(message: RequestFileMessage) {
+    if (!this.sendData) {
+      console.error(
+        `can not set send status, sendData is null`,
+      );
+      return;
+    }
+    const info = this.info;
+    if (!info) {
+      console.error(
+        `can not set send status, info is null`,
+      );
+      return;
+    }
+    const chunkLength = getTotalChunkCount(info);
+    if (message.ranges) {
+      rangesIterator(
+        getSubRanges(chunkLength, message.ranges),
+      ).forEach((index) =>
+        this.sendData?.indexes.add(index),
+      );
+    }
 
+    this.updateProgress();
+  }
+
+  private updateProgress() {
+    const info = this.info;
+    if (!info) {
+      return;
+    }
+    if (this.mode === TransferMode.Receive) {
+      if (!this.receivedData) {
+        console.error(
+          `can not update progress, receivedData is null`,
+        );
+        return;
+      }
+      this.dispatchEvent("progress", {
+        total: info.fileSize,
+        received: this.receivedData.receiveBytes,
+      });
+    } else if (this.mode === TransferMode.Send) {
+      if (!this.sendData) {
+        console.error(
+          `can not update progress, sendData is null`,
+        );
+        return;
+      }
+      this.dispatchEvent("progress", {
+        total: info.fileSize,
+        received: getRequestContentSize(
+          info,
+          this.sendData.indexes.values().toArray(),
+        ),
+      });
+    }
+  }
+
+  public async initialize() {
+    if (this.initialized) {
+      console.warn(
+        `transfer ${this.cache.id} is already initialized`,
+      );
+    }
+    this.initialized = true;
+
+    if (!this.info) {
+      this.info = await this.cache.getInfo();
+    } else {
+      this.cache.setInfo(this.info);
+    }
+
+    if (!this.info) {
+      throw Error(
+        "transfer file info is not set correctly",
+      );
+    }
+
+    if (this.mode === TransferMode.Receive) {
+      const uncompressWorker = new UncompressWorker();
+
+      uncompressWorker.onmessage = (ev) => {
+        const { data, error, context } = ev.data;
+        if (error) {
+          console.error(error);
+          return;
+        }
+        const chunkIndex = context?.chunkIndex;
+        if (chunkIndex === undefined) {
+          console.error(
+            `can not store chunk, chunkIndex is undefined`,
+          );
+          return;
+        }
+        this.storeChunk(chunkIndex, data.buffer);
+      };
+
+      this.unzipWorker = uncompressWorker;
+
+      const receivedData = {
+        receiveBytes: 0,
+        indexes: new Set(),
+      } satisfies ReceiveData;
+      this.receivedData = receivedData;
+      const keys = await this.cache.getCachedKeys();
+      keys.forEach((key) => receivedData.indexes.add(key));
+
+      receivedData.receiveBytes =
+        (await this.cache.calcCachedBytes()) ?? 0;
+    } else if (this.mode === TransferMode.Send) {
+      this.sendData = {
+        indexes: new Set(),
+      };
+    }
+    this.updateProgress();
+    if (this.channels.length > 0) {
+      this.dispatchEvent("ready", undefined);
+    }
+  }
+
+  private async storeChunk(
+    chunkIndex: number,
+    chunkData: ArrayBufferLike,
+  ) {
+    const info = this.info;
+    if (!info) {
+      console.error(`can not store chunk, info is null`);
+
+      return;
+    }
+    await this.cache.storeChunk(chunkIndex, chunkData);
+    const receivedData = this.receivedData;
+    if (!receivedData) {
+      console.error(
+        `can not store chunk, receivedData is null`,
+      );
+      return;
+    }
+    if (receivedData.indexes.has(chunkIndex)) {
+      return;
+    }
+    receivedData.indexes.add(chunkIndex);
+    receivedData.receiveBytes += chunkData.byteLength;
+    this.updateProgress();
+
+    if (this.triggerReceiveComplete()) {
+      window.clearInterval(this.timer);
+    }
+    delete this.blockCache[chunkIndex];
+  }
+
+  public addChannel(channel: RTCDataChannel) {
     const onClose = () => {
       channel.onmessage = null;
       const index = this.channels.findIndex(
@@ -328,95 +396,8 @@ export class FileTransferer {
       once: true,
     });
 
-    const storeChunk = async (
-      chunkIndex: number,
-      chunkData: ArrayBufferLike,
-    ) => {
-      const info = this.info;
-      if (!info) {
-        console.error(`can not store chunk, info is null`);
-
-        return;
-      }
-      await this.cache.storeChunk(chunkIndex, chunkData);
-      this.receivedData?.indexes.add(chunkIndex);
-      if (this.receivedData) {
-        this.receivedData.receiveBytes +=
-          chunkData.byteLength;
-      }
-
-      this.updateProgress();
-
-      if (this.triggerReceiveComplete()) {
-        window.clearInterval(this.timer);
-      }
-      delete this.blockCache[chunkIndex];
-    };
-
-    const uncompressWorker = new UncompressWorker();
-
-    uncompressWorker.onmessage = (ev) => {
-      const { data, error, context } = ev.data;
-      if (error) {
-        console.error(error);
-        return;
-      }
-      const chunkIndex = context?.chunkIndex;
-      if (chunkIndex === undefined) {
-        console.error(
-          `can not store chunk, chunkIndex is undefined`,
-        );
-        return;
-      }
-      storeChunk(chunkIndex, data.buffer);
-    };
-
     channel.onmessage = (ev) =>
-      this.handleMessage(ev, (packet) => {
-        const {
-          chunkIndex,
-          blockIndex,
-          blockData,
-          isLastBlock,
-        } = readPacket(packet);
-
-        if (!this.blockCache[chunkIndex]) {
-          this.blockCache[chunkIndex] = {
-            blocks: {},
-            receivedBlockNumber: 0,
-          };
-        }
-
-        const chunkInfo = this.blockCache[chunkIndex];
-
-        chunkInfo.blocks[blockIndex] = blockData;
-        chunkInfo.receivedBlockNumber += 1;
-
-        if (isLastBlock) {
-          chunkInfo.totalBlockNumber = blockIndex + 1;
-        }
-        if (
-          chunkInfo.receivedBlockNumber ===
-          chunkInfo.totalBlockNumber
-        ) {
-          const compressedData = assembleCompressedChunk(
-            chunkInfo.blocks,
-            chunkInfo.totalBlockNumber,
-          );
-
-          uncompressWorker.postMessage({
-            data: compressedData,
-            context: {
-              chunkIndex,
-            },
-          });
-
-          // storeChunk(
-          //   chunkIndex,
-          //   inflateSync(compressedData),
-          // );
-        }
-      });
+      this.handleReceiveMessage(ev.data);
     channel.binaryType = "arraybuffer";
     channel.bufferedAmountLowThreshold =
       this.bufferedAmountLowThreshold;
@@ -444,7 +425,54 @@ export class FileTransferer {
       }
     }
 
+    if (this.initialized && this.channels.length === 0) {
+      this.dispatchEvent("ready", undefined);
+    }
     this.channels.push(channel);
+  }
+
+  private unzip(packet: ArrayBuffer) {
+    if (!this.unzipWorker) {
+      throw new Error("unzip worker is not initialized");
+    }
+    const {
+      chunkIndex,
+      blockIndex,
+      blockData,
+      isLastBlock,
+    } = readPacket(packet);
+
+    if (!this.blockCache[chunkIndex]) {
+      this.blockCache[chunkIndex] = {
+        blocks: {},
+        receivedBlockNumber: 0,
+      };
+    }
+
+    const chunkInfo = this.blockCache[chunkIndex];
+
+    chunkInfo.blocks[blockIndex] = blockData;
+    chunkInfo.receivedBlockNumber += 1;
+
+    if (isLastBlock) {
+      chunkInfo.totalBlockNumber = blockIndex + 1;
+    }
+    if (
+      chunkInfo.receivedBlockNumber ===
+      chunkInfo.totalBlockNumber
+    ) {
+      const compressedData = assembleCompressedChunk(
+        chunkInfo.blocks,
+        chunkInfo.totalBlockNumber,
+      );
+
+      this.unzipWorker.postMessage({
+        data: compressedData,
+        context: {
+          chunkIndex,
+        },
+      });
+    }
   }
 
   private async startChecking(interval: number = 5000) {
@@ -572,7 +600,9 @@ export class FileTransferer {
       return;
     }
 
-    if (!this.sendData) {
+    const sendData = this.sendData;
+
+    if (!sendData) {
       this.dispatchEvent(
         "error",
         new Error(
@@ -597,6 +627,7 @@ export class FileTransferer {
     const totalChunks = getTotalChunkCount(info);
 
     let transferRange = ranges;
+    console.log(`sended ranges`, transferRange);
     if (!transferRange) {
       if (totalChunks !== 0) {
         transferRange = [[0, totalChunks - 1]];
@@ -712,22 +743,15 @@ export class FileTransferer {
   }
 
   // handle receive message
-  private handleMessage(
-    event: MessageEvent,
-    unzipCB: (packet: ArrayBuffer) => void,
-  ) {
-    // if (this.readyInterval) {
-    //   clearInterval(this.readyInterval);
-    //   this.readyInterval = undefined;
-    // }
+  handleReceiveMessage(data: any) {
     try {
       this.setStatus(TransferStatus.Process);
 
       if (this.mode === TransferMode.Receive) {
-        if (typeof event.data === "string") {
-          console.log(`receiver get message`, event.data);
+        if (typeof data === "string") {
+          console.log(`receiver get message`, data);
           const message = JSON.parse(
-            event.data,
+            data,
           ) as TransferMessage;
           if (message.type === "complete") {
             if (this.triggerReceiveComplete()) {
@@ -737,23 +761,21 @@ export class FileTransferer {
         } else {
           const info = this.info;
           if (!info) return;
-          let packet: ArrayBuffer | Blob = event.data;
+          let packet: ArrayBuffer | Blob = data;
 
           if (packet instanceof ArrayBuffer) {
-            unzipCB(packet);
+            this.unzip(packet);
           } else if (packet instanceof Blob) {
             blobToArrayBuffer(packet).then((packet) =>
-              unzipCB(packet),
+              this.unzip(packet),
             );
           }
         }
         this.startChecking(10000);
       } else if (this.mode === TransferMode.Send) {
-        console.log(`sender get message`, event.data);
-        if (typeof event.data !== "string") return;
-        const message = JSON.parse(
-          event.data,
-        ) as TransferMessage;
+        console.log(`sender get message`, data);
+        if (typeof data !== "string") return;
+        const message = JSON.parse(data) as TransferMessage;
 
         if (message.type === "request-content") {
           if (this.sendData) {

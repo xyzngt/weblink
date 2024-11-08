@@ -69,5 +69,5 @@ interface DrawerProps<T>
 export const createDrawer = <T extends any>(
   options: DrawerProps<T>,
 ) => {
-  return createModal({ ...options, component: BaseDrawer });
+  return createModal<T>({ ...options, component: BaseDrawer });
 };

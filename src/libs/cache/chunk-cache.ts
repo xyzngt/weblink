@@ -505,10 +505,8 @@ export class IDBChunkCache implements ChunkCache {
             }
 
             console.log("merge file done", data);
-            this.dispatchEvent("merged", data);
-            info.file = data as File;
-            this.setInfo(info);
             resolve(data as File);
+            this.dispatchEvent("merged", data);
             this.setStatus("done");
           };
           worker.postMessage({ fileId: this.id });
@@ -536,7 +534,6 @@ export class IDBChunkCache implements ChunkCache {
             lastModified: info.lastModified,
           });
           info.file = file;
-
           this.setInfo(info);
           store.clear();
           reslove(file);

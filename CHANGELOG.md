@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.0] - 2024-11-07
+## [0.6.1] - 2024-11-07
 
 ### New Features
 
@@ -11,6 +11,10 @@ All notable changes to this project will be documented in this file.
 ### Improvements
 
 - Improve the file search function 优化文件搜索功能
+
+### Bug Fixes
+
+- Fix the bug that the file chunk cannot be received when resuming 修复了续传时文件区块接收的问题
 
 ## [0.5.0] - 2024-11-04
 

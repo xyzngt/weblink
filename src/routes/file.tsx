@@ -620,28 +620,25 @@ export default function File() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     class="gap-2"
-                    onSelect={async () => {
-                      if (
-                        (
-                          await openDeleteDialog(
-                            table
-                              .getSelectedRowModel()
-                              .rows.map(
-                                (row) =>
-                                  row.original.fileName,
-                              ),
-                          )
-                        ).result
-                      ) {
+                    onSelect={() => {
+                      openDeleteDialog(
                         table
                           .getSelectedRowModel()
-                          .rows.forEach((row) => {
-                            cacheManager.remove(
-                              row.original.id,
-                            );
-                          });
-                        table.resetRowSelection();
-                      }
+                          .rows.map(
+                            (row) => row.original.fileName,
+                          ),
+                      ).then(({ result }) => {
+                        if (result === true) {
+                          table
+                            .getSelectedRowModel()
+                            .rows.forEach((row) => {
+                              cacheManager.remove(
+                                row.original.id,
+                              );
+                            });
+                          table.resetRowSelection();
+                        }
+                      });
                     }}
                   >
                     <IconDelete class="size-4" />

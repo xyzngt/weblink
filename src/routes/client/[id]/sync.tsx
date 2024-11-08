@@ -245,6 +245,7 @@ const Sync = (props: RouteSectionProps) => {
                           requestFile(
                             props.params.id,
                             row.original,
+                            false,
                           );
                         }}
                       >
@@ -290,16 +291,14 @@ const Sync = (props: RouteSectionProps) => {
                       </Show>
                       <DropdownMenuItem
                         class="gap-2"
-                        onSelect={async () => {
-                          if (
-                            (
-                              await openDeleteDialog([
-                                row.original.fileName,
-                              ])
-                            ).result
-                          ) {
-                            cache().cleanup();
-                          }
+                        onSelect={() => {
+                          openDeleteDialog([
+                            row.original.fileName,
+                          ]).then(({ result }) => {
+                            if (result === true) {
+                              cache().cleanup();
+                            }
+                          });
                         }}
                       >
                         <IconDelete class="size-4" />
@@ -312,6 +311,7 @@ const Sync = (props: RouteSectionProps) => {
                             requestFile(
                               props.params.id,
                               row.original,
+                              true,
                             );
                           }}
                         >

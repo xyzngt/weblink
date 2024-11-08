@@ -91,6 +91,7 @@ export interface WebRTCContextProps {
   requestFile(
     target: ClientID,
     info: ChunkMetaData,
+    resume?: boolean,
   ): Promise<void>;
   send: (
     text: string | File,
@@ -262,31 +263,20 @@ export const WebRTCProvider: Component<
             `cache ${message.fid} is not complete`,
           );
         }
-
         messageStores.setReceiveMessage(message);
-
         const transferer = transferManager.createTransfer(
           cache,
           TransferMode.Send,
         );
         messageStores.addTransfer(transferer);
+
+        transferer.addEventListener("ready", () => {
+          transferer.sendFile(message.ranges);
+        });
+
         await transferer.initialize();
         transferer.setSendStatus(message);
 
-        for (
-          let i = 0;
-          i < appOptions.channelsNumber;
-          i++
-        ) {
-          const channel = await session.createChannel(
-            `${transferer.id}-${i}`,
-            "transfer",
-          );
-
-          if (channel) {
-            transferManager.addChannel(cache.id, channel);
-          }
-        }
         const replyMessage = {
           type: "check-message",
           id: message.id,
@@ -297,7 +287,6 @@ export const WebRTCProvider: Component<
         } satisfies CheckMessage;
 
         session.sendMessage(replyMessage);
-        await transferer.sendFile(message.ranges);
       } else if (message.type === "check-message") {
         messageStores.setReceiveMessage(message);
         const index = messageStores.messages.findLastIndex(
@@ -313,6 +302,11 @@ export const WebRTCProvider: Component<
         }
         const storeMessage = messageStores.messages[index];
         if (storeMessage.type === "file") {
+          if (!storeMessage.fid) {
+            throw new Error(
+              `file transfer message ${message.id} fid is undefined`,
+            );
+          }
           const cache = cacheManager.getCache(
             storeMessage.fid,
           );
@@ -324,36 +318,61 @@ export const WebRTCProvider: Component<
               `cache ${storeMessage.fid} not found`,
             );
           }
-          const transferer = transferManager.createTransfer(
-            cache,
-            message.mode === "send"
-              ? TransferMode.Receive
-              : TransferMode.Send,
-          );
+          if (message.mode === "send") {
+            const transferer =
+              transferManager.createTransfer(
+                cache,
+                TransferMode.Receive,
+              );
+            messageStores.addTransfer(transferer);
+            await transferer.initialize();
+            for (
+              let i = 0;
+              i < appOptions.channelsNumber;
+              i++
+            ) {
+              const channel = await session.createChannel(
+                `${transferer.id}-${i}`,
+                "transfer",
+              );
 
-          messageStores.addTransfer(transferer);
+              if (channel) {
+                transferManager.addChannel(
+                  cache.id,
+                  channel,
+                );
+              }
+            }
+          } else if (message.mode === "receive") {
+            const transferer =
+              transferManager.createTransfer(
+                cache,
+                TransferMode.Send,
+              );
 
-          for (
-            let i = 0;
-            i < appOptions.channelsNumber;
-            i++
-          ) {
-            const channel = await session.createChannel(
-              `${transferer.id}-${i}`,
-              "transfer",
-            );
+            messageStores.addTransfer(transferer);
+            transferer.addEventListener("ready", () => {
+              transferer.sendFile();
+            });
+            await transferer.initialize();
 
-            if (!channel) continue;
+            for (
+              let i = 0;
+              i < appOptions.channelsNumber;
+              i++
+            ) {
+              const channel = await session.createChannel(
+                `${transferer.id}-${i}`,
+                "transfer",
+              );
 
-            transferManager.addChannel(
-              storeMessage.fid,
-              channel,
-            );
-          }
+              if (!channel) continue;
 
-          await transferer.initialize();
-          if (message.mode === "receive") {
-            await transferer.sendFile();
+              transferManager.addChannel(
+                storeMessage.fid,
+                channel,
+              );
+            }
           }
         }
       } else if (message.type === "storage") {
@@ -780,6 +799,7 @@ export const WebRTCProvider: Component<
   const requestFile = async (
     target: ClientID,
     info: ChunkMetaData,
+    resume: boolean = false,
   ) => {
     const session = sessionService.sessions[target];
     if (!session) {
@@ -817,15 +837,19 @@ export const WebRTCProvider: Component<
       return;
     }
 
-    const index = messageStores.messages.findIndex(
+    let index = messageStores.messages.findIndex(
       (msg) => msg.type === "file" && msg.fid === info.id,
     );
 
+    let id;
+    if (resume && index !== -1) {
+      id = messageStores.messages[index].id;
+    } else {
+      id = v4();
+    }
+
     const message = {
-      id:
-        index === -1
-          ? v4()
-          : messageStores.messages[index].id,
+      id,
       type: "request-file",
       fid: info.id,
       client: session.clientId,
@@ -837,6 +861,7 @@ export const WebRTCProvider: Component<
       lastModified: info.lastModified,
       chunkSize: info.chunkSize ?? appOptions.chunkSize,
       createdAt: Date.now(),
+      resume,
     } satisfies RequestFileMessage;
 
     messageStores.setSendMessage(message);

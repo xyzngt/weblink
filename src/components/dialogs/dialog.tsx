@@ -49,5 +49,5 @@ interface DialogProps<T>
 export const createDialog = <T extends any>(
   options: DialogProps<T>,
 ) => {
-  return createModal({ ...options, component: BaseDialog });
+  return createModal<T>({ ...options, component: BaseDialog });
 };
