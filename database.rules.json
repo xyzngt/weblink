@@ -6,10 +6,8 @@
         ".write": "auth != null",
         "clients": {
           "$clientKey": {
-            ".write": "auth != null",
-            ".validate": "newData.hasChildren(['name', 'createdAt']) && 
-                          newData.child('name').isString() && 
-                          newData.child('createdAt').isNumber()"
+            ".read": "auth != null",
+            ".write": "auth != null"
           }
         },
         "signals": {

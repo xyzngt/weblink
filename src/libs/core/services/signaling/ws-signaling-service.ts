@@ -23,7 +23,6 @@ export class WebSocketSignalingService
   private eventEmitter: MultiEventEmitter<SignalingServiceEventMap> =
     new MultiEventEmitter();
   private socket: WebSocket;
-  private _sessionId: SessionID;
   private _clientId: string;
   private _targetClientId: string;
   private password: string | null = null;
@@ -35,7 +34,6 @@ export class WebSocketSignalingService
     password: string | null = null,
   ) {
     this.socket = socket;
-    this._sessionId = uuidv4();
     this._clientId = clientId;
     this._targetClientId = targetClientId;
     this.password = password;
@@ -103,10 +101,6 @@ export class WebSocketSignalingService
     }
   }
 
-  get sessionId(): SessionID {
-    return this._sessionId;
-  }
-
   get clientId(): string {
     return this._clientId;
   }
@@ -149,9 +143,6 @@ export class WebSocketSignalingService
     if (signal.type !== "message") return;
 
     const message = signal.data as ClientSignal;
-    // Ignore signals sent by this instance
-    if (message.sessionId === this._sessionId) return;
-
     // Check if the signal is intended for this client
     if (
       message.targetClientId &&

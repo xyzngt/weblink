@@ -57,10 +57,6 @@ export class PeerSession {
     return this.sender.targetClientId;
   }
 
-  get sessionId() {
-    return this.sender.sessionId;
-  }
-
   addEventListener<K extends keyof PeerSessionEventMap>(
     eventName: K,
     handler: EventHandler<PeerSessionEventMap[K]>,
@@ -98,17 +94,11 @@ export class PeerSession {
       if (
         this.peerConnection.connectionState === "connected"
       ) {
-        console.warn(
-          `peer connection for session ${this.sessionId} has already been created`,
-        );
         return;
       }
 
       this.disconnect();
     }
-    console.log(
-      `create peer connection for session ${this.sessionId}`,
-    );
 
     const pc = new RTCPeerConnection(
       await getConfiguration(),
@@ -143,9 +133,6 @@ export class PeerSession {
       "icecandidate",
       async (ev: RTCPeerConnectionIceEvent) => {
         if (ev.candidate) {
-          // console.log(
-          //   `client ${this.clientId} onIcecandidate`,
-          // );
           this.sender.sendSignal({
             type: "candidate",
             data: JSON.stringify({
@@ -201,7 +188,7 @@ export class PeerSession {
               this.channels.splice(index, 1);
             }
 
-            if (ev.channel.label === "message") {
+            if (ev.channel.protocol === "message") {
               this.messageChannel = null;
             }
           },
@@ -209,7 +196,7 @@ export class PeerSession {
           { once: true },
         );
 
-        if (ev.channel.label === "message") {
+        if (ev.channel.protocol === "message") {
           ev.channel.addEventListener(
             "message",
             (ev) => {
@@ -326,14 +313,11 @@ export class PeerSession {
       "signal",
       async (ev) => {
         const pc = this.peerConnection;
-        if (!pc) {
-          console.warn(
-            `peer connection for session ${this.sessionId} is not created`,
-          );
-          return;
-        }
+        if (!pc) return;
+
         console.log(
-          `client received signal with type ${ev.detail.type}`,
+          `client received signal ${ev.detail.type}`,
+          ev.detail,
         );
 
         try {
@@ -423,7 +407,7 @@ export class PeerSession {
           this.channels.splice(index, 1);
         }
 
-        if (channel.label === "message") {
+        if (channel.protocol === "message") {
           this.messageChannel = null;
           this.dispatchEvent(
             "messageChannelChange",
@@ -435,7 +419,7 @@ export class PeerSession {
       { once: true },
     );
 
-    if (channel.label === "message") {
+    if (channel.protocol === "message") {
       channel.addEventListener(
         "message",
         (ev) => {
@@ -504,7 +488,7 @@ export class PeerSession {
         });
     } else {
       console.warn(
-        `session ${this.sessionId} already making offer`,
+        `session ${this.clientId} already making offer`,
       );
     }
   }
@@ -573,7 +557,7 @@ export class PeerSession {
             });
         } else {
           console.warn(
-            `session ${this.sessionId} already making offer`,
+            `session ${this.clientId} already making offer`,
           );
         }
       });
@@ -585,7 +569,7 @@ export class PeerSession {
   async connect() {
     if (this.polite) {
       console.log(
-        `session ${this.sessionId} is polite, skip connect`,
+        `session ${this.clientId} is polite, skip connect`,
       );
       return;
     }
@@ -597,7 +581,7 @@ export class PeerSession {
 
     if (pc.connectionState === "connected") {
       console.warn(
-        `session ${this.sessionId} already connected`,
+        `session ${this.clientId} already connected`,
       );
       return;
     }
@@ -710,7 +694,7 @@ export class PeerSession {
           });
       } else {
         console.warn(
-          `session ${this.sessionId} already making offer`,
+          `session ${this.clientId} already making offer`,
         );
       }
     });

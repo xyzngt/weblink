@@ -20,7 +20,6 @@ import {
   Unsubscribe,
   SignalingServiceEventMap,
 } from "../type";
-import { SessionID } from "../../type";
 import {
   decryptData,
   encryptData,
@@ -31,7 +30,6 @@ export class FirebaseSignalingService
   implements SignalingService
 {
   private signalsRef;
-  private _sessionId: string;
   private db = getDatabase(app);
   private _clientId: string;
   private _targetClientId: string;
@@ -50,7 +48,6 @@ export class FirebaseSignalingService
     targetClientId: string,
     password: string | null,
   ) {
-    this._sessionId = v4();
     this._targetClientId = targetClientId;
     this._clientId = clientId;
     this.signalsRef = ref(
@@ -58,10 +55,6 @@ export class FirebaseSignalingService
       `rooms/${roomId}/signals`,
     );
     this.password = password;
-  }
-
-  get sessionId(): SessionID {
-    return this._sessionId;
   }
 
   get clientId(): string {
@@ -130,7 +123,6 @@ export class FirebaseSignalingService
     const singnalRef = await push(this.signalsRef, {
       type: type,
       data: sendData,
-      senderId: this._sessionId,
       clientId: this._clientId,
       targetClientId: this._targetClientId,
     });
@@ -141,21 +133,19 @@ export class FirebaseSignalingService
     callback: (signal: ClientSignal) => void,
   ) {
     return onChildAdded(
-      query(
-        this.signalsRef,
-        orderByChild("clientId"),
-        equalTo(this._targetClientId),
-      ),
+      this.signalsRef,
       async (snapshot) => {
         const message = snapshot.val() as ClientSignal;
         if (!message) return;
-        if (message.sessionId === this._sessionId) return;
+        if (message.clientId === this._clientId) return;
+        if (message.clientId !== this._targetClientId)
+          return;
         if (
           message.targetClientId &&
           message.targetClientId !== this._clientId
         )
           return;
-
+        remove(snapshot.ref);
         if (this.password) {
           message.data = await decryptData(
             this.password,
@@ -173,16 +163,17 @@ export class FirebaseSignalingService
 
     snapshot.forEach((childSnapshot) => {
       const data = childSnapshot.val() as ClientSignal;
-      if (
-        data &&
-        (data.sessionId === this._sessionId ||
-          data.targetClientId === this._clientId)
-      )
+      if (data && data.targetClientId === this._clientId)
         remove(childSnapshot.ref);
     });
   }
 
   async destroy() {
     await this.clearSignals();
+    Object.values(this.listeners).forEach((listeners) => {
+      listeners.forEach((listener) => {
+        listener.unsubscribe();
+      });
+    });
   }
 }

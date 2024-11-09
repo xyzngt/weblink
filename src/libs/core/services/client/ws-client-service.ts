@@ -270,23 +270,28 @@ export class WebSocketClientService
     }
   }
 
-  getSender(
+  createSender(
     targetClientId: string,
-  ): WebSocketSignalingService {
+  ): WebSocketSignalingService | null {
     let service =
       this.signalingServices.get(targetClientId);
-    if (!service) {
-      if (!this.socket) {
-        throw Error("WebSocket not init yet");
-      }
-      service = new WebSocketSignalingService(
-        this.socket,
-        this.client.clientId,
-        targetClientId,
-        this.password,
+    if (service) {
+      console.warn(
+        `sender to remote client: ${targetClientId} already exists`,
       );
-      this.signalingServices.set(targetClientId, service);
+      return null;
     }
+
+    if (!this.socket) {
+      throw Error("WebSocket not init yet");
+    }
+    service = new WebSocketSignalingService(
+      this.socket,
+      this.client.clientId,
+      targetClientId,
+      this.password,
+    );
+    this.signalingServices.set(targetClientId, service);
     return service;
   }
   removeSender(targetClientId: string) {

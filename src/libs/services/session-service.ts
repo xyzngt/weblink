@@ -154,7 +154,7 @@ class SessionService {
       this.service.info.createdAt < client.createdAt;
 
     const session = new PeerSession(
-      this.service?.getSender(client.clientId),
+      this.service?.createSender(client.clientId),
       {
         polite,
       },

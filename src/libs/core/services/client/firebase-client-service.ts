@@ -202,10 +202,17 @@ export class FirebaseClientService
     await update(this.clientRef, this.client);
   }
 
-  getSender(targetClientId: string): SignalingService {
+  createSender(
+    targetClientId: string,
+  ): SignalingService | null {
     const service =
       this.singlingServices.get(targetClientId);
-    if (service) return service;
+    if (service) {
+      console.warn(
+        `sender to remote client: ${targetClientId} already exists`,
+      );
+      return null;
+    }
     const newService = new FirebaseSignalingService(
       this.roomId,
       this.client.clientId,
