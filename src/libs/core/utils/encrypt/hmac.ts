@@ -10,7 +10,7 @@ export async function generateHMAC(
   const messageData = encoder.encode(message);
 
   if (isCryptoSubtleAvailable()) {
-    // 使用 Web Crypto API
+    // Use Web Crypto API
     const cryptoKey = await window.crypto.subtle.importKey(
       "raw",
       keyData,
@@ -25,7 +25,7 @@ export async function generateHMAC(
     );
     return arrayBufferToBase64(signature);
   } else {
-    // 使用 crypto-js 作为替代
+    // Replace with crypto-js as an alternative
     const CryptoJS = await getCryptoJS();
     const keyWordArray = CryptoJS.enc.Utf8.parse(key);
     const messageWordArray =

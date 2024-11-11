@@ -141,7 +141,7 @@
   },
   "cache": {
     "title": "文件缓存",
-    "usage": "{{value}} 已用, {{max}} 总共, {{remaining}} 剩余",
+    "usage": "已用 {{value}}, 总共 {{max}}, 剩余 {{remaining}}",
     "search_input": "搜索缓存文件..."
   },
   "404": {

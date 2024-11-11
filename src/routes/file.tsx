@@ -102,7 +102,7 @@ import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 
 const columnHelper = createColumnHelper<FileMetaData>();
 
-const StorageStatus = () => {
+const StorageStatus = (props: { class?: string }) => {
   if (!navigator.storage) {
     return <></>;
   }
@@ -121,6 +121,7 @@ const StorageStatus = () => {
     <Show when={storage()}>
       {(storage) => (
         <Progress
+          class={props.class}
           value={storage().usage}
           maxValue={storage().quota}
           getValueLabel={({ value, max }) =>
@@ -555,11 +556,11 @@ export default function File() {
       />
       <div
         class="container z-[10] flex min-h-[calc(100%-3rem)] flex-col gap-4
-          bg-background/80 py-4"
+          bg-background/80 px-0 py-4"
       >
-        <h2 class="h2">{t("cache.title")}</h2>
-        <StorageStatus />
-        <div class="sticky top-12 z-10 flex gap-2 py-2 backdrop-blur">
+        <h2 class="h2 px-2">{t("cache.title")}</h2>
+        <StorageStatus class="px-2" />
+        <div class="sticky top-12 z-10 flex gap-2 p-2 backdrop-blur">
           <Show
             when={Object.keys(rowSelection()).length !== 0}
           >

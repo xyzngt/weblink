@@ -158,7 +158,7 @@ export default function Settings() {
       <AboutDialogComponent />
       <ResetOptionsDialogComponent />
       <div class="container bg-background/80 backdrop-blur">
-        <div class="grid gap-4 py-4">
+        <div class="columns-1 py-4 lg:columns-2 space-y-4 [column-gap:2rem] [column-rule:1px_solid_hsl(var(--border))] [&>*]:break-inside-avoid-column">
           <h3 id="appearance" class="h3">
             {t("setting.appearance.title")}
           </h3>
@@ -322,6 +322,7 @@ export default function Settings() {
           <h3 id="connection" class="h3">
             {t("setting.connection.title")}
           </h3>
+
           <div class="flex flex-col gap-2">
             <Switch
               disabled={clientProfile.firstTime}
@@ -376,7 +377,7 @@ export default function Settings() {
               )}
             </p>
           </label>
-          <label class="flex flex-col gap-2">
+          <label class="flex flex-col gap-2 ">
             <Label>
               {t("setting.connection.turn_servers.title")}
             </Label>
@@ -1014,7 +1015,7 @@ export default function Settings() {
             </CollapsibleContent>
           </Collapsible>
           <Separator />
-          <div class="place-self-end">
+          <div class="flex flex-col gap-2">
             <Button
               variant="destructive"
               onClick={async () => {
@@ -1034,8 +1035,7 @@ export default function Settings() {
               <IconDelete class="size-4" />
               {t("setting.about.reset_options")}
             </Button>
-          </div>
-          <div class="place-self-end">
+
             <Button onClick={() => open()} class="gap-2">
               <IconInfo class="size-4" />
               {t("setting.about.title")}
