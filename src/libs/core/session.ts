@@ -460,7 +460,7 @@ export class PeerSession {
       return;
     }
 
-    this.messageChannel?.send(JSON.stringify(message));
+    this.messageChannel.send(JSON.stringify(message));
   }
 
   async renegotiate() {

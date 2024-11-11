@@ -5,7 +5,7 @@ import {
 import {
   comparePasswordHash,
   hashPassword,
-} from "../../utils/encrypt";
+} from "@/libs/core/utils/encrypt/e2e";
 import { WebSocketSignalingService } from "../signaling/ws-signaling-service";
 import {
   ClientServiceEventMap,
@@ -122,17 +122,17 @@ export class WebSocketClientService
 
     wsUrl.searchParams.append("room", this.roomId);
     if (this.password) {
-      try {
-        const hash = await hashPassword(this.password);
+      const hash = await hashPassword(this.password).catch(
+        (error) => {
+          this.password = null;
+          toast.error(
+            `failed to hash password: ${error.message}`,
+          );
+          return null;
+        },
+      );
+      if (hash) {
         wsUrl.searchParams.append("pwd", hash);
-      } catch (error) {
-        console.error(error);
-        if (error instanceof Error) {
-          toast.error(error.message);
-        } else {
-          toast.error("failed to hash password");
-        }
-        this.password = null;
       }
     }
     const socket = new WebSocket(wsUrl);

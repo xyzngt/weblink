@@ -4,7 +4,7 @@ import { faker } from "@faker-js/faker";
 import { Client } from "./type";
 import { v4 } from "uuid";
 import { SignalingService } from "./services/type";
-import { generateHMAC } from "./utils/hmac";
+import { generateHMAC } from "./utils/encrypt/hmac";
 import { appOptions, TurnServerOptions } from "@/options";
 
 export interface ClientProfile extends Client {

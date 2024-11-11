@@ -27,7 +27,7 @@ import { getAuth, signInAnonymously } from "firebase/auth";
 import {
   comparePasswordHash,
   hashPassword,
-} from "../../utils/encrypt";
+} from "../../utils/encrypt/e2e";
 import {
   EventHandler,
   MultiEventEmitter,
@@ -114,19 +114,20 @@ export class FirebaseClientService
 
     const roomSnapshot = await get(this.roomRef);
     const roomData = roomSnapshot.val();
-    let passwordHash = null;
+    let passwordHash: string | null = null;
     if (this.password) {
-      try {
-        passwordHash = await hashPassword(this.password);
-      } catch (error) {
+      passwordHash = await hashPassword(
+        this.password,
+      ).catch((error) => {
         console.error(error);
-        if (error instanceof Error) {
-          toast.error(error.message);
-        }
+        toast.error(
+          `failed to hash password: ${error.message}`,
+        );
         this.password = null;
-      }
+        return null;
+      });
     }
-    if (!roomData && this.password) {
+    if (!roomData && passwordHash) {
       await update(this.roomRef, { passwordHash });
       await onDisconnect(this.roomRef).update({
         passwordHash: null,
@@ -134,7 +135,7 @@ export class FirebaseClientService
     }
 
     return {
-      passwordHash: passwordHash,
+      passwordHash,
     };
   }
 

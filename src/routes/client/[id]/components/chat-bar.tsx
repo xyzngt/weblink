@@ -41,7 +41,7 @@ export const ChatBar: Component<
     "client",
     "class",
   ]);
-  const { send } = useWebRTC();
+  const { sendText, sendFile } = useWebRTC();
   const [text, setText] = createSignal("");
 
   const { open: openPreview, Component: PreviewDialog } =
@@ -50,13 +50,8 @@ export const ChatBar: Component<
   const onSend = async () => {
     if (text().trim().length === 0) return;
     try {
-      if (
-        await send(text(), {
-          target: props.client.clientId,
-        })
-      ) {
-        setText("");
-      }
+      await sendText(text(), props.client.clientId);
+      setText("");
     } catch (error) {
       console.error(error);
       if (error instanceof Error) {
@@ -77,9 +72,7 @@ export const ChatBar: Component<
       if (file.webkitRelativePath) {
         return;
       }
-      send(file, {
-        target: local.client.clientId,
-      });
+      sendFile(file, local.client.clientId);
     }
   };
 
@@ -116,7 +109,9 @@ export const ChatBar: Component<
               }
             }
           }}
-          placeholder={t("client.message_editor.placeholder")}
+          placeholder={t(
+            "client.message_editor.placeholder",
+          )}
           value={text()}
           onInput={(ev) => setText(ev.currentTarget.value)}
           onPaste={async (ev) => {
@@ -144,9 +139,7 @@ export const ChatBar: Component<
                 props.client.name,
               );
               if (result) {
-                send(file, {
-                  target: local.client.clientId,
-                });
+                sendFile(file, local.client.clientId);
               }
             }
           }}
@@ -180,9 +173,7 @@ export const ChatBar: Component<
               const file = await handleSelectFolder(
                 ev.currentTarget.files,
               );
-              send(file, {
-                target: local.client.clientId,
-              });
+              sendFile(file, local.client.clientId);
             }}
           />
         </Button>

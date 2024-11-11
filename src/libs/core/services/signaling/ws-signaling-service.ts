@@ -6,12 +6,10 @@ import {
   SignalingService,
   SignalingServiceEventMap,
 } from "../type";
-
-import { SessionID } from "../../type";
 import {
   encryptData,
   decryptData,
-} from "../../utils/encrypt";
+} from "@/libs/core/utils/encrypt/e2e";
 import {
   EventHandler,
   MultiEventEmitter,

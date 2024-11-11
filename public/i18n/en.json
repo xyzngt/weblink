@@ -211,7 +211,7 @@
       "avatar_url": "Avatar URL",
       "password": {
         "title": "Room Password",
-        "description": "Optional, the password of the room, please set a password to secure your room"
+        "description": "Optional, the password of the room, used to encrypt the signaling messages sent between clients, you can click the button to generate a strong password"
       },
       "auto_join": "Auto Join Next Time"
     },

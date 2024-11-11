@@ -32,6 +32,7 @@ import { t } from "@/i18n";
 import { sessionService } from "@/libs/services/session-service";
 import { appOptions } from "@/options";
 import { getInitials } from "@/libs/utils/name";
+import { generateStrongPassword } from "@/libs/core/utils/encrypt/strong-password";
 
 export const createRoomDialog = () => {
   const { open, close, submit, Component } = createDialog({
@@ -141,19 +142,32 @@ export const createRoomDialog = () => {
             <span>
               {t("common.join_form.password.title")}
             </span>
-            <Input
-              placeholder={t(
-                "common.join_form.password.placeholder",
-              )}
-              value={clientProfile.password ?? ""}
-              onInput={(ev) =>
-                setClientProfile(
-                  "password",
-                  optional(ev.currentTarget.value),
-                )
-              }
-              class="col-span-2 md:col-span-3"
-            />
+            <div class="flex gap-1">
+              <Input
+                placeholder={t(
+                  "common.join_form.password.placeholder",
+                )}
+                value={clientProfile.password ?? ""}
+                onInput={(ev) =>
+                  setClientProfile(
+                    "password",
+                    optional(ev.currentTarget.value),
+                  )
+                }
+                class="col-span-2 md:col-span-3"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={async () => {
+                  const password =
+                    await generateStrongPassword();
+                  setClientProfile("password", password);
+                }}
+              >
+                <IconCasino class="size-6" />
+              </Button>
+            </div>
             <p class="muted">
               {t("common.join_form.password.description")}
             </p>

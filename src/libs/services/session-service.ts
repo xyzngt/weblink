@@ -153,12 +153,20 @@ class SessionService {
     const polite =
       this.service.info.createdAt < client.createdAt;
 
-    const session = new PeerSession(
-      this.service?.createSender(client.clientId),
-      {
-        polite,
-      },
+    if (!this.service) {
+      throw new Error(
+        `can not add client, client service not found`,
+      );
+    }
+    const sender = this.service.createSender(
+      client.clientId,
     );
+    if (!sender) {
+      throw new Error(
+        `can not add client, can not create sender`,
+      );
+    }
+    const session = new PeerSession(sender, { polite });
 
     this.setClientInfo(client.clientId, {
       ...client,
@@ -232,11 +240,13 @@ class SessionService {
     session.addEventListener(
       "messageChannelChange",
       (ev) => {
-        this.setClientInfo(
-          client.clientId,
-          "messageChannel",
-          ev.detail === "ready",
-        );
+        if (this.clientInfo[client.clientId]) {
+          this.setClientInfo(
+            client.clientId,
+            "messageChannel",
+            ev.detail === "ready",
+          );
+        }
       },
     );
 

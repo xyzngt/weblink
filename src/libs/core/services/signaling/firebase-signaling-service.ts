@@ -23,7 +23,7 @@ import {
 import {
   decryptData,
   encryptData,
-} from "@/libs/core/utils/encrypt";
+} from "@/libs/core/utils/encrypt/e2e";
 import { EventHandler } from "@/libs/utils/event-emitter";
 
 export class FirebaseSignalingService

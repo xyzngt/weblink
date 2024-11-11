@@ -256,7 +256,7 @@ export default function ClientPage(
   props: RouteSectionProps,
 ) {
   const navigate = useNavigate();
-  const { send, roomStatus } = useWebRTC();
+  const { sendText, sendFile } = useWebRTC();
   const client = createMemo<Client | null>(
     () =>
       messageStores.clients.find(
@@ -454,9 +454,7 @@ export default function ClientPage(
                   );
 
                   files.forEach((file) => {
-                    send(file, {
-                      target: client().clientId,
-                    });
+                    sendFile(file, client().clientId);
                   });
                 }
               }}

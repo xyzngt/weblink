@@ -2,19 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.1] - 2024-11-07
+## [0.6.2] - 2024-11-11
 
 ### New Features
 
 - Add file sync feature, now you can get the files cached by the peer 添加文件同步功能，现在可以获取对方缓存的文件
 
+- Add strong password generation function 添加强密码生成功能
+
 ### Improvements
 
 - Improve the file search function 优化文件搜索功能
 
+- Using crypto-js for encryption in non-secure contexts 在非安全上下文中使用 crypto-js 进行加密
+
 ### Bug Fixes
 
 - Fix the bug that the file chunk cannot be received when resuming 修复了续传时文件区块接收的问题
+
+- Fix the bug that messageChannel is undefined 修复了 messageChannel 未定义的问题
 
 ## [0.5.0] - 2024-11-04
 

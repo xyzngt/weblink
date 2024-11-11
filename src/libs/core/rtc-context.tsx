@@ -93,10 +93,14 @@ export interface WebRTCContextProps {
     info: ChunkMetaData,
     resume?: boolean,
   ): Promise<void>;
-  send: (
-    text: string | File,
-    options: SendOptions,
-  ) => Promise<boolean>;
+  sendText: (
+    text: string,
+    target: ClientID | ClientID[],
+  ) => Promise<void>;
+  sendFile: (
+    file: File,
+    target: ClientID | ClientID[],
+  ) => Promise<void>;
   shareFile: (fileId: FileID, target: ClientID) => void;
   roomStatus: RoomStatus;
   remoteStreams: Record<string, MediaStream>;
@@ -675,83 +679,81 @@ export const WebRTCProvider: Component<
     updateRemoteStreams(props.localStream);
   });
 
+  const getTargetSessions = (
+    target: ClientID | ClientID[],
+  ) => {
+    const sessions = target
+      ? Array.isArray(target)
+        ? target.map((t) => sessionService.sessions[t])
+        : [sessionService.sessions[target]]
+      : Object.values(sessionService.sessions);
+    return sessions.filter((s) => s);
+  };
+
   const sendText = async (
     text: string,
-    session: PeerSession,
+    target: ClientID | ClientID[],
   ) => {
-    const message = {
-      id: v4(),
-      type: "send-text",
-      client: session.clientId,
-      target: session.targetClientId,
-      data: text,
-      createdAt: Date.now(),
-    } as SendTextMessage;
-    session.sendMessage(message);
-    messageStores.setSendMessage(message);
-    console.log(`send text message`, message);
+    const sessions = getTargetSessions(target);
+    if (sessions.length === 0) return;
+
+    for (const session of sessions) {
+      const message = {
+        id: v4(),
+        type: "send-text",
+        client: session.clientId,
+        target: session.targetClientId,
+        data: text,
+        createdAt: Date.now(),
+      } as SendTextMessage;
+      session.sendMessage(message);
+      messageStores.setSendMessage(message);
+      console.log(`send text message`, message);
+    }
   };
 
   const sendFile = async (
     file: File,
-    session: PeerSession,
+    target: ClientID | ClientID[],
   ) => {
-    const fid = v4();
-    const target = session.targetClientId;
-    const client = session.clientId;
-    const message = {
-      id: v4(),
-      type: "send-file",
-      client: client,
-      target: target,
-      fid: fid,
-      fileName: file.name,
-      fileSize: file.size,
-      mimeType: file.type,
-      lastModified: file.lastModified,
-      createdAt: Date.now(),
-      chunkSize: appOptions.chunkSize,
-    } satisfies SendFileMessage;
-
-    const cache = await cacheManager.createCache(
-      message.fid,
-    );
-    cache.setInfo({
-      fileName: message.fileName,
-      fileSize: message.fileSize,
-      mimetype: message.mimeType,
-      lastModified: message.lastModified,
-      chunkSize: message.chunkSize,
-      createdAt: message.createdAt,
-      file: file,
-    });
-
-    console.log(`send file message`, message);
-    messageStores.setSendMessage(message);
-    session.sendMessage(message);
-  };
-
-  const send = async (
-    data: string | File,
-    { target }: SendOptions,
-  ): Promise<boolean> => {
-    const sessions = target
-      ? sessionService.sessions[target]
-        ? [sessionService.sessions[target]]
-        : []
-      : Object.values(sessionService.sessions);
-
-    if (sessions.length === 0) return false;
+    const sessions = getTargetSessions(target);
+    if (sessions.length === 0) return;
 
     for (const session of sessions) {
-      if (typeof data === "string") {
-        sendText(data, session);
-      } else if (data instanceof File) {
-        sendFile(data, session);
-      }
-    }
+      const fid = v4();
+      const target = session.targetClientId;
+      const client = session.clientId;
+      const message = {
+        id: v4(),
+        type: "send-file",
+        client: client,
+        target: target,
+        fid: fid,
+        fileName: file.name,
+        fileSize: file.size,
+        mimeType: file.type,
+        lastModified: file.lastModified,
+        createdAt: Date.now(),
+        chunkSize: appOptions.chunkSize,
+      } satisfies SendFileMessage;
 
-    return true;
+      const cache = await cacheManager.createCache(
+        message.fid,
+      );
+      cache.setInfo({
+        fileName: message.fileName,
+        fileSize: message.fileSize,
+        mimetype: message.mimeType,
+        lastModified: message.lastModified,
+        chunkSize: message.chunkSize,
+        createdAt: message.createdAt,
+        file: file,
+      });
+
+      console.log(`send file message`, message);
+      messageStores.setSendMessage(message);
+      session.sendMessage(message);
+    }
   };
 
   const shareFile = async (
@@ -874,7 +876,8 @@ export const WebRTCProvider: Component<
         joinRoom,
         leaveRoom,
         shareFile,
-        send,
+        sendText,
+        sendFile,
         requestFile,
         roomStatus,
         remoteStreams: remoteStreams,

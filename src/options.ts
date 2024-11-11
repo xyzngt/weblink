@@ -45,6 +45,7 @@ export type AppOption = {
   bufferedAmountLowThreshold: number;
   compressionLevel: CompressionLevel;
   blockSize: number;
+  maxFileSize: number;
 
   // Connection
   servers: ConnectionOptions;
@@ -71,7 +72,7 @@ export const getDefaultAppOptions = () => {
     ordered: false,
     enableClipboard: navigator.clipboard !== undefined,
     automaticCacheDeletion: false,
-    bufferedAmountLowThreshold: 512 * 1024,
+    bufferedAmountLowThreshold: 64 * 1024,
     maxMomeryCacheSlices: 12,
     videoMaxBitrate: 128 * 1024 * 1024,
     audioMaxBitrate: 512 * 1024,
@@ -88,6 +89,7 @@ export const getDefaultAppOptions = () => {
     backgroundImageOpacity: 0.5,
     automaticDownload: false,
     websocketUrl: import.meta.env.VITE_WEBSOCKET_URL,
+    maxFileSize: 1024 * 1024 * 1024, // 1GB
   } satisfies AppOption;
 };
 

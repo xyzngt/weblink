@@ -28,7 +28,11 @@ import {
   Checkbox,
   CheckboxControl,
 } from "@/components/ui/checkbox";
-import { IconForward, IconInsertDriveFile, IconShare } from "./icons";
+import {
+  IconForward,
+  IconInsertDriveFile,
+  IconShare,
+} from "./icons";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import { toast } from "solid-sonner";
 import { FileMetaData } from "@/libs/cache";
@@ -99,7 +103,7 @@ export const createForwardDialog = () => {
     setShareData(shares);
     setOpen(true);
   };
-  const { send, shareFile } = useWebRTC();
+  const { sendText, sendFile, shareFile } = useWebRTC();
   const forwardCache = (
     fileData: FileMetaData | FileMetaData[],
   ) => {
@@ -132,7 +136,9 @@ export const createForwardDialog = () => {
     Component: () => (
       <CommandDialog open={open()} onOpenChange={setOpen}>
         <CommandInput
-          placeholder={t("common.forward_dialog.placeholder")}
+          placeholder={t(
+            "common.forward_dialog.placeholder",
+          )}
         />
 
         <CommandList>
@@ -217,13 +223,12 @@ export const createForwardDialog = () => {
                 for (const item of data ?? []) {
                   try {
                     if (item.type === "text") {
-                      send(item.data as string, {
-                        target: clientId,
-                      });
+                      sendText(
+                        item.data as string,
+                        clientId,
+                      );
                     } else if (item.type === "file") {
-                      send(item.data as File, {
-                        target: clientId,
-                      });
+                      sendFile(item.data as File, clientId);
                     } else if (item.type === "cache") {
                       shareFile(
                         (item.data as FileMetaData).id,

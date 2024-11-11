@@ -218,7 +218,7 @@
       "avatar_url": "头像 URL",
       "password": {
         "title": "房间密码",
-        "description": "房间的密码，可以为空，请设置密码以保护您的房间"
+        "description": "可选，房间的密码，用于加密客户端之间的信令消息，你可以点击按钮生成一个强密码"
       },
       "auto_join": "下次自动加入"
     },
@@ -253,7 +253,7 @@
         "not_started": "未开始",
         "stopped": "已停止",
         "transferring": "传输中",
-        "done": "完成"
+        "done": "已完成"
       },
       "filter": {
         "clear_filters": "清空过滤器",
