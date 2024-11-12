@@ -53,7 +53,6 @@ import {
   DropdownMenuGroup,
   DropdownMenuGroupLabel,
   DropdownMenuItem,
-  DropdownMenuItemLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -374,11 +373,7 @@ export default function ClientPage(
     <div class="flex h-full w-full flex-col">
       <Show when={client()}>
         {(client) => (
-          <div
-            class={cn(
-              "flex flex-1 flex-col [&>*]:p-1 md:[&>*]:p-2",
-            )}
-          >
+          <div class={cn("flex flex-1 flex-col [&>*]:p-1")}>
             <FloatingButton
               onClick={async () => {
                 toBottom?.(0, false);

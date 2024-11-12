@@ -111,5 +111,14 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
     __APP_LICENSE__: JSON.stringify(packageJson.license),
+    __APP_AUTHOR_NAME__: JSON.stringify(
+      packageJson.author.name,
+    ),
+    __APP_AUTHOR_EMAIL__: JSON.stringify(
+      packageJson.author.email,
+    ),
+    __APP_AUTHOR_URL__: JSON.stringify(
+      packageJson.author.url,
+    ),
   },
 });

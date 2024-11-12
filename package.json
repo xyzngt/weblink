@@ -1,8 +1,13 @@
 {
   "name": "weblink",
   "type": "module",
-  "version": "0.6.3",
+  "version": "0.6.4",
   "license": "MIT",
+  "author": {
+    "name": "99percentpeople",
+    "email": "myzzzyearz@outlook.com",
+    "url": "https://github.com/99percentpeople"
+  },
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
@@ -47,7 +52,6 @@
     "solid-sonner": "^0.2.8",
     "tailwind-merge": "^2.5.2",
     "uuid": "^10.0.0",
-    "weblink": "link:",
     "workbox-cacheable-response": "^7.1.0",
     "workbox-core": "^7.3.0",
     "workbox-expiration": "^7.1.0",

@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 
 - Add sender resume file feature 添加发送端恢复传输功能
 
+- Improve the UI of sending message 优化消息的 UI
+
 ### Bug Fixes
 
 - Fix the bug that the file chunk cannot be received when resuming 修复了续传时文件区块接收的问题

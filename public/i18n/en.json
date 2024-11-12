@@ -166,6 +166,7 @@
     },
     "message_editor": {
       "placeholder": "Ctrl + Enter or Shift + Enter to send the message",
+      "mobile_placeholder": "Send message",
       "paste_tip": "Clipboard paste enabled"
     },
     "message_error": "Error occurred",
@@ -324,13 +325,13 @@
       "title": "About Weblink",
       "description1": "Weblink is a WebRTC-based P2P chat and file transfer tool. It helps you quickly and securely transfer files.",
       "description2": "It provides progress display, resume, folder transfer, clipboard transfer, file cache, video calls, and other features.",
-      "description3": "This project is a pure Web application, no installation is required. If you encounter any instability, please try to refresh the page.",
-      "disclaimer": "Disclaimer: This application is for learning and research purposes only. The server does not store any user data, and users should bear the risks of using it at their own risk, and the developers are not responsible for any data loss or privacy breaches.",
+      "description3": "This project is a pure Web application, no installation is required. If you encounter any instability, please try to refresh the page. Information will not be lost.",
+      "disclaimer": "Disclaimer: This application uses P2P technology, all data is stored in the user's client (browser), the server does not store any user data, only responsible for forwarding signaling. Users should bear the risks of using it at their own risk, and the developers are not responsible for any data loss or privacy breaches.",
       "star_repo": "If you like this project, please give me a ⭐ on GitHub!",
       "version": "Version",
       "author": "Author",
       "license": "License",
-      "github": "Click to open"
+      "github": "GitHub Repository"
     },
     "timeago": {
       "just_now": "Just Now"

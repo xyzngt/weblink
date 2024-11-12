@@ -29,9 +29,9 @@ const createAboutDialog = () => {
                 <a
                   class="text-blue-500 hover:text-blue-600 hover:underline"
                   target="_blank"
-                  href="https://github.com/99percentpeople"
+                  href={__APP_AUTHOR_URL__}
                 >
-                  99percentpeople
+                  {__APP_AUTHOR_NAME__}
                 </a>
               </p>
               <p>{t("common.about_dialog.license")}</p>

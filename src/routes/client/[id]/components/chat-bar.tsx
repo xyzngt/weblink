@@ -8,15 +8,12 @@ import {
   splitProps,
 } from "solid-js";
 
-import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Client } from "@/libs/core/type";
 import { textareaAutoResize } from "@/libs/hooks/input-resize";
 import { cn } from "@/libs/cn";
 
-import "photoswipe/style.css";
-import { zip } from "fflate";
 import {
   IconAttachFile,
   IconFolder,
@@ -50,7 +47,7 @@ export const ChatBar: Component<
   const onSend = async () => {
     if (text().trim().length === 0) return;
     try {
-      await sendText(text(), props.client.clientId);
+      await sendText(text().trim(), props.client.clientId);
       setText("");
     } catch (error) {
       console.error(error);
@@ -88,64 +85,127 @@ export const ChatBar: Component<
       <PreviewDialog />
       <form
         id="send"
+        class="flex flex-col gap-1"
         onSubmit={async (ev) => {
           ev.preventDefault();
           onSend();
         }}
       >
-        <Textarea
-          ref={(ref) => {
-            createEffect(() => {
-              textareaAutoResize(ref, text);
-            });
-          }}
-          rows="1"
-          class="max-h-48 resize-none"
-          onKeyDown={async (e) => {
-            if (e.key === "Enter") {
-              if (e.ctrlKey || e.shiftKey) {
-                e.preventDefault();
-                await onSend();
-              }
-            }
-          }}
-          placeholder={t(
-            "client.message_editor.placeholder",
-          )}
-          value={text()}
-          onInput={(ev) => setText(ev.currentTarget.value)}
-          onPaste={async (ev) => {
-            if (
-              navigator.clipboard &&
-              appOptions.enableClipboard
-            ) {
-              if (!isMobile()) {
-                ev.stopPropagation();
-              } else {
-                setTimeout(() => {
-                  setText("");
-                }, 0);
-              }
-            }
-            const clipboardData = ev.clipboardData;
-            const items = clipboardData?.items;
-            if (!items) return;
-
-            const files = await handleDropItems(items);
-
-            for (const file of files) {
-              const { result } = await openPreview(
-                file,
-                props.client.name,
-              );
-              if (result) {
+        <div class="flex gap-1">
+          <Button as="label" variant="ghost" size="icon">
+            <IconFolder class="size-6" />
+            <Input
+              // @ts-expect-error
+              webkitdirectory
+              mozdirectory
+              directory
+              class="hidden"
+              type="file"
+              onChange={async (ev) => {
+                if (!ev.currentTarget.files) return;
+                const file = await handleSelectFolder(
+                  ev.currentTarget.files,
+                );
                 sendFile(file, local.client.clientId);
+              }}
+            />
+          </Button>
+          <Button as="label" variant="ghost" size="icon">
+            <IconAttachFile class="size-6" />
+            <Input
+              multiple
+              class="hidden"
+              type="file"
+              onChange={(ev) => {
+                ev.currentTarget.files &&
+                  handleSendFiles(ev.currentTarget.files);
+              }}
+            />
+          </Button>
+        </div>
+        <label
+          class={cn(
+            `relative rounded-md border border-input bg-transparent pl-3
+            text-sm shadow-sm placeholder:text-muted-foreground
+            focus-within:outline-none focus-within:ring-1
+            focus-within:ring-ring disabled:cursor-not-allowed
+            disabled:opacity-50`,
+            "flex items-center",
+          )}
+        >
+          <textarea
+            class="my-1 max-h-36 flex-1 resize-none overflow-y-auto
+              bg-transparent outline-none scrollbar-none"
+            ref={(ref) => {
+              createEffect(() => {
+                textareaAutoResize(ref, text);
+              });
+            }}
+            rows="1"
+            onKeyDown={async (e) => {
+              if (e.key === "Enter") {
+                if (e.ctrlKey || e.shiftKey) {
+                  e.preventDefault();
+                  await onSend();
+                }
               }
+            }}
+            placeholder={
+              isMobile()
+                ? t(
+                    "client.message_editor.mobile_placeholder",
+                  )
+                : t("client.message_editor.placeholder")
             }
-          }}
-        />
+            value={text()}
+            onInput={(ev) =>
+              setText(ev.currentTarget.value)
+            }
+            onPaste={async (ev) => {
+              if (
+                navigator.clipboard &&
+                appOptions.enableClipboard
+              ) {
+                if (!isMobile()) {
+                  ev.stopPropagation();
+                } else {
+                  setTimeout(() => {
+                    setText("");
+                  }, 0);
+                }
+              }
+              const clipboardData = ev.clipboardData;
+              const items = clipboardData?.items;
+              if (!items) return;
+
+              const files = await handleDropItems(items);
+
+              for (const file of files) {
+                const { result } = await openPreview(
+                  file,
+                  props.client.name,
+                );
+                if (result) {
+                  sendFile(file, local.client.clientId);
+                }
+              }
+            }}
+          />
+
+          <Button
+            form="send"
+            type="submit"
+            variant="ghost"
+            size="icon"
+            class="self-end"
+            disabled={text().trim().length === 0}
+          >
+            <IconSend class="size-6" />
+          </Button>
+        </label>
       </form>
       <div class="flex gap-1">
+        <div class="ml-auto"></div>
         <Show
           when={
             isMobile() &&
@@ -157,47 +217,6 @@ export const ChatBar: Component<
             {t("client.message_editor.paste_tip")}
           </p>
         </Show>
-        <div class="ml-auto"></div>
-
-        <Button as="label" variant="ghost" size="icon">
-          <IconFolder class="size-6" />
-          <Input
-            // @ts-expect-error
-            webkitdirectory
-            mozdirectory
-            directory
-            class="hidden"
-            type="file"
-            onChange={async (ev) => {
-              if (!ev.currentTarget.files) return;
-              const file = await handleSelectFolder(
-                ev.currentTarget.files,
-              );
-              sendFile(file, local.client.clientId);
-            }}
-          />
-        </Button>
-        <Button as="label" variant="ghost" size="icon">
-          <IconAttachFile class="size-6" />
-          <Input
-            multiple
-            class="hidden"
-            type="file"
-            onChange={(ev) => {
-              ev.currentTarget.files &&
-                handleSendFiles(ev.currentTarget.files);
-            }}
-          />
-        </Button>
-
-        <Button
-          form="send"
-          type="submit"
-          variant="ghost"
-          size="icon"
-        >
-          <IconSend class="size-6" />
-        </Button>
       </div>
     </div>
   );

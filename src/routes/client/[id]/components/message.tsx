@@ -1,3 +1,4 @@
+import "photoswipe/style.css";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import {
   Component,
@@ -26,7 +27,6 @@ import createTransferSpeed from "@/libs/hooks/transfer-speed";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
 import { ContextMenuItem } from "@/components/ui/context-menu";
 import { convertImageToPNG } from "@/libs/utils/conver-to-png";
-import "photoswipe/style.css";
 import {
   FileTransferMessage,
   messageStores,

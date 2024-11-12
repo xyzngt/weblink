@@ -166,6 +166,7 @@
     },
     "message_editor": {
       "placeholder": "Ctrl + Enter 或 Shift + Enter 发送消息",
+      "mobile_placeholder": "发送消息",
       "paste_tip": "剪贴板粘贴已启用"
     },
     "sync": {
@@ -321,15 +322,14 @@
     "about_dialog": {
       "title": "关于 Weblink",
       "description1": "Weblink 是一款基于 WebRTC 的P2P聊天和文件传输工具，它可以帮助你快速、安全地传输文件。",
-      "description2": "提供进度显示、断点续传、文件夹传输、剪贴板传输、文件缓存、视频通话等多种功能。",
-      "description3": "此项目是纯Web应用，无需安装。如果遇到不稳定的情况，请尝试刷新页面。",
-
-      "disclaimer": "免责声明：本项目仅供学习和研究使用。服务器不存储任何用户数据，用户应自行承担使用风险，开发者不对任何数据丢失或隐私泄露负责。",
+      "description2": "提供文件同步、进度显示、断点续传、文件夹传输、剪贴板传输、文件缓存、视频通话等多种功能。",
+      "description3": "此项目是纯Web应用，无需安装。功能较多实现比较复杂，如果遇到不稳定的情况，请尝试刷新页面，信息不会丢失。",
+      "disclaimer": "免责声明：此应用使用P2P技术，所有数据储存在用户客户端（浏览器）中，服务器不存储任何用户数据，只负责转发信令。用户应自行承担使用风险，开发者不对任何数据丢失或隐私泄露负责。",
       "star_repo": "如果您喜欢这个项目，欢迎在 GitHub 上给我一个 ⭐！",
       "version": "版本",
       "author": "作者",
       "license": "许可证",
-      "github": "点击打开"
+      "github": "GitHub 仓库"
     },
     "notification": {
       "copy_success": "复制成功",

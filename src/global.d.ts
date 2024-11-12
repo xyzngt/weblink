@@ -22,7 +22,9 @@ interface ImportMeta {
 
 declare const __APP_VERSION__: string;
 declare const __APP_LICENSE__: string;
-
+declare const __APP_AUTHOR_NAME__: string;
+declare const __APP_AUTHOR_EMAIL__: string;
+declare const __APP_AUTHOR_URL__: string;
 
 declare module "virtual:pwa-register/solid" {
   import type { Accessor, Setter } from "solid-js";

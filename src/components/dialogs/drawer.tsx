@@ -1,41 +1,20 @@
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
   DrawerHeader,
   DrawerTitle,
-  DrawerTrigger,
 } from "@/components/ui/drawer";
-import { Component, createSignal } from "solid-js";
+import { Component } from "solid-js";
 import {
   BaseModalProps,
   createModal,
   ModalOptions,
 } from "./base";
 import { cn } from "@/libs/cn";
-import { Button } from "../ui/button";
 
 const BaseDrawer: Component<BaseModalProps> = (props) => {
-  const [isSubmitting, setIsSubmitting] =
-    createSignal<boolean>(false);
-  // const handleConfirm = async () => {
-  //   if (props.onConfirm) {
-  //     setIsSubmitting(true);
-  //     let result: any = null;
-  //     try {
-  //       result = await props.onConfirm();
-  //       props.onClose(result);
-  //     } catch (err) {
-  //     } finally {
-  //       setIsSubmitting(false);
-  //     }
-  //   } else {
-  //     props.onCancel();
-  //   }
-  // };
-
   return (
     <Drawer
       open={props.isOpen}
@@ -69,5 +48,8 @@ interface DrawerProps<T>
 export const createDrawer = <T extends any>(
   options: DrawerProps<T>,
 ) => {
-  return createModal<T>({ ...options, component: BaseDrawer });
+  return createModal<T>({
+    ...options,
+    component: BaseDrawer,
+  });
 };
