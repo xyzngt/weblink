@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.6.2] - 2024-11-11
+## [0.6.3] - 2024-11-12
 
 ### New Features
 
@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 - Improve the file search function 优化文件搜索功能
 
 - Using crypto-js for encryption in non-secure contexts 在非安全上下文中使用 crypto-js 进行加密
+
+- Add sender resume file feature 添加发送端恢复传输功能
 
 ### Bug Fixes
 

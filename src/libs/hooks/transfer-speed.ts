@@ -7,23 +7,28 @@ import {
 } from "solid-js";
 
 type TransferSpeedOptions = {
-  sampleInterval?: number; // 采样间隔
-  windowSize?: number; // 滑动窗口大小
+  sampleInterval?: number;
+  windowSize?: number;
 };
 
-// 根据收到的字节数计算平均传输速度
+/**
+ * Calculate the average transfer speed based on the received bytes
+ * @param transferredSize - The size of the transferred bytes
+ * @param options - The options for the transfer speed
+ * @returns The average transfer speed
+ */
 const createTransferSpeed = (
   transferredSize: Accessor<number>,
   options: TransferSpeedOptions = {},
 ) => {
-  const { sampleInterval = 500, windowSize = 10 } = options; // 设置默认值
+  const { sampleInterval = 200, windowSize = 20 } = options;
   const [prevTransferred, setPrevTransferred] =
-    createSignal<number>(transferredSize()); // 上一次的传输大小
+    createSignal<number>(transferredSize());
   const [prevTimestamp, setPrevTimestamp] =
     createSignal<number>(performance.now());
   const [speedSamples, setSpeedSamples] = createSignal<
     number[]
-  >([]); // 速度样本窗口
+  >([]);
   let interval: number;
   const averageSpeed = createMemo<number | null>(() => {
     if (speedSamples().length > 0) {
@@ -36,17 +41,16 @@ const createTransferSpeed = (
     } else {
       return null;
     }
-  }); // 平滑后的平均速度
+  });
 
   const setSample = () => {
-    const now = performance.now(); // 获取当前高精度时间戳
-    const timeElapsed = (now - prevTimestamp()) / 1000; // 计算时间差（秒）
+    const now = performance.now();
+    const timeElapsed = (now - prevTimestamp()) / 1000;
     const transferredInLastInterval =
       transferredSize() - prevTransferred();
     if (timeElapsed > 0 && transferredInLastInterval >= 0) {
       const currentSpeed =
-        transferredInLastInterval / timeElapsed; // 当前传输速度（字节/秒）
-      // 更新速度样本数组，并保持最多为 windowSize 个样本
+        transferredInLastInterval / timeElapsed;
       setSpeedSamples((prevSamples) => {
         const newSamples = [...prevSamples, currentSpeed];
         return newSamples.length > windowSize

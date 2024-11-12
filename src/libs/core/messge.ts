@@ -94,6 +94,11 @@ export type RequestFileMessage = BaseExchangeMessage & {
   resume: boolean;
 };
 
+export type ResumeFileMessage = BaseExchangeMessage & {
+  type: "resume-file";
+  fid: FileID;
+};
+
 export type SendFileMessage = BaseExchangeMessage & {
   type: "send-file";
   fid: FileID;
@@ -133,7 +138,8 @@ export type SessionMessage =
   | SendClipboardMessage
   | ErrorMessage
   | StorageMessage
-  | RequestStorageMessage;
+  | RequestStorageMessage
+  | ResumeFileMessage;
 
 class MessageStores {
   readonly messages: StoreMessage[];
@@ -511,7 +517,6 @@ class MessageStores {
         );
       }
     } else if (sessionMsg.type === "error") {
-      console.warn(`clearTimeout`, sessionMsg.id);
       this.clearTimeout(sessionMsg.id);
       this.setMessages(
         index,

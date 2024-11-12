@@ -29,8 +29,10 @@ import {
 import {
   CheckMessage,
   ErrorMessage,
+  FileTransferMessage,
   messageStores,
   RequestFileMessage,
+  ResumeFileMessage,
   SendClipboardMessage,
   SendFileMessage,
   SendTextMessage,
@@ -102,6 +104,7 @@ export interface WebRTCContextProps {
     target: ClientID | ClientID[],
   ) => Promise<void>;
   shareFile: (fileId: FileID, target: ClientID) => void;
+  resumeFile: (fileId: FileID, target: ClientID) => void;
   roomStatus: RoomStatus;
   remoteStreams: Record<string, MediaStream>;
 }
@@ -379,6 +382,18 @@ export const WebRTCProvider: Component<
             }
           }
         }
+      } else if (message.type === "resume-file") {
+        const cache = cacheManager.getCache(message.fid);
+        if (!cache) {
+          throw new Error(`cache ${message.fid} not found`);
+        }
+        const info = await cache.getInfo();
+        if (!info) {
+          throw new Error(
+            `cache ${message.fid} info not found`,
+          );
+        }
+        requestFile(message.client, info, true);
       } else if (message.type === "storage") {
         sessionService.setStorage(message);
       } else if (message.type === "request-storage") {
@@ -870,6 +885,38 @@ export const WebRTCProvider: Component<
     session.sendMessage(message);
   };
 
+  const resumeFile = async (
+    fileId: FileID,
+    target: ClientID,
+  ) => {
+    const session = sessionService.sessions[target];
+    if (!session) return;
+    const cache = cacheManager.getCache(fileId);
+    if (!cache) return;
+    const info = await cache.getInfo();
+    if (!info) return;
+    if (!info.file) return;
+
+    const transferMessage = messageStores.messages.find(
+      (msg) => msg.type === "file" && msg.fid === fileId,
+    ) as FileTransferMessage | undefined;
+    if (!transferMessage) return;
+    if (transferMessage.transferStatus === "complete")
+      return;
+
+    const message = {
+      id: transferMessage.id,
+      type: "resume-file",
+      fid: fileId,
+      client: session.clientId,
+      target: session.targetClientId,
+      createdAt: Date.now(),
+    } satisfies ResumeFileMessage;
+
+    messageStores.setSendMessage(message);
+    session.sendMessage(message);
+  };
+
   return (
     <WebRTCContext.Provider
       value={{
@@ -879,6 +926,7 @@ export const WebRTCProvider: Component<
         sendText,
         sendFile,
         requestFile,
+        resumeFile,
         roomStatus,
         remoteStreams: remoteStreams,
       }}

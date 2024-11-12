@@ -49,6 +49,7 @@ import {
   IconFileUpload,
   IconInsertDriveFile,
   IconRestore,
+  IconResume,
   IconSchedule,
 } from "@/components/icons";
 import { sessionService } from "@/libs/services/session-service";
@@ -77,7 +78,7 @@ export interface FileMessageCardProps {
 const FileMessageCard: Component<FileMessageCardProps> = (
   props,
 ) => {
-  const { requestFile } = useWebRTC();
+  const { requestFile, resumeFile } = useWebRTC();
 
   const transferer = createMemo<FileTransferer | null>(
     () =>
@@ -87,9 +88,18 @@ const FileMessageCard: Component<FileMessageCardProps> = (
         : null,
   );
 
-  const clientInfo = createMemo(
-    () => sessionService.clientInfo[props.message.client],
-  );
+  const isSelf = createMemo(() => {
+    return props.message.client === clientProfile.clientId;
+  });
+
+  const targetClientInfo = createMemo(() => {
+    if (isSelf()) {
+      return sessionService.clientInfo[
+        props.message.target
+      ];
+    }
+    return sessionService.clientInfo[props.message.client];
+  });
 
   const cacheData = createMemo<FileMetaData | undefined>(
     () =>
@@ -127,10 +137,10 @@ const FileMessageCard: Component<FileMessageCardProps> = (
           />
         }
       >
-        {(info) => (
+        {(cache) => (
           <>
             <Show
-              when={info().file}
+              when={cache().file}
               fallback={
                 <div class="flex items-center gap-1">
                   <div>
@@ -157,7 +167,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                       </Match>
                     </Switch>
                   </div>
-                  <p>{info().fileName}</p>
+                  <p>{cache().fileName}</p>
                 </div>
               }
             >
@@ -172,12 +182,12 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                           <IconInsertDriveFile class="size-8" />
                         </div>
 
-                        <p>{info().fileName}</p>
+                        <p>{cache().fileName}</p>
                       </div>
                     }
                   >
                     <Match
-                      when={info().mimetype?.startsWith(
+                      when={cache().mimetype?.startsWith(
                         "image/",
                       )}
                     >
@@ -195,7 +205,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                           class="flex max-h-48 rounded-sm bg-muted hover:cursor-pointer
                             lg:max-h-72 xl:max-h-96"
                           src={url}
-                          alt={info().fileName}
+                          alt={cache().fileName}
                           onload={(ev) => {
                             const parent =
                               ev.currentTarget
@@ -205,7 +215,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                             parent.dataset.pswpHeight =
                               ev.currentTarget.naturalHeight.toString();
                             parent.dataset.download =
-                              info().fileName;
+                              cache().fileName;
 
                             props.onLoad?.();
                           }}
@@ -213,7 +223,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                       </a>
                     </Match>
                     <Match
-                      when={info().mimetype?.startsWith(
+                      when={cache().mimetype?.startsWith(
                         "video/",
                       )}
                     >
@@ -229,7 +239,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                       />
                     </Match>
                     <Match
-                      when={info().mimetype?.startsWith(
+                      when={cache().mimetype?.startsWith(
                         "audio/",
                       )}
                     >
@@ -249,7 +259,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
               }}
             </Show>
 
-            <Switch fallback={<></>}>
+            <Switch>
               <Match
                 when={
                   props.message.transferStatus ===
@@ -305,7 +315,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
             </Switch>
 
             <div class="flex items-center justify-end gap-1">
-              <Show when={info().file}>
+              <Show when={cache().file}>
                 {(file) => (
                   <>
                     <p class="muted mr-auto">
@@ -316,35 +326,43 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                       variant="ghost"
                       size="icon"
                       href={URL.createObjectURL(file())}
-                      download={info().fileName}
+                      download={cache().fileName}
                     >
                       <IconDownload class="size-6" />
                     </Button>
                   </>
                 )}
               </Show>
+
               <Show
                 when={
                   !transferer() &&
                   !["merging", "complete"].includes(
                     props.message.transferStatus ?? "",
                   ) &&
-                  !info().file &&
-                  clientInfo()?.onlineStatus === "online"
+                  targetClientInfo()?.onlineStatus ===
+                    "online"
                 }
               >
                 <Button
                   size="icon"
                   variant="outline"
                   onClick={() => {
-                    requestFile(
-                      props.message.client,
-                      info(),
-                      true,
-                    );
+                    if (isSelf()) {
+                      resumeFile(
+                        cache().id,
+                        props.message.target,
+                      );
+                    } else {
+                      requestFile(
+                        props.message.client,
+                        cache(),
+                        true,
+                      );
+                    }
                   }}
                 >
-                  <IconRestore class="size-6" />
+                  <IconResume class="size-6" />
                 </Button>
               </Show>
             </div>
