@@ -268,21 +268,8 @@ export default function App(props: RouteSectionProps) {
         <Style>
           {`
           :root {
-            --background-image: url(${backgroundImage()});
+            --background-image: url(${backgroundImage() ?? ""});
             --background-image-opacity: ${appOptions.backgroundImageOpacity};
-          }
-          body {
-            background-image: url(${backgroundImage()});
-          }
-          body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: hsl(var(--background) / ${appOptions.backgroundImageOpacity});
-            z-index: -1;
           }`}
         </Style>
       </MetaProvider>

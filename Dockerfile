@@ -12,10 +12,7 @@ FROM base AS build
 COPY --from=install /temp/prod/node_modules node_modules
 COPY . .
 
-ARG VITE_WEBSOCKET_URL
-
 ENV VITE_BACKEND=WEBSOCKET
-ENV VITE_WEBSOCKET_URL=${VITE_WEBSOCKET_URL}
 
 RUN pnpm build
 

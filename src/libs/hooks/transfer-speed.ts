@@ -1,5 +1,6 @@
 import {
   Accessor,
+  createEffect,
   createMemo,
   createSignal,
   onCleanup,
@@ -59,7 +60,7 @@ const createTransferSpeed = (
       });
     }
 
-    setPrevTransferred(transferredSize);
+    setPrevTransferred(transferredSize());
     setPrevTimestamp(now);
   };
 

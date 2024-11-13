@@ -5,21 +5,27 @@ import {
   JSX,
   ParentProps,
   splitProps,
+  ValidComponent,
 } from "solid-js";
+import { Dynamic } from "solid-js/web";
 
-interface DropAreaProps
-  extends ParentProps,
-    Omit<ComponentProps<"div">, "onDrop"> {
+interface DropAreaProps<T extends ValidComponent>
+  extends ParentProps {
   overlay?: (event: DragEvent | null) => JSX.Element;
   onDrop?: (event: DragEvent) => void;
+  as?: T;
+  class?: string;
 }
 
-export default function DropArea(props: DropAreaProps) {
+export default function DropArea<T extends ValidComponent>(
+  props: DropAreaProps<T>,
+) {
   const [local, other] = splitProps(props, [
     "class",
     "children",
     "overlay",
     "onDrop",
+    "as",
   ]);
 
   const [eventInfo, setEventInfo] =
@@ -47,7 +53,8 @@ export default function DropArea(props: DropAreaProps) {
   };
 
   return (
-    <div
+    <Dynamic
+      component={local.as ?? "div"}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -57,6 +64,6 @@ export default function DropArea(props: DropAreaProps) {
     >
       {local.children}
       {local.overlay?.(eventInfo())}
-    </div>
+    </Dynamic>
   );
 }

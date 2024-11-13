@@ -64,6 +64,10 @@ export type AppOption = {
   audioMaxBitrate: number;
 };
 
+export const defaultWebsocketUrl =
+  import.meta.env.VITE_WEBSOCKET_URL ??
+  window.env.VITE_WEBSOCKET_URL;
+
 export const getDefaultAppOptions = () => {
   return {
     channelsNumber: 1,
@@ -88,7 +92,7 @@ export const getDefaultAppOptions = () => {
     shareServersWithOthers: false,
     backgroundImageOpacity: 0.5,
     automaticDownload: false,
-    websocketUrl: import.meta.env.VITE_WEBSOCKET_URL,
+    websocketUrl: defaultWebsocketUrl,
     maxFileSize: 1024 * 1024 * 1024, // 1GB
   } satisfies AppOption;
 };

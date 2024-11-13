@@ -60,12 +60,15 @@ import {
   CompressionLevel,
   getDefaultAppOptions,
   backgroundImage,
+  defaultWebsocketUrl,
 } from "@/options";
 import createAboutDialog from "@/components/about-dialog";
 import { Button } from "@/components/ui/button";
 import {
+  IconClose,
   IconDelete,
   IconExpandAll,
+  IconFileUpload,
   IconInfo,
 } from "@/components/icons";
 import { Separator } from "@/components/ui/seprartor";
@@ -83,6 +86,8 @@ import {
 } from "@/components/ui/collapsible";
 import { ComponentProps } from "solid-js";
 import { checkTurnServerAvailability } from "@/libs/core/utils/turn";
+import { createElementSize } from "@solid-primitives/resize-observer";
+import DropArea from "@/components/drop-area";
 type MediaDeviceInfoType = Omit<MediaDeviceInfo, "toJSON">;
 
 export const [devices, setDevices] = makePersisted(
@@ -153,12 +158,50 @@ export default function Settings() {
     open: openResetOptionsDialog,
     Component: ResetOptionsDialogComponent,
   } = createResetOptionsDialog();
+  const [imageHole, setImageHole] =
+    createSignal<HTMLElement | null>(null);
+  const size = createElementSize(imageHole);
+
+  const radius = createMemo(() => {
+    return getComputedStyle(
+      document.querySelector(":root") as Element,
+    ).getPropertyValue("--radius");
+  });
+
   return (
     <>
       <AboutDialogComponent />
       <ResetOptionsDialogComponent />
-      <div class="container bg-background/80 backdrop-blur">
-        <div class="columns-1 py-4 lg:columns-2 space-y-4 [column-gap:2rem] [column-rule:1px_solid_hsl(var(--border))] [&>*]:break-inside-avoid-column">
+      <div class="[mask:url(#bg-image-mask)] container relative bg-background/80 backdrop-blur">
+        <svg width="0" height="0">
+          <defs>
+            <mask id="bg-image-mask">
+              <rect
+                x="0"
+                y="0"
+                width="100vw"
+                height="10000000000000000"
+                fill="white"
+              />
+              <Show when={backgroundImage()}>
+                <rect
+                  rx={radius()}
+                  ry={radius()}
+                  x={imageHole()?.offsetLeft ?? 0}
+                  y={imageHole()?.offsetTop ?? 0}
+                  width={size?.width ?? 0}
+                  height={size?.height ?? 0}
+                  fill="black"
+                />
+              </Show>
+            </mask>
+          </defs>
+        </svg>
+        <div
+          class="columns-1 space-y-4 py-4 [column-gap:2rem]
+            [column-rule:1px_solid_hsl(var(--border))] lg:columns-2
+            [&>*]:break-inside-avoid-column"
+        >
           <h3 id="appearance" class="h3">
             {t("setting.appearance.title")}
           </h3>
@@ -195,7 +238,67 @@ export default function Settings() {
               )}
             </Label>
             <div class="flex w-full flex-col items-end gap-4">
-              <label class="w-full hover:cursor-pointer">
+              <DropArea
+                ref={setImageHole}
+                as="label"
+                class="relative w-full hover:cursor-pointer"
+                overlay={(event) => {
+                  const isFile =
+                    event?.dataTransfer?.types.includes(
+                      "Files",
+                    );
+
+                  if (event) {
+                    if (!isFile) {
+                      event.dataTransfer!.dropEffect =
+                        "none";
+                    } else {
+                      event.dataTransfer!.dropEffect =
+                        "move";
+                    }
+                  }
+                  return (
+                    <div
+                      class="pointer-events-none absolute inset-0 flex items-center
+                        justify-center text-sm text-muted-foreground/50"
+                    >
+                      {event ? (
+                        isFile ? (
+                          <IconFileUpload class="size-12" />
+                        ) : (
+                          <IconClose class="size-12" />
+                        )
+                      ) : (
+                        t(
+                          "setting.appearance.background_image.click_to_select",
+                        )
+                      )}
+                    </div>
+                  );
+                }}
+                onDrop={async (ev) => {
+                  ev.preventDefault();
+                  if (!ev.dataTransfer) return;
+                  for (const file of ev.dataTransfer
+                    .files) {
+                    if (file.type.startsWith("image/")) {
+                      const id = v4();
+                      const cache =
+                        await cacheManager.createCache(id);
+                      cache.setInfo({
+                        fileName: file.name,
+                        fileSize: file.size,
+                        mimetype: file.type,
+                        lastModified: file.lastModified,
+                        chunkSize: 1024 * 1024,
+                        file: file,
+                      });
+                      setAppOptions("backgroundImage", id);
+                      break;
+                    }
+                  }
+                }}
+              >
                 <Input
                   type="file"
                   accept="image/*"
@@ -220,22 +323,13 @@ export default function Settings() {
                     }
                   }}
                 />
-                <Show
-                  when={backgroundImage()}
-                  fallback={
-                    <div
-                      class="h-24 place-content-center rounded-md bg-muted text-center
-                        text-xs text-muted-foreground md:h-32"
-                    >
-                      {t(
-                        "setting.appearance.background_image.click_to_select",
-                      )}
-                    </div>
-                  }
-                >
-                  <div class="bg-image h-24 rounded-md md:h-32" />
-                </Show>
-              </label>
+
+                <div
+                  class="opacity-1 h-24 content-center rounded-lg bg-muted
+                    text-center text-sm md:h-32"
+                />
+              </DropArea>
+
               <Button
                 variant="destructive"
                 class="text-nowrap"
@@ -377,7 +471,7 @@ export default function Settings() {
               )}
             </p>
           </label>
-          <label class="flex flex-col gap-2 ">
+          <label class="flex flex-col gap-2">
             <Label>
               {t("setting.connection.turn_servers.title")}
             </Label>
@@ -531,7 +625,7 @@ export default function Settings() {
               <Show
                 when={
                   appOptions.websocketUrl !==
-                  import.meta.env.VITE_WEBSOCKET_URL
+                  defaultWebsocketUrl
                 }
               >
                 {(_) => {
@@ -545,8 +639,7 @@ export default function Settings() {
                         onClick={() => {
                           setAppOptions(
                             "websocketUrl",
-                            import.meta.env
-                              .VITE_WEBSOCKET_URL,
+                            defaultWebsocketUrl,
                           );
                         }}
                       >
