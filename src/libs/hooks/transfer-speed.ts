@@ -22,7 +22,7 @@ const createTransferSpeed = (
   transferredSize: Accessor<number>,
   options: TransferSpeedOptions = {},
 ) => {
-  const { sampleInterval = 200, windowSize = 20 } = options;
+  const { sampleInterval = 500, windowSize = 5 } = options;
   const [prevTransferred, setPrevTransferred] =
     createSignal<number>(transferredSize());
   const [prevTimestamp, setPrevTimestamp] =

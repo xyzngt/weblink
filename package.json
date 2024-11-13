@@ -17,7 +17,6 @@
     "generate-pwa-assets": "pwa-assets-generator"
   },
   "dependencies": {
-    "@ark-ui/solid": "^3.9.0",
     "@corvu/drawer": "^0.2.2",
     "@corvu/resizable": "^0.2.3",
     "@faker-js/faker": "^9.0.3",
@@ -39,6 +38,7 @@
     "autoprefixer": "^10.4.19",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "uuid": "^10.0.0",
     "cmdk-solid": "^1.1.0",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
@@ -47,11 +47,9 @@
     "photoswipe": "^5.4.4",
     "postcss": "^8.4.38",
     "qrcode": "^1.5.4",
-    "server": "^1.0.41",
     "solid-js": "^1.9.3",
     "solid-sonner": "^0.2.8",
     "tailwind-merge": "^2.5.2",
-    "uuid": "^10.0.0",
     "workbox-cacheable-response": "^7.1.0",
     "workbox-core": "^7.3.0",
     "workbox-expiration": "^7.1.0",
