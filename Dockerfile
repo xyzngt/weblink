@@ -20,9 +20,9 @@ FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
 
 COPY docker/nginx.conf.template /etc/nginx/nginx.conf.template
-COPY docker/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 EXPOSE 80 443
 
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["entrypoint.sh"]

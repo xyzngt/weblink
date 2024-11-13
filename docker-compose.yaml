@@ -3,15 +3,14 @@ version: "3.5"
 services:
   weblink:
     build:
-      context: .        
+      context: .
     ports:
       - "8080:80"
       - "443:443"
     environment:
       - ENABLE_SSL=${ENABLE_SSL:-false}
       # Set your public websocket url here, example:
-      # wss://ws-weblink-fampuqelff.cn-shenzhen.fcapp.run
-      - VITE_WEBSOCKET_URL=${VITE_WEBSOCKET_URL}
+      - VITE_WEBSOCKET_URL=ws://192.168.8.100:8080/ws
     volumes:
       - ./docker/ssl:/etc/nginx/ssl
     depends_on:
