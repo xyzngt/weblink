@@ -899,7 +899,7 @@ export const WebRTCProvider: Component<
     if (!info) return;
     if (!info.file) return;
 
-    const transferMessage = messageStores.messages.find(
+    const transferMessage = messageStores.messages.findLast(
       (msg) => msg.type === "file" && msg.fid === fileId,
     ) as FileTransferMessage | undefined;
     if (!transferMessage) return;
