@@ -1,6 +1,5 @@
 import {
   Accessor,
-  createEffect,
   createMemo,
   createSignal,
   onCleanup,
@@ -22,7 +21,7 @@ const createTransferSpeed = (
   transferredSize: Accessor<number>,
   options: TransferSpeedOptions = {},
 ) => {
-  const { sampleInterval = 500, windowSize = 5 } = options;
+  const { sampleInterval = 250, windowSize = 10 } = options;
   const [prevTransferred, setPrevTransferred] =
     createSignal<number>(transferredSize());
   const [prevTimestamp, setPrevTimestamp] =

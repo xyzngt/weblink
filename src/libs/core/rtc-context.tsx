@@ -44,6 +44,7 @@ import { WebSocketClientService } from "./services/client/ws-client-service";
 import { appOptions } from "@/options";
 import { toast } from "solid-sonner";
 import { ChunkMetaData, FileMetaData } from "../cache";
+import { catchErrorAsync } from "../catch";
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -603,9 +604,10 @@ export const WebRTCProvider: Component<
       messageStores.setClient(targetClient);
 
       if (!session.polite) {
-        try {
-          await session.connect();
-        } catch (err) {
+        const [err] = await catchErrorAsync(
+          session.connect(),
+        );
+        if (err) {
           console.error(err);
           if (
             Object.values(sessionService.sessions)

@@ -212,13 +212,12 @@ export default function Home(props: RouteSectionProps) {
         >
           {(resizeProps) => {
             createEffect(() => {
-              if (!isMobile()) {
-                if ((size()?.[1] ?? 0) < 0.6) {
-                  resizeProps.resize(0.6);
-                }
+              if (!isMobile() && (size()?.[1] ?? 0) < 0.6) {
+                resizeProps.resize(0.6);
               }
             });
-            return props.children;
+
+            return <>{props.children}</>;
           }}
         </ResizablePanel>
       </Show>

@@ -12,11 +12,8 @@ import {
   TransferMode,
 } from "./file-transferer";
 import { ChunkCache } from "../cache/chunk-cache";
-import { v4 } from "uuid";
-import { PeerSession } from "./session";
 import { Accessor, createSignal, Setter } from "solid-js";
-import { clientProfile } from "./store";
-import { ChunkMetaData, FileMetaData } from "../cache";
+import { ChunkMetaData } from "../cache";
 
 export type MessageID = string;
 

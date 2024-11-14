@@ -66,23 +66,6 @@ export async function getConfiguration() {
   } satisfies RTCConfiguration;
 }
 
-// this function is used to modify the offer
-export async function handleOffer(
-  pc: RTCPeerConnection,
-  sender: SignalingService,
-  options?: RTCOfferOptions,
-) {
-  const offer = await pc.createOffer(options);
-
-  await pc.setLocalDescription(offer);
-  await sender.sendSignal({
-    type: offer.type,
-    data: JSON.stringify({
-      sdp: offer.sdp,
-    }),
-  });
-}
-
 export const getDefaultProfile = () => {
   return {
     roomId: faker.word.noun(),

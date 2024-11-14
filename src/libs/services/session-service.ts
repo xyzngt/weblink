@@ -83,20 +83,19 @@ class SessionService {
   }
 
   setClientService(cs: ClientService) {
+    if (this.service) {
+      console.warn(
+        `client service already set, destory old service`,
+      );
+      this.destoryService();
+    }
     this.service = cs;
-    const controller = new AbortController();
-    cs.addEventListener(
-      "status-change",
-      (ev) => {
-        this.setClientServiceStatus(ev.detail);
+    cs.addEventListener("status-change", (ev) => {
+      this.setClientServiceStatus(ev.detail);
 
-        if (ev.detail === "disconnected") {
-          // this.destoryAllSession();
-          controller?.abort();
-        }
-      },
-      { signal: controller.signal },
-    );
+      if (ev.detail === "disconnected") {
+      }
+    });
   }
 
   destoryService() {

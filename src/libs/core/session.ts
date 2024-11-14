@@ -1,4 +1,4 @@
-import { getConfiguration, handleOffer } from "./store";
+import { getConfiguration } from "./store";
 import {
   ClientSignal,
   SignalingService,
@@ -10,7 +10,7 @@ import {
 import { SessionMessage } from "./messge";
 import { waitChannel } from "./utils/channel";
 import { appOptions } from "@/options";
-import { Accessor, Setter, createSignal } from "solid-js";
+import { catchErrorAsync, catchErrorSync } from "../catch";
 
 export interface PeerSessionOptions {
   polite?: boolean;
@@ -200,13 +200,11 @@ export class PeerSession {
           ev.channel.addEventListener(
             "message",
             (ev) => {
-              let message = null;
-              try {
-                message = JSON.parse(
-                  ev.data,
-                ) as SessionMessage;
-                console.log(`get message`, message);
-              } catch (err) {
+              const [error, message] = catchErrorSync(
+                () => JSON.parse(ev.data) as SessionMessage,
+              );
+              if (error) {
+                console.error(error);
                 return;
               }
               this.dispatchEvent("message", message);
@@ -320,60 +318,109 @@ export class PeerSession {
           ev.detail,
         );
 
-        try {
-          const signal = ev.detail;
-          if (this.polite && signal.type === "offer") {
-            const offerCollision =
-              this.makingOffer ||
-              pc.signalingState !== "stable";
-            this.ignoreOffer =
-              !this.polite && offerCollision;
-            if (this.ignoreOffer) {
-              console.warn(
-                "Offer ignored due to collision",
-              );
-              return;
-            }
+        let err: Error | undefined;
 
-            await pc
-              .setRemoteDescription(
-                new RTCSessionDescription({
-                  type: "offer",
-                  sdp: signal.data.sdp,
-                }),
-              )
-              .then(() => pc.setLocalDescription())
-              .then(() => {
-                if (pc.localDescription)
-                  this.sender.sendSignal({
-                    type: pc.localDescription.type,
-                    data: JSON.stringify({
-                      sdp: pc.localDescription.sdp,
-                    }),
-                  });
-              });
-          } else if (
-            !this.polite &&
-            signal.type === "answer"
-          ) {
-            await pc.setRemoteDescription(
+        const signal = ev.detail;
+        if (signal.type === "offer") {
+          if (pc.signalingState !== "stable") {
+            console.warn(
+              `offer ignored due to signalingState is ${pc.signalingState}`,
+            );
+            return;
+          }
+
+          const offerCollision =
+            this.makingOffer ||
+            pc.signalingState !== "stable";
+          this.ignoreOffer = !this.polite && offerCollision;
+          if (this.ignoreOffer) {
+            console.warn("Offer ignored due to collision");
+            return;
+          }
+
+          [err] = await catchErrorAsync(
+            pc.setRemoteDescription(
+              new RTCSessionDescription({
+                type: "offer",
+                sdp: signal.data.sdp,
+              }),
+            ),
+          );
+
+          if (err) {
+            console.error(
+              `setRemoteDescription error: `,
+              err,
+            );
+            return;
+          }
+
+          [err] = await catchErrorAsync(
+            pc.setLocalDescription(),
+          );
+
+          if (err) {
+            console.error(
+              `setLocalDescription error: `,
+              err,
+            );
+            return;
+          }
+
+          if (!pc.localDescription) {
+            return;
+          }
+
+          [err] = await catchErrorAsync(
+            this.sender.sendSignal({
+              type: pc.localDescription.type,
+              data: JSON.stringify({
+                sdp: pc.localDescription.sdp,
+              }),
+            }),
+          );
+
+          if (err) {
+            console.error(`sendSignal error: `, err);
+            return;
+          }
+        } else if (signal.type === "answer") {
+          if (pc.signalingState !== "have-local-offer") {
+            console.warn(
+              `answer ignored due to signalingState is ${pc.signalingState}`,
+            );
+            return;
+          }
+
+          [err] = await catchErrorAsync(
+            pc.setRemoteDescription(
               new RTCSessionDescription({
                 type: "answer",
                 sdp: signal.data.sdp,
               }),
+            ),
+          );
+
+          if (err) {
+            console.error(
+              `setRemoteDescription error: `,
+              err,
             );
-          } else if (signal.type === "candidate") {
-            const candidate = new RTCIceCandidate(
-              signal.data.candidate,
-            );
-            await pc
-              .addIceCandidate(candidate)
-              .catch((err) => {
-                if (!this.ignoreOffer) throw err;
-              });
+            return;
           }
-        } catch (err) {
-          console.error(err);
+        } else if (signal.type === "candidate") {
+          const candidate = new RTCIceCandidate(
+            signal.data.candidate,
+          );
+          [err] = await catchErrorAsync(
+            pc.addIceCandidate(candidate),
+          );
+
+          if (err) {
+            if (!this.ignoreOffer) {
+              console.error(`addIceCandidate error: `, err);
+            }
+          }
         }
       },
       { signal: this.controller?.signal },
@@ -423,11 +470,11 @@ export class PeerSession {
       channel.addEventListener(
         "message",
         (ev) => {
-          let message = null;
-          try {
-            message = JSON.parse(ev.data) as SessionMessage;
-            console.log(`get message`, message);
-          } catch (err) {
+          const [error, message] = catchErrorSync(
+            () => JSON.parse(ev.data) as SessionMessage,
+          );
+          if (error) {
+            console.error(error);
             return;
           }
           this.dispatchEvent("message", message);
@@ -464,6 +511,12 @@ export class PeerSession {
   }
 
   async renegotiate() {
+    if (this.polite) {
+      console.log(
+        `session ${this.clientId} is polite, skip renegotiate`,
+      );
+      return;
+    }
     if (!this.peerConnection) {
       console.warn(
         `renegotiate failed, peer connection is not created`,
@@ -479,13 +532,14 @@ export class PeerSession {
     }
     if (!this.makingOffer) {
       this.makingOffer = true;
-      await handleOffer(this.peerConnection, this.sender)
-        .catch((err) => {
-          console.error(err);
-        })
-        .finally(() => {
-          this.makingOffer = false;
-        });
+      const [err] = await catchErrorAsync(
+        handleOffer(this.peerConnection, this.sender),
+      );
+      if (err) {
+        console.error("Error during ICE restart:", err);
+        return;
+      }
+      this.makingOffer = false;
     } else {
       console.warn(
         `session ${this.clientId} already making offer`,
@@ -544,17 +598,14 @@ export class PeerSession {
 
         if (!this.makingOffer) {
           this.makingOffer = true;
-
-          await handleOffer(pc, this.sender)
-            .catch((err) => {
-              console.error(
-                "Error during ICE restart:",
-                err,
-              );
-            })
-            .finally(() => {
-              this.makingOffer = false;
-            });
+          const [err] = await catchErrorAsync(
+            handleOffer(pc, this.sender),
+          );
+          if (err) {
+            console.error("Error during ICE restart:", err);
+            return;
+          }
+          this.makingOffer = false;
         } else {
           console.warn(
             `session ${this.clientId} already making offer`,
@@ -575,7 +626,9 @@ export class PeerSession {
     }
     const pc = this.peerConnection;
     if (!pc) {
-      console.warn(`listen failed`);
+      console.warn(
+        `connect failed, peer connection is null`,
+      );
       return;
     }
 
@@ -681,17 +734,17 @@ export class PeerSession {
 
       if (!this.makingOffer) {
         this.makingOffer = true;
-        await handleOffer(pc, this.sender)
-          .catch((err) => {
-            reject(
-              new Error(
-                `Failed to create and send offer: ${err.message}`,
-              ),
-            );
-          })
-          .finally(() => {
-            this.makingOffer = false;
-          });
+        const [err] = await catchErrorAsync(
+          handleOffer(pc, this.sender),
+        );
+        if (err) {
+          reject(
+            new Error(
+              `Failed to create and send offer: ${err.message}`,
+            ),
+          );
+        }
+        this.makingOffer = false;
       } else {
         console.warn(
           `session ${this.clientId} already making offer`,
@@ -708,4 +761,21 @@ export class PeerSession {
     this.disconnect();
     this.dispatchEvent("close", undefined);
   }
+}
+
+// this function is used to modify the offer
+export async function handleOffer(
+  pc: RTCPeerConnection,
+  sender: SignalingService,
+  options?: RTCOfferOptions,
+) {
+  const offer = await pc.createOffer(options);
+
+  await pc.setLocalDescription(offer);
+  await sender.sendSignal({
+    type: offer.type,
+    data: JSON.stringify({
+      sdp: offer.sdp,
+    }),
+  });
 }

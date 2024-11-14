@@ -2,7 +2,6 @@ import {
   EventHandler,
   MultiEventEmitter,
 } from "../utils/event-emitter";
-import { formatBtyeSize } from "../utils/format-filesize";
 import { ChunkRange, getSubRanges } from "../utils/range";
 import MergeChunkWorker from "@/libs/workers/merge-chunk?worker";
 import {

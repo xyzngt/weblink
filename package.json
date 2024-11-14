@@ -1,7 +1,7 @@
 {
   "name": "weblink",
   "type": "module",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "license": "MIT",
   "author": {
     "name": "99percentpeople",
@@ -38,7 +38,6 @@
     "autoprefixer": "^10.4.19",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
-    "uuid": "^10.0.0",
     "cmdk-solid": "^1.1.0",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
@@ -50,6 +49,7 @@
     "solid-js": "^1.9.3",
     "solid-sonner": "^0.2.8",
     "tailwind-merge": "^2.5.2",
+    "uuid": "^10.0.0",
     "workbox-cacheable-response": "^7.1.0",
     "workbox-core": "^7.3.0",
     "workbox-expiration": "^7.1.0",
