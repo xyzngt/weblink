@@ -19,8 +19,7 @@ const Client: Component = (props) => {
           >
             <Logo class="size-36" />
           </div>
-        </Match>{" "}
-        *
+        </Match>
         <Match
           when={
             sessionService.clientServiceStatus() ===
@@ -34,10 +33,10 @@ const Client: Component = (props) => {
           >
             <div class="flex flex-col items-center gap-2">
               <p class="text-xl font-bold">
-                {t("chat.index.guide_title")}
+                {t("client.index.guide_title")}
               </p>
               <p class="text-sm">
-                {t("chat.index.guide_description")}
+                {t("client.index.guide_description")}
               </p>
             </div>
           </div>
