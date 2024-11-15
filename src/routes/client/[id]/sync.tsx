@@ -36,7 +36,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { t } from "@/i18n";
-import { ChunkMetaData } from "@/libs/cache";
+import {
+  ChunkCacheInfo,
+  ChunkMetaData,
+  FileMetaData,
+  getTotalChunkCount,
+} from "@/libs/cache";
 import { cn } from "@/libs/cn";
 import { messageStores } from "@/libs/core/messge";
 import { useWebRTC } from "@/libs/core/rtc-context";
@@ -83,7 +88,7 @@ type ChunkStatus =
   | "not_started"
   | "stopped"
   | "transferring"
-  | "done";
+  | "completed";
 
 const Sync = (props: RouteSectionProps) => {
   const { requestFile } = useWebRTC();
@@ -153,6 +158,40 @@ const Sync = (props: RouteSectionProps) => {
           <Badge variant="outline">
             {t(`common.file_table.status.${status()}`)}
           </Badge>
+        );
+      },
+    }),
+    columnHelper.display({
+      id: "progress",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t("common.file_table.columns.progress")}
+        />
+      ),
+      cell: ({ row }) => {
+        const cacheInfo = createMemo<
+          FileMetaData | undefined
+        >(() => cacheManager.cacheInfo[row.original.id]);
+        const status = statuses()[row.index];
+        const progress = createMemo(() => {
+          const info = cacheInfo();
+          if (!info?.chunkCount) return 0;
+          return (
+            (info?.chunkCount / getTotalChunkCount(info)) *
+            100
+          );
+        });
+
+        return (
+          <Show
+            when={status() === "transferring"}
+            fallback={<div class="min-w-12"></div>}
+          >
+            <span class="font-mono">
+              {`${progress().toFixed(2)}%`}
+            </span>
+          </Show>
         );
       },
     }),
@@ -260,7 +299,11 @@ const Sync = (props: RouteSectionProps) => {
                   {(cache) => (
                     <>
                       <Show
-                        when={cache().status() === "done"}
+                        when={
+                          cacheManager.cacheInfo[
+                            row.original.id
+                          ]?.isComplete
+                        }
                       >
                         <DropdownMenuItem
                           class="gap-2"
@@ -337,7 +380,7 @@ const Sync = (props: RouteSectionProps) => {
   } = createComfirmDeleteDialog();
 
   const [storage, setStorage] = createSignal<
-    ChunkMetaData[]
+    ChunkCacheInfo[]
   >([]);
 
   createEffect(() => {
@@ -445,10 +488,9 @@ const Sync = (props: RouteSectionProps) => {
   });
 
   const createStatus = (chunk: ChunkMetaData) => {
-    const cache = createMemo<ChunkCache | undefined>(
-      () => cacheManager.caches[chunk.id],
+    const cacheInfo = createMemo(
+      () => cacheManager.cacheInfo[chunk.id],
     );
-
     const transfer = createMemo<FileTransferer | undefined>(
       () => transferManager.transferers[chunk.id],
     );
@@ -457,19 +499,17 @@ const Sync = (props: RouteSectionProps) => {
       createSignal<ChunkStatus>("not_started");
 
     createEffect(() => {
-      const c = cache();
-      if (!c) {
+      const info = cacheInfo();
+      if (!info) {
         setStatus("not_started");
-      } else if (c.status() === "done") {
-        setStatus("done");
-      } else if (c.status() === "writing") {
-        if (transfer()) {
+      } else {
+        if (info.isComplete) {
+          setStatus("completed");
+        } else if (transfer()) {
           setStatus("transferring");
         } else {
           setStatus("stopped");
         }
-      } else {
-        setStatus("not_started");
       }
     });
 
@@ -478,7 +518,10 @@ const Sync = (props: RouteSectionProps) => {
 
   const statuses = createMemo(() => {
     table.resetColumnFilters();
-    return storage().map(createStatus);
+    const statuses = storage().map((chunk) =>
+      createStatus(chunk),
+    );
+    return statuses;
   });
 
   return (
@@ -574,8 +617,10 @@ const Sync = (props: RouteSectionProps) => {
                 value: "transferring",
               },
               {
-                label: t("common.file_table.status.done"),
-                value: "done",
+                label: t(
+                  "common.file_table.status.completed",
+                ),
+                value: "completed",
               },
             ]}
           />

@@ -4,7 +4,7 @@ import { sessionService } from "@/libs/services/session-service";
 import Logo from "../../../public/favicon.svg?component-solid";
 const Client: Component = (props) => {
   return (
-    <div class="relative h-full w-full">
+    <div class="relative h-full w-full overflow-hidden">
       <Switch>
         <Match
           when={
@@ -15,7 +15,7 @@ const Client: Component = (props) => {
           <div
             class="absolute left-1/2 top-1/2 flex -translate-x-1/2
               -translate-y-1/2 flex-col items-center gap-2 rounded-lg p-4
-              opacity-50"
+              opacity-10"
           >
             <Logo class="size-36" />
           </div>

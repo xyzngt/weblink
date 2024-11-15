@@ -69,6 +69,7 @@ import {
   IconFolder,
   IconForward,
   IconMenu,
+  IconMerge,
   IconMoreHoriz,
   IconPageInfo,
   IconPlaceItem,
@@ -87,7 +88,10 @@ import { createStore } from "solid-js/store";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { appOptions, setAppOptions } from "@/options";
 import { createForwardDialog } from "@/components/forward-dialog";
-import { FileMetaData } from "@/libs/cache";
+import {
+  FileMetaData,
+  getTotalChunkCount,
+} from "@/libs/cache";
 import { downloadFile } from "@/libs/utils/download-file";
 import DataTableColumnVisibility from "@/components/data-table/data-table-column-visibility";
 import { makePersisted } from "@solid-primitives/storage";
@@ -99,6 +103,8 @@ import {
 } from "@/libs/utils/process-file";
 import DropArea from "@/components/drop-area";
 import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { Badge } from "@/components/ui/badge";
+import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 
 const columnHelper = createColumnHelper<FileMetaData>();
 
@@ -205,6 +211,75 @@ export default function File() {
         </p>
       ),
       enableGlobalFilter: true,
+    }),
+    columnHelper.display({
+      id: "status",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t("common.file_table.columns.status")}
+        />
+      ),
+      filterFn: (row, columnId, filterValue) => {
+        const status = row.original.isComplete
+          ? "completed"
+          : "incompleted";
+        return filterValue.length
+          ? filterValue.includes(status)
+          : true;
+      },
+      cell: ({ row }) => {
+        const complete = createMemo(() => {
+          return row.original.isComplete;
+        });
+        return (
+          <p class="max-w-xs overflow-hidden text-ellipsis">
+            <Badge variant="outline">
+              {complete()
+                ? t("common.file_table.status.completed")
+                : t("common.file_table.status.incompleted")}
+            </Badge>
+          </p>
+        );
+      },
+    }),
+    columnHelper.display({
+      id: "progress",
+      header: ({ column }) => (
+        <DataTableColumnHeader
+          column={column}
+          title={t("common.file_table.columns.progress")}
+        />
+      ),
+      sortingFn: (rowA, rowB) => {
+        return (
+          (rowA.original.chunkCount ?? 0) -
+          (rowB.original.chunkCount ?? 0)
+        );
+      },
+      sortUndefined: "last",
+      cell: ({ row }) => {
+        const progress = createMemo(() => {
+          if (!row.original.chunkCount) return 0;
+          const totalChunkCount = getTotalChunkCount(
+            row.original,
+          );
+          return (
+            (row.original.chunkCount / totalChunkCount) *
+            100
+          );
+        });
+        return (
+          <Show
+            when={!row.original.isComplete}
+            fallback={<div class="min-w-12"></div>}
+          >
+            <span class="font-mono">
+              {`${progress().toFixed(2)}%`}
+            </span>
+          </Show>
+        );
+      },
     }),
     columnHelper.accessor("fileSize", {
       header: ({ column }) => (
@@ -340,6 +415,25 @@ export default function File() {
                           )}
                         </DropdownMenuItem>
                       </Show>
+                      <Show
+                        when={
+                          !row.original.isComplete &&
+                          row.original.chunkCount ===
+                            getTotalChunkCount(row.original)
+                        }
+                      >
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={() => {
+                            cacheManager.caches[
+                              row.original.id
+                            ]?.mergeFile();
+                          }}
+                        >
+                          <IconMerge class="size-4" />
+                          {t("common.action.merge")}
+                        </DropdownMenuItem>
+                      </Show>
                     </>
                   )}
                 </Show>
@@ -407,9 +501,9 @@ export default function File() {
       : [],
   );
 
-  // createEffect(() => {
-  //   console.debug("get file data", data());
-  // });
+  createEffect(() => {
+    console.debug("get file data", data());
+  });
 
   const table: SolidTable<FileMetaData> = createSolidTable({
     get data() {
@@ -669,6 +763,24 @@ export default function File() {
               }
             />
           </label>
+          <DataTableFacetedFilter
+            column={table.getColumn("status")}
+            title={t("common.file_table.columns.status")}
+            options={[
+              {
+                label: t(
+                  "common.file_table.status.completed",
+                ),
+                value: "completed",
+              },
+              {
+                label: t(
+                  "common.file_table.status.incompleted",
+                ),
+                value: "incompleted",
+              },
+            ]}
+          />
           <DataTableColumnVisibility
             table={table}
             class="ml-auto"
@@ -796,7 +908,7 @@ export default function File() {
           <div
             data-sync-scroll="file-table"
             class="sticky top-24 z-10 overflow-x-auto bg-background/50
-              backdrop-blur"
+              backdrop-blur scrollbar-thin"
           >
             <Table
               style={{

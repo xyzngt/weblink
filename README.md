@@ -2,6 +2,8 @@
 
 ## Introduction
 
+**English Introduction** | [**中文介绍**](README_CN.md)
+
 Weblink is a pure web-based file transfer and chat application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase and WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
 
 The project is deployed on Vercel and can be accessed at [https://web1ink.vercel.app](https://web1ink.vercel.app).
@@ -27,8 +29,6 @@ Weblink currently supports the following features:
 | ✅ Text Chat              | Send text messages for chatting                                                                           |
 
 More information can be found in [CHANGELOG](CHANGELOG.md).
-
-[**中文介绍**](README_CN.md)
 
 ## Usage
 

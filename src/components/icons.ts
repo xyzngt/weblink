@@ -62,6 +62,7 @@ import IconSync from "@material-symbols/svg-400/outlined/sync.svg?component-soli
 import IconChatBubble from "@material-symbols/svg-400/outlined/chat_bubble.svg?component-solid";
 import IconAdd from "@material-symbols/svg-400/outlined/add.svg?component-solid";
 import IconAddCircle from "@material-symbols/svg-400/outlined/add_circle.svg?component-solid";
+import IconMerge from "@material-symbols/svg-400/outlined/merge.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -127,4 +128,5 @@ export {
   IconChatBubble,
   IconAdd,
   IconAddCircle,
+  IconMerge,
 };

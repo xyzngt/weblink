@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.0] - 2024-11-15
+
+### New Features
+
+- Add progress display in file list 在文件列表中添加进度显示
+
 ## [0.6.5] - 2024-11-14
 
 ### New Features

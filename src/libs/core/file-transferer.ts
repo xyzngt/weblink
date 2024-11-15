@@ -405,6 +405,11 @@ export class FileTransferer {
       once: true,
     });
 
+    channel.addEventListener("error", onClose, {
+      signal: this.controller.signal,
+      once: true,
+    });
+
     channel.onmessage = (ev) =>
       this.handleReceiveMessage(ev.data);
     channel.binaryType = "arraybuffer";
@@ -489,7 +494,7 @@ export class FileTransferer {
       if (!this.receivedData) {
         return;
       }
-      const done = await this.cache.isComplete();
+      const done = await this.cache.isTransferComplete();
 
       if (!done) {
         const ranges = await this.cache.getReqRanges();

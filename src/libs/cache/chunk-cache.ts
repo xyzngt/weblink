@@ -11,7 +11,6 @@ import {
   FileMetaData,
   getTotalChunkCount,
 } from ".";
-import { Accessor, createSignal, Setter } from "solid-js";
 
 export interface ChunkCache {
   addEventListener<K extends keyof ChunkCacheEventMap>(
@@ -26,15 +25,15 @@ export interface ChunkCache {
   ): void;
 
   readonly id: string;
-  readonly status: Accessor<
-    "writing" | "merging" | "done" | "error"
-  >;
+  // readonly status: Accessor<
+  //   "writing" | "merging" | "completed" | "error"
+  // >;
   initialize(): Promise<void>;
   storeChunk(
     chunckIndex: number,
     data: ArrayBufferLike,
   ): Promise<void>;
-  setInfo(data: Omit<FileMetaData, "id">): Promise<void>;
+  setInfo(data: Omit<ChunkMetaData, "id">): Promise<void>;
   getInfo(): Promise<FileMetaData | null>;
   getChunk(chunkIndex: number): Promise<ArrayBuffer | null>;
   getChunkCount(): Promise<number>;
@@ -44,9 +43,8 @@ export interface ChunkCache {
   cleanup(): Promise<void>;
   calcCachedBytes(): Promise<number | null>;
   getCachedKeys(): Promise<number[]>;
-  isComplete(): Promise<boolean>;
-  getStorage(): Promise<ChunkMetaData | null>;
   isTransferComplete(): Promise<boolean>;
+  mergeFile(): Promise<File | null>;
 }
 
 export interface IDBChunkCacheOptions {
@@ -56,16 +54,17 @@ export interface IDBChunkCacheOptions {
 
 export class IDBChunkCache implements ChunkCache {
   private db: IDBDatabase | null = null;
-  status: Accessor<
-    "writing" | "merging" | "done" | "error"
-  >;
-  private setStatus: Setter<
-    "writing" | "merging" | "done" | "error"
-  >;
+  // status: Accessor<
+  //   "writing" | "merging" | "completed" | "error"
+  // >;
+  // private setStatus: Setter<
+  //   "writing" | "merging" | "completed" | "error"
+  // >;
+  private isMerging = false;
   private eventEmitter =
     new MultiEventEmitter<ChunkCacheEventMap>();
   public readonly id: string;
-
+  private info: FileMetaData | null = null;
   // memory cache
   private memoryCache: Array<[number, ArrayBufferLike]> =
     [];
@@ -74,11 +73,11 @@ export class IDBChunkCache implements ChunkCache {
   constructor(options: IDBChunkCacheOptions) {
     this.id = options.id;
     this.maxMomeryCacheSize = options.maxMomeryCacheSize;
-    const [status, setStatus] = createSignal<
-      "writing" | "merging" | "done" | "error"
-    >("writing");
-    this.status = status;
-    this.setStatus = setStatus;
+    // const [status, setStatus] = createSignal<
+    //   "writing" | "merging" | "completed" | "error"
+    // >("writing");
+    // this.status = status;
+    // this.setStatus = setStatus;
   }
 
   async initialize() {
@@ -91,14 +90,14 @@ export class IDBChunkCache implements ChunkCache {
     if (info) {
       this.dispatchEvent("update", info);
     }
-    await this.isEmpty();
-    const done = await this.isComplete();
 
-    if (done) {
-      if (info?.file) {
-        this.setStatus("done");
-      }
-    }
+    await this.isEmpty();
+
+    // if (done) {
+    //   if (info?.file) {
+    //     this.dispatchEvent("complete", info.file);
+    //   }
+    // }
   }
 
   addEventListener<K extends keyof ChunkCacheEventMap>(
@@ -233,7 +232,10 @@ export class IDBChunkCache implements ChunkCache {
   }
 
   async isEmpty() {
-    const info = await this.getInfo();
+    let info = this.info;
+    if (!info) {
+      info = await this.getInfo();
+    }
     const count = await this.getChunkCount();
     let empty = true;
     if (!info && count === 0) {
@@ -243,20 +245,17 @@ export class IDBChunkCache implements ChunkCache {
     return empty;
   }
 
-  async isComplete() {
-    let done = false;
-    const info = await this.getInfo();
-    if (info) {
-      done = !!info.file;
-    }
-    return done;
-  }
-
   async isTransferComplete() {
-    if (await this.isComplete()) {
+    let info = this.info;
+    if (!info) {
+      info = await this.getInfo();
+    }
+    if (!info) {
+      return false;
+    }
+    if (info.isComplete) {
       return true;
     }
-    const info = (await this.getInfo())!;
 
     const count = await this.getChunkCount();
     const total = getTotalChunkCount(info);
@@ -294,46 +293,57 @@ export class IDBChunkCache implements ChunkCache {
     return store;
   }
 
-  public async setInfo(data: FileMetaData): Promise<void> {
+  public async setInfo(data: ChunkMetaData): Promise<void> {
     const setData = {
       ...data,
       id: this.id,
     };
     const store = await this.getInfoStore("readwrite");
     const request = store.put(setData);
-    return new Promise(async (resolve, reject) => {
-      request.onsuccess = () => {
+    return new Promise((resolve, reject) => {
+      request.onsuccess = async () => {
         resolve();
-
-        this.dispatchEvent("update", setData);
-
-        if (setData.file) {
-          this.setStatus("done");
-        }
+        this.info = {
+          ...setData,
+          isComplete: await isComplete(setData),
+          chunkCount: await this.getChunkCount(),
+        };
+        this.dispatchEvent("update", this.info);
       };
       request.onerror = () => reject(request.error);
     });
-  }
-
-  public async getStorage(): Promise<ChunkMetaData | null> {
-    if (!(await this.isComplete())) {
-      return null;
-    }
-    const info = (await this.getInfo())!;
-    const { file, ...storage } = info;
-    return storage;
   }
 
   public async getInfo(): Promise<FileMetaData | null> {
     const store = await this.getInfoStore("readonly");
     const request = store.get(this.id);
-    return new Promise((resolve, reject) => {
-      request.onsuccess = () => {
-        const info = request.result ?? null;
-        resolve(info);
-      };
-      request.onerror = () => reject(request.error);
-    });
+    const info = await new Promise<ChunkMetaData | null>(
+      (resolve, reject) => {
+        request.onsuccess = async () => {
+          const info = request.result ?? null;
+          const complete = await isComplete(info);
+          const count = await this.getChunkCount();
+          this.info = {
+            ...info,
+            isComplete: complete,
+            chunkCount: count,
+          };
+          resolve(info);
+        };
+        request.onerror = () => reject(request.error);
+      },
+    );
+
+    if (!info) {
+      console.warn(`get info is null for ${this.id}`);
+      return null;
+    }
+
+    return {
+      ...info,
+      isComplete: await isComplete(info),
+      chunkCount: await this.getChunkCount(),
+    } satisfies FileMetaData;
   }
 
   // flush memory cache to db
@@ -343,6 +353,7 @@ export class IDBChunkCache implements ChunkCache {
     const store = await this.getChunkStore("readwrite");
     const transaction = store.transaction;
 
+    const memoryCount = this.memoryCache.length;
     for (
       let value = this.memoryCache.pop();
       value;
@@ -355,6 +366,13 @@ export class IDBChunkCache implements ChunkCache {
     return new Promise<void>((resolve, reject) => {
       transaction.oncomplete = () => {
         resolve();
+        if (this.info) {
+          if (!this.info.chunkCount) {
+            this.info.chunkCount = 0;
+          }
+          this.info.chunkCount += memoryCount;
+          this.dispatchEvent("update", this.info);
+        }
       };
       transaction.onerror = () => {
         reject(transaction.error);
@@ -471,10 +489,14 @@ export class IDBChunkCache implements ChunkCache {
 
   async mergeFile() {
     await this.flush();
-    if (this.status() === "merging") {
-      console.warn(`cache is ${this.status()} already`);
+
+    if (this.isMerging) {
+      console.warn(`cache is merging already`);
       return null;
     }
+
+    this.isMerging = true;
+    this.dispatchEvent("merging", undefined);
 
     const info = await this.getInfo();
 
@@ -492,25 +514,25 @@ export class IDBChunkCache implements ChunkCache {
 
       return await new Promise<File | null>(
         (resolve, reject) => {
-          this.setStatus("merging");
-          this.dispatchEvent("merging", undefined);
+          this.isMerging = true;
           worker.onmessage = (event) => {
             const { data, error } = event.data;
             if (error) {
-              this.setStatus("error");
               console.error(error);
               reject(error);
               return;
             }
-
-            console.log("merge file done", data);
+            info.file = data as File;
+            this.setInfo(info);
             resolve(data as File);
-            this.dispatchEvent("merged", data);
-            this.setStatus("done");
+
+            this.dispatchEvent("complete", data);
           };
           worker.postMessage({ fileId: this.id });
         },
-      );
+      ).finally(() => {
+        this.isMerging = false;
+      });
     }
 
     // current scope is worker
@@ -533,11 +555,12 @@ export class IDBChunkCache implements ChunkCache {
             lastModified: info.lastModified,
           });
           info.file = file;
+
           this.setInfo(info);
           store.clear();
           reslove(file);
-          this.setStatus("done");
-          this.dispatchEvent("merged", file);
+          this.dispatchEvent("complete", file);
+          this.dispatchEvent("update", info);
           console.log(
             `merge file cost ${Date.now() - time}ms`,
           );
@@ -545,6 +568,17 @@ export class IDBChunkCache implements ChunkCache {
       };
 
       request.onerror = (err) => reject(err);
+    }).finally(() => {
+      this.isMerging = false;
     });
   }
+}
+
+async function isComplete(info: FileMetaData) {
+  let done = false;
+
+  if (info) {
+    done = !!info.file;
+  }
+  return done;
 }

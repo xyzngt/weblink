@@ -9,17 +9,21 @@ export interface ChunkMetaData {
   chunkSize?: number;
   from?: ClientID;
   createdAt?: number;
+  file?: File;
 }
+
+export type ChunkCacheInfo = Omit<ChunkMetaData, "file">;
 
 export type ChunkCacheEventMap = {
   cleanup: void;
   update: FileMetaData | null;
-  merged: File;
+  complete: File;
   merging: void;
 };
 
 export interface FileMetaData extends ChunkMetaData {
-  file?: File;
+  chunkCount?: number;
+  isComplete?: boolean;
 }
 
 export const DBNAME_PREFIX: string = "file-";

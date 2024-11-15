@@ -266,7 +266,12 @@ export const WebRTCProvider: Component<
           throw new Error(`cache ${message.fid} not found`);
         }
 
-        if (!(await cache.isComplete())) {
+        const info = await cache.getInfo();
+        if (!info) {
+          throw new Error(`cache ${message.fid} info not found`);
+        }
+
+        if (!info.isComplete) {
           throw new Error(
             `cache ${message.fid} is not complete`,
           );
@@ -398,6 +403,7 @@ export const WebRTCProvider: Component<
       } else if (message.type === "storage") {
         sessionService.setStorage(message);
       } else if (message.type === "request-storage") {
+
         const replyMessage = {
           type: "storage",
           data: (await cacheManager.getStorages()) ?? [],

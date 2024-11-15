@@ -1,3 +1,6 @@
+/**
+ * catch error for async function
+ */
 export async function catchErrorAsync<T>(
   promise: Promise<T>,
 ): Promise<[undefined, T] | [Error]> {
@@ -7,6 +10,9 @@ export async function catchErrorAsync<T>(
   );
 }
 
+/**
+ * catch error for sync function
+ */
 export function catchErrorSync<T>(
   fn: () => T,
 ): [undefined, T] | [Error] {

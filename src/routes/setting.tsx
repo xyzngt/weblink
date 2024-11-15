@@ -172,7 +172,10 @@ export default function Settings() {
     <>
       <AboutDialogComponent />
       <ResetOptionsDialogComponent />
-      <div class="[mask:url(#bg-image-mask)] container relative bg-background/80 backdrop-blur">
+      <div
+        class="container relative bg-background/80 backdrop-blur
+          [mask:url(#bg-image-mask)]"
+      >
         <svg width="0" height="0">
           <defs>
             <mask id="bg-image-mask">
@@ -332,7 +335,7 @@ export default function Settings() {
 
               <Button
                 variant="destructive"
-                class="text-nowrap"
+                class="gap-1 text-nowrap"
                 disabled={!backgroundImage()}
                 onClick={() => {
                   setAppOptions(
@@ -341,7 +344,7 @@ export default function Settings() {
                   );
                 }}
               >
-                <IconDelete class="mr-2 size-4" />
+                <IconDelete class="size-4" />
                 {t("common.action.delete")}
               </Button>
             </div>
@@ -356,6 +359,7 @@ export default function Settings() {
             minValue={0}
             maxValue={1}
             step={0.01}
+            disabled={!backgroundImage()}
             defaultValue={[
               1 - appOptions.backgroundImageOpacity,
             ]}
@@ -877,9 +881,12 @@ export default function Settings() {
               </label>
 
               <Slider
-                minValue={appOptions.blockSize}
-                maxValue={1024 * 1024 * 10}
-                step={appOptions.blockSize}
+                minValue={Math.max(
+                  appOptions.blockSize,
+                  128 * 1024,
+                )}
+                maxValue={10 * 1024 * 1024}
+                step={128 * 1024}
                 defaultValue={[appOptions.chunkSize]}
                 class="gap-2"
                 getValueLabel={({ values }) =>
@@ -903,8 +910,8 @@ export default function Settings() {
               </Slider>
               <Slider
                 minValue={16 * 1024}
-                maxValue={200 * 1024}
-                step={1024}
+                maxValue={192 * 1024}
+                step={16 * 1024}
                 defaultValue={[appOptions.blockSize]}
                 class="gap-2"
                 getValueLabel={({ values }) =>
@@ -1123,13 +1130,13 @@ export default function Settings() {
                   );
                 }
               }}
-              class="gap-2"
+              class="gap-1"
             >
               <IconDelete class="size-4" />
               {t("setting.about.reset_options")}
             </Button>
 
-            <Button onClick={() => open()} class="gap-2">
+            <Button onClick={() => open()} class="gap-1">
               <IconInfo class="size-4" />
               {t("setting.about.title")}
             </Button>

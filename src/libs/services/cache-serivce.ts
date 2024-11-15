@@ -20,6 +20,7 @@ import {
 } from "solid-js";
 import { appOptions } from "@/options";
 import {
+  ChunkCacheInfo,
   ChunkMetaData,
   DBNAME_PREFIX,
   FileMetaData,
@@ -60,7 +61,6 @@ class FileCacheFactory {
     >({});
     this.cacheInfo = cacheInfo;
     this.setCacheInfo = setCacheInfo;
-    this.initialize();
   }
 
   addEventListener<K extends keyof EventMap>(
@@ -142,15 +142,19 @@ class FileCacheFactory {
       id,
       maxMomeryCacheSize: appOptions.maxMomeryCacheSlices,
     });
+
     cache.addEventListener("update", (ev) => {
-      this.setCacheInfo(id, ev.detail ?? undefined!);
+      if (ev.detail) {
+        this.setCacheInfo(id, ev.detail);
+      }
     });
+
     cache.addEventListener("cleanup", () => {
       this.setCacheInfo(id, undefined!);
       this.setCaches(id, undefined!);
     });
-    cache.addEventListener("merged", (ev) => {
-      this.setCacheInfo(id, "file", ev.detail);
+
+    cache.addEventListener("complete", (ev) => {
       if (appOptions.automaticDownload) {
         const file = ev.detail;
         const a = document.createElement("a");
@@ -160,6 +164,7 @@ class FileCacheFactory {
       }
     });
     await cache.initialize();
+
     return cache;
   }
 
@@ -167,13 +172,17 @@ class FileCacheFactory {
     this.setCaches(id, cache);
   }
 
-  async getStorages(): Promise<ChunkMetaData[] | null> {
+  async getStorages(): Promise<ChunkCacheInfo[] | null> {
     let storage = await Promise.all(
       Object.values(this.caches).map((cache) =>
-        cache.getStorage(),
+        cache.getInfo(),
       ),
     ).then(
-      (infos) => infos.filter(Boolean) as ChunkMetaData[],
+      (infos) =>
+        infos.filter(Boolean).map((info) => {
+          const { file, ...rest } = info ?? {};
+          return rest;
+        }) as ChunkCacheInfo[],
     );
     return storage;
   }
@@ -187,3 +196,5 @@ class FileCacheFactory {
 }
 
 export const cacheManager = new FileCacheFactory();
+
+cacheManager.initialize();

@@ -223,13 +223,15 @@
         "last_modified": "Last Modified",
         "status": "Status",
         "created_at": "Created At",
-        "mime_type": "MIME Type"
+        "mime_type": "MIME Type",
+        "progress": "Progress"
       },
       "status": {
         "not_started": "Not Started",
         "stopped": "Stopped",
         "transferring": "Transferring",
-        "done": "Done"
+        "completed": "Completed",
+        "incompleted": "Incompleted"
       },
       "filter": {
         "clear_filters": "Clear Filters",

@@ -606,7 +606,7 @@ class MessageStores {
     );
 
     cache.addEventListener(
-      "merged",
+      "complete",
       () => {
         setter((state) => {
           state.transferStatus = "complete";
