@@ -7,6 +7,12 @@ import {
   IconMeetingRoom,
   IconSettings,
 } from "./icons";
+import { t } from "@/i18n";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 export const linkClasses = cn(
   "text-foreground/60 hover:text-foreground/80 aria-[current]:text-foreground transition-colors font-semibold",
@@ -21,27 +27,58 @@ export default function Nav(props: ComponentProps<"nav">) {
   const [local, other] = splitProps(props, ["class"]);
   return (
     <nav class={cn("flex gap-2", local.class)} {...other}>
-      <A href="/" class={cn(linkClasses, active("/"))}>
-        <IconForum class="size-8" />
-      </A>
-      <A
-        href="/video"
-        class={cn(linkClasses, active("/video"))}
-      >
-        <IconMeetingRoom class="size-8" />
-      </A>
-      <A
-        href="/file"
-        class={cn(linkClasses, active("/file"))}
-      >
-        <IconFolder class="size-8" />
-      </A>
-      <A
-        href="/setting"
-        class={cn(linkClasses, active("/setting"))}
-      >
-        <IconSettings class="size-8" />
-      </A>
+      <Tooltip>
+        <TooltipTrigger
+          as={A}
+          href="/"
+          aria-label={t("nav.chat")}
+          class={cn(linkClasses, active("/"))}
+        >
+          <IconForum class="size-8" />
+        </TooltipTrigger>
+        <TooltipContent>
+          {t("common.nav.chat")}
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger
+          as={A}
+          href="/video"
+          aria-label={t("nav.video_conference")}
+          class={cn(linkClasses, active("/video"))}
+        >
+          <IconMeetingRoom class="size-8" />
+        </TooltipTrigger>
+        <TooltipContent>
+          {t("common.nav.video_conference")}
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger
+          as={A}
+          href="/file"
+          aria-label={t("nav.file_cache")}
+          class={cn(linkClasses, active("/file"))}
+        >
+          <IconFolder class="size-8" />
+        </TooltipTrigger>
+        <TooltipContent>
+          {t("common.nav.file_cache")}
+        </TooltipContent>
+      </Tooltip>
+      <Tooltip>
+        <TooltipTrigger
+          as={A}
+          href="/setting"
+          aria-label={t("nav.settings")}
+          class={cn(linkClasses, active("/setting"))}
+        >
+          <IconSettings class="size-8" />
+        </TooltipTrigger>
+        <TooltipContent>
+          {t("common.nav.settings")}
+        </TooltipContent>
+      </Tooltip>
     </nav>
   );
 }

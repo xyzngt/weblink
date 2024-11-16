@@ -19,22 +19,23 @@ import {
   messageStores,
   StoreMessage,
 } from "@/libs/core/messge";
-import { PortableContextMenu } from "../../components/portable-contextmenu";
+import { PortableContextMenu } from "@/components/portable-contextmenu";
 import {
   ContextMenuItem,
   ContextMenuSeparator,
-} from "../../components/ui/context-menu";
+} from "@/components/ui/context-menu";
 import {
   IconAudioFileFilled,
   IconDelete,
   IconDraftFilled,
+  IconFolderMatch,
   IconPhotoFilled,
   IconStorage,
   IconVideoFileFilled,
-} from "../../components/icons";
+} from "@/components/icons";
 
 import { sessionService } from "@/libs/services/session-service";
-import { createComfirmDeleteClientDialog } from "../../components/box/confirm-delete-dialog";
+import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { getInitials } from "@/libs/utils/name";
@@ -147,7 +148,7 @@ export const UserItem: Component<UserItemProps> = (
                 close();
               }}
             >
-              <IconStorage class="size-4" />
+              <IconFolderMatch class="size-4" />
               {t("client.sync.title")}
             </ContextMenuItem>
             <ContextMenuSeparator />

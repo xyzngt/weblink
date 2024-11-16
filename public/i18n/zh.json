@@ -155,7 +155,7 @@
       "connection_status": "连接状态",
       "delete_client": "删除客户端",
       "clipboard": "剪贴板",
-      "client_options": "客户端选项",
+      "options": "选项",
       "redirect": "连接后自动跳转"
     },
     "index": {
@@ -170,7 +170,11 @@
       "paste_tip": "剪贴板粘贴已启用"
     },
     "sync": {
-      "title": "文件同步"
+      "title": "文件同步",
+      "menu": {
+        "refresh": "刷新",
+        "chat": "聊天"
+      }
     },
     "message_error": "发生错误"
   },
@@ -206,7 +210,7 @@
     },
     "join_form": {
       "title": "编辑房间信息",
-      "description": "在这里编辑房间信息。点击提交完成编辑。",
+      "description": "在这里编辑房间信息。点击确定即可创建或加入房间。",
       "client_id": {
         "title": "客户端 ID (只读)",
         "description": "房间的客户端 ID，代表你的身份，可以在设置中更改"
@@ -339,6 +343,15 @@
       "copy_failed": "复制失败",
       "reset_options_success": "选项重置成功",
       "unknown_error": "未知错误"
+    },
+    "nav": {
+      "chat": "聊天",
+      "file_cache": "文件缓存",
+      "video_conference": "视频会议",
+      "settings": "设置",
+      "join_room": "加入房间",
+      "leave_room": "离开房间",
+      "share_link": "分享链接"
     },
     "timeago": {
       "just_now": "刚刚"

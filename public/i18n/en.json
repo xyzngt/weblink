@@ -155,7 +155,7 @@
       "connection_status": "Connection Status",
       "delete_client": "Delete Client",
       "clipboard": "Clipboard",
-      "client_options": "Client Options",
+      "options": "Options",
       "redirect": "Redirect after connection"
     },
     "index": {
@@ -171,7 +171,11 @@
     },
     "message_error": "Error occurred",
     "sync": {
-      "title": "File Sync"
+      "title": "File Sync",
+      "menu": {
+        "refresh": "Refresh",
+        "chat": "Chat"
+      }
     }
   },
   "video": {
@@ -199,7 +203,7 @@
     },
     "join_form": {
       "title": "Edit Room Info",
-      "description": "Edit the room info here. Click submit to finish editing.",
+      "description": "Edit the room info here. Click confirm to create or join the room.",
       "client_id": {
         "title": "Client ID (Read Only)",
         "description": "The client ID of the room, representing your identity, which can be changed in settings"
@@ -334,6 +338,15 @@
       "author": "Author",
       "license": "License",
       "github": "GitHub Repository"
+    },
+    "nav": {
+      "chat": "Chat",
+      "file_cache": "File Cache",
+      "video_conference": "Video Conference",
+      "settings": "Settings",
+      "join_room": "Join Room",
+      "leave_room": "Leave Room",
+      "share_link": "Share Link"
     },
     "timeago": {
       "just_now": "Just Now"

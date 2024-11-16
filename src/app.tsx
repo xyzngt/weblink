@@ -19,7 +19,6 @@ import {
   ColorModeProvider,
   ColorModeScript,
   createLocalStorageManager,
-  useColorMode,
 } from "@kobalte/core";
 import {
   clientProfile,
@@ -49,6 +48,11 @@ import { MetaProvider, Style } from "@solidjs/meta";
 import { produce } from "solid-js/store";
 import { createQRCodeDialog } from "./components/create-qrcode-dialog";
 import { createForwardDialog } from "./components/forward-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "./components/ui/tooltip";
 let wakeLock: WakeLockSentinel | null = null;
 const requestWakeLock = async () => {
   if (!navigator.wakeLock) {
@@ -245,9 +249,18 @@ const InnerApp = (props: ParentProps) => {
             "connected"
           }
         >
-          <Button onClick={openQRCodeDialog} size="icon">
-            <IconQRCode class="size-6" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              as={Button}
+              onClick={openQRCodeDialog}
+              size="icon"
+            >
+              <IconQRCode class="size-6" />
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("common.nav.share_link")}
+            </TooltipContent>
+          </Tooltip>
         </Show>
         <JoinRoomButton />
       </div>

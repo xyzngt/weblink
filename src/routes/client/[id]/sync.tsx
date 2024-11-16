@@ -83,6 +83,11 @@ import { v4 } from "uuid";
 import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { ChunkCache } from "@/libs/cache/chunk-cache";
 import { FileTransferer } from "@/libs/core/file-transferer";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type ChunkStatus =
   | "not_started"
@@ -552,26 +557,42 @@ const Sync = (props: RouteSectionProps) => {
           <h4 class={cn("h4")}>{client()?.name}</h4>
           <ConnectionBadge client={clientInfo()} />
           <div class="ml-auto"></div>
-          <Button
-            as={A}
-            href={`../chat`}
-            variant="ghost"
-            size="icon"
-          >
-            <IconChatBubble class="size-6" />
-          </Button>
-          <Button
-            disabled={!clientInfo()?.messageChannel}
-            onClick={() => {
-              sessionService.requestStorage(
-                props.params.id,
-              );
-            }}
-            variant="outline"
-            size="icon"
-          >
-            <IconSync class="size-6" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                as={A}
+                href={`../chat`}
+                variant="ghost"
+                aria-label={t("client.sync.menu.chat")}
+                size="icon"
+              >
+                <IconChatBubble class="size-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("client.sync.menu.chat")}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip disabled={!clientInfo()?.messageChannel}>
+            <TooltipTrigger>
+              <Button
+                disabled={!clientInfo()?.messageChannel}
+                aria-label={t("client.sync.menu.refresh")}
+                onClick={() => {
+                  sessionService.requestStorage(
+                    props.params.id,
+                  );
+                }}
+                variant="outline"
+                size="icon"
+              >
+                <IconSync class="size-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("client.sync.menu.refresh")}
+            </TooltipContent>
+          </Tooltip>
         </div>
         <div class="flex items-center gap-2 p-2">
           <label

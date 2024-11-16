@@ -33,6 +33,11 @@ import { sessionService } from "@/libs/services/session-service";
 import { appOptions } from "@/options";
 import { getInitials } from "@/libs/utils/name";
 import { generateStrongPassword } from "@/libs/core/utils/encrypt/strong-password";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "./ui/tooltip";
 
 export const createRoomDialog = () => {
   const { open, close, submit, Component } = createDialog({
@@ -245,38 +250,50 @@ export function JoinRoomButton(
           "disconnected"
         }
         fallback={
-          <Button
-            disabled={
-              sessionService.clientServiceStatus() !==
-              "connected"
-            }
-            onClick={() => leaveRoom()}
-            variant="destructive"
-            size="icon"
-          >
-            <IconLogout class="size-6" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              as={Button}
+              disabled={
+                sessionService.clientServiceStatus() !==
+                "connected"
+              }
+              onClick={() => leaveRoom()}
+              variant="destructive"
+              size="icon"
+            >
+              <IconLogout class="size-6" />
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("common.nav.leave_room")}
+            </TooltipContent>
+          </Tooltip>
         }
       >
-        <Button
-          size="icon"
-          disabled={
-            sessionService.clientServiceStatus() !==
-            "disconnected"
-          }
-          onClick={async () => {
-            const result = await open();
-            if (result.cancel) return;
+        <Tooltip>
+          <TooltipTrigger
+            as={Button}
+            size="icon"
+            disabled={
+              sessionService.clientServiceStatus() !==
+              "disconnected"
+            }
+            onClick={async () => {
+              const result = await open();
+              if (result.cancel) return;
 
-            await joinRoom().catch((err) => {
-              console.error(err);
-              toast.error(err.message);
-            });
-          }}
-          {...props}
-        >
-          <IconLogin class="size-6" />
-        </Button>
+              await joinRoom().catch((err) => {
+                console.error(err);
+                toast.error(err.message);
+              });
+            }}
+            {...props}
+          >
+            <IconLogin class="size-6" />
+          </TooltipTrigger>
+          <TooltipContent>
+            {t("common.nav.join_room")}
+          </TooltipContent>
+        </Tooltip>
       </Show>
     </>
   );

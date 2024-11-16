@@ -64,6 +64,7 @@ import {
   IconConnectWithoutContract,
   IconDataInfoAlert,
   IconDelete,
+  IconFolderMatch,
   IconMenu,
   IconPlaceItem,
   IconStorage,
@@ -79,6 +80,11 @@ import { createClipboardHistoryDialog } from "@/components/box/clipboard-history
 import clientInfoDialog from "./components/chat-client-info";
 import { handleDropItems } from "../../../libs/utils/process-file";
 import { ClientInfo, Client } from "@/libs/core/type";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const ChatHeader: Component<{
   info?: ClientInfo;
@@ -126,125 +132,140 @@ const ChatHeader: Component<{
           <h4 class={cn("h4")}>{props.client.name}</h4>
           <ConnectionBadge client={props.info} />
           <div class="ml-auto" />
-          <Button
-            as={A}
-            variant="ghost"
-            size="icon"
-            href={`../sync`}
-          >
-            <IconStorage class="size-6" />
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              as={Button}
-              size="icon"
-              variant="ghost"
-            >
-              <IconMenu class="size-6" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent class="min-w-48">
-              <DropdownMenuGroup>
-                <DropdownMenuGroupLabel>
-                  {t("client.menu.client_options")}
-                </DropdownMenuGroupLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  class="gap-2"
-                  onSelect={() => {
-                    openClientInfoDialog(
-                      props.client.clientId,
-                    );
-                  }}
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                as={A}
+                href="../sync"
+                variant="ghost"
+                size="icon"
+              >
+                <IconFolderMatch class="size-6" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("client.sync.title")}
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger>
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  as={Button}
+                  size="icon"
+                  variant="ghost"
                 >
-                  <IconDataInfoAlert class="size-4" />
-                  {t("client.menu.connection_status")}
-                </DropdownMenuItem>
-                <Show
-                  when={
-                    props.info?.onlineStatus === "offline"
-                  }
-                >
-                  <DropdownMenuItem
-                    class="gap-2"
-                    onSelect={async () => {
-                      const session =
-                        sessionService.sessions[
-                          props.client.clientId
-                        ];
-                      if (session) {
-                        try {
-                          await session.listen();
-                          if (!session.polite)
-                            await session.connect();
-                        } catch (error) {
-                          console.error(error);
-                          if (error instanceof Error) {
-                            toast.error(error.message);
-                          }
-                        }
-                      }
-                    }}
-                  >
-                    <IconConnectWithoutContract class="size-4" />
-                    {t("client.menu.connect")}
-                  </DropdownMenuItem>
-                </Show>
-                <Show when={props.info?.clipboard}>
-                  {(clipboard) => (
+                  <IconMenu class="size-6" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent class="min-w-48">
+                  <DropdownMenuGroup>
+                    <DropdownMenuGroupLabel>
+                      {t("client.menu.options")}
+                    </DropdownMenuGroupLabel>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                       class="gap-2"
                       onSelect={() => {
-                        openClipboardHistoryDialog(
-                          clipboard,
+                        openClientInfoDialog(
+                          props.client.clientId,
                         );
                       }}
                     >
-                      <IconAssignment class="size-4" />
-                      {t("client.menu.clipboard")}
+                      <IconDataInfoAlert class="size-4" />
+                      {t("client.menu.connection_status")}
                     </DropdownMenuItem>
-                  )}
-                </Show>
+                    <Show
+                      when={
+                        props.info?.onlineStatus ===
+                        "offline"
+                      }
+                    >
+                      <DropdownMenuItem
+                        class="gap-2"
+                        onSelect={async () => {
+                          const session =
+                            sessionService.sessions[
+                              props.client.clientId
+                            ];
+                          if (session) {
+                            try {
+                              await session.listen();
+                              if (!session.polite)
+                                await session.connect();
+                            } catch (error) {
+                              console.error(error);
+                              if (error instanceof Error) {
+                                toast.error(error.message);
+                              }
+                            }
+                          }
+                        }}
+                      >
+                        <IconConnectWithoutContract class="size-4" />
+                        {t("client.menu.connect")}
+                      </DropdownMenuItem>
+                    </Show>
+                    <Show when={props.info?.clipboard}>
+                      {(clipboard) => (
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={() => {
+                            openClipboardHistoryDialog(
+                              clipboard,
+                            );
+                          }}
+                        >
+                          <IconAssignment class="size-4" />
+                          {t("client.menu.clipboard")}
+                        </DropdownMenuItem>
+                      )}
+                    </Show>
 
-                <DropdownMenuItem
-                  class="gap-2"
-                  onSelect={async () => {
-                    if (
-                      !(
-                        await openConfirmDeleteClientDialog()
-                      ).cancel
-                    ) {
-                      messageStores.deleteClient(
-                        props.client.clientId,
-                      );
-                    }
-                  }}
-                >
-                  <IconDelete class="size-4" />
-                  {t("client.menu.delete_client")}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuGroup>
-                  <DropdownMenuCheckboxItem
-                    class="gap-2"
-                    checked={
-                      appOptions.redirectToClient ===
-                      props.client.clientId
-                    }
-                    onChange={(checked) => {
-                      setAppOptions(
-                        "redirectToClient",
-                        checked
-                          ? props.client.clientId
-                          : undefined,
-                      );
-                    }}
-                  >
-                    {t("client.menu.redirect")}
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuGroup>
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                    <DropdownMenuItem
+                      class="gap-2"
+                      onSelect={async () => {
+                        if (
+                          !(
+                            await openConfirmDeleteClientDialog()
+                          ).cancel
+                        ) {
+                          messageStores.deleteClient(
+                            props.client.clientId,
+                          );
+                        }
+                      }}
+                    >
+                      <IconDelete class="size-4" />
+                      {t("client.menu.delete_client")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuGroup>
+                      <DropdownMenuCheckboxItem
+                        class="gap-2"
+                        checked={
+                          appOptions.redirectToClient ===
+                          props.client.clientId
+                        }
+                        onChange={(checked) => {
+                          setAppOptions(
+                            "redirectToClient",
+                            checked
+                              ? props.client.clientId
+                              : undefined,
+                          );
+                        }}
+                      >
+                        {t("client.menu.redirect")}
+                      </DropdownMenuCheckboxItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </TooltipTrigger>
+            <TooltipContent>
+              {t("client.menu.options")}
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </>
