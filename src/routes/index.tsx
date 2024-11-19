@@ -130,8 +130,8 @@ export default function Home(props: RouteSectionProps) {
           )}
           collapsible
           initialSize={0.2}
-          maxSize={0.4}
-          minSize={0.1}
+          maxSize={0.3}
+          minSize={0.15}
         >
           {(props) => {
             createEffect(() => {
@@ -207,13 +207,13 @@ export default function Home(props: RouteSectionProps) {
       >
         <ResizablePanel
           class="relative"
-          minSize={0.6}
+          minSize={0.7}
           initialSize={0.8}
         >
           {(resizeProps) => {
             createEffect(() => {
-              if (!isMobile() && (size()?.[1] ?? 0) < 0.6) {
-                resizeProps.resize(0.6);
+              if (!isMobile() && (size()?.[1] ?? 0) < 0.7) {
+                resizeProps.resize(0.7);
               }
             });
 
