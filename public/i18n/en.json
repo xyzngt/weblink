@@ -203,7 +203,7 @@
     },
     "join_form": {
       "title": "Edit Room Info",
-      "description": "Edit the room info here. Click confirm to create or join the room.",
+      "description": "Edit the room info here, click confirm to create or join the room.",
       "client_id": {
         "title": "Client ID (Read Only)",
         "description": "The client ID of the room, representing your identity, which can be changed in settings"
@@ -234,6 +234,7 @@
         "not_started": "Not Started",
         "stopped": "Stopped",
         "transferring": "Transferring",
+        "merging": "Merging",
         "completed": "Completed",
         "incompleted": "Incompleted"
       },

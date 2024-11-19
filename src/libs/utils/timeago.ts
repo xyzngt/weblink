@@ -5,9 +5,6 @@ import {
 import { Accessor } from "solid-js";
 import {
   formatRelative,
-  formatDate,
-  max,
-  formatDistanceToNow,
   formatDistance,
 } from "date-fns";
 import { enUS, zhCN } from "date-fns/locale";

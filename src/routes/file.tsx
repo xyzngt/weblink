@@ -157,6 +157,24 @@ export default function File() {
     reset();
   });
 
+  const getStatus = (info: FileMetaData) => {
+    if (info.isMerging) {
+      return {
+        label: t("common.file_table.status.merging"),
+        value: "merging",
+      };
+    }
+    return info.isComplete
+      ? {
+          label: t("common.file_table.status.completed"),
+          value: "completed",
+        }
+      : {
+          label: t("common.file_table.status.incompleted"),
+          value: "incompleted",
+        };
+  };
+
   const {
     forwardCache: shareCache,
     Component: ForwardDialogComponent,
@@ -221,23 +239,16 @@ export default function File() {
         />
       ),
       filterFn: (row, columnId, filterValue) => {
-        const status = row.original.isComplete
-          ? "completed"
-          : "incompleted";
+        const status = getStatus(row.original);
         return filterValue.length
-          ? filterValue.includes(status)
+          ? filterValue.includes(status.value)
           : true;
       },
       cell: ({ row }) => {
-        const complete = createMemo(() => {
-          return row.original.isComplete;
-        });
         return (
           <p class="max-w-xs overflow-hidden text-ellipsis">
             <Badge variant="outline">
-              {complete()
-                ? t("common.file_table.status.completed")
-                : t("common.file_table.status.incompleted")}
+              {getStatus(row.original).label}
             </Badge>
           </p>
         );
@@ -501,9 +512,9 @@ export default function File() {
       : [],
   );
 
-  createEffect(() => {
-    console.debug("get file data", data());
-  });
+  // createEffect(() => {
+  //   console.debug("get file data", data());
+  // });
 
   const table: SolidTable<FileMetaData> = createSolidTable({
     get data() {
@@ -772,6 +783,12 @@ export default function File() {
                   "common.file_table.status.completed",
                 ),
                 value: "completed",
+              },
+              {
+                label: t(
+                  "common.file_table.status.merging",
+                ),
+                value: "merging",
               },
               {
                 label: t(

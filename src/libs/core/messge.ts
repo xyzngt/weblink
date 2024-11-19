@@ -645,7 +645,6 @@ class MessageStores {
 
       return;
     }
-    console.log(`add transfer`, transferer);
 
     const controller = this.getController(transferer.id);
 
@@ -664,7 +663,6 @@ class MessageStores {
         });
       },
       {
-        once: true,
         signal: controller.signal,
       },
     );
@@ -698,7 +696,6 @@ class MessageStores {
         }
       },
       {
-        once: true,
         signal: controller.signal,
       },
     );
@@ -714,7 +711,6 @@ class MessageStores {
         });
       },
       {
-        once: true,
         signal: controller.signal,
       },
     );

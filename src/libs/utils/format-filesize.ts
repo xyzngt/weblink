@@ -20,7 +20,7 @@ export function formatBtyeSize(
 
   const i = Math.floor(Math.log(bytes) / Math.log(k));
 
-  // 直接使用 toFixed 保留小数未的0
+  // directly use toFixed to keep the decimal point of 0
   return (
     (bytes / Math.pow(k, i)).toFixed(dm) + " " + sizes[i]
   );
@@ -48,7 +48,7 @@ export function formatBitSize(
 
   const i = Math.floor(Math.log(bit) / Math.log(k));
 
-  // 直接使用 toFixed 保留小数未的0
+  // directly use toFixed to keep the decimal point of 0
   return (
     (bit / Math.pow(k, i)).toFixed(dm) + " " + sizes[i]
   );

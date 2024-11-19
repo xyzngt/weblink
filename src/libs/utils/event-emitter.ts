@@ -48,7 +48,7 @@ export class MultiEventEmitter<
   ): void {
     const opts = this.normalizeOptions(options);
 
-    // 检查是否已存在包装后的监听器
+    // check if the wrapped listener already exists
     let wrappedListener = this.listenerMap.get(
       listener as EventHandler<Events[keyof Events]>,
     );
@@ -62,7 +62,7 @@ export class MultiEventEmitter<
       );
     }
 
-    // 处理 signal
+    // handle signal
     if (opts.signal) {
       if (opts.signal.aborted) {
         return;
@@ -79,7 +79,7 @@ export class MultiEventEmitter<
       opts,
     );
 
-    // 如果是自定义实现，记录监听器以便移除
+    // if it's a custom implementation, record the listener to remove
     if (!(this.eventTarget instanceof EventTarget)) {
       if (!this.listeners.has(type as string)) {
         this.listeners.set(type as string, []);
@@ -97,12 +97,12 @@ export class MultiEventEmitter<
   ): void {
     const opts = this.normalizeOptions(options);
 
-    // 获取已存储的包装监听器
+    // get the stored wrapped listener
     const wrappedListener = this.listenerMap.get(
       listener as EventHandler<Events[keyof Events]>,
     );
     if (!wrappedListener) {
-      // 如果没有找到对应的包装监听器，说明从未添加过，直接返回
+      // if the corresponding wrapped listener is not found, it means it was never added, return directly
       return;
     }
 
@@ -112,7 +112,7 @@ export class MultiEventEmitter<
       opts,
     );
 
-    // 从自定义监听器列表中移除
+    // remove from the custom listener list
     if (
       !(this.eventTarget instanceof EventTarget) &&
       this.listeners.has(type as string)
@@ -129,7 +129,7 @@ export class MultiEventEmitter<
       }
     }
 
-    // 从映射中删除监听器
+    // remove from the map
     this.listenerMap.delete(
       listener as EventHandler<Events[keyof Events]>,
     );
@@ -150,7 +150,7 @@ export class MultiEventEmitter<
     this.listeners.clear();
   }
 
-  // 辅助方法
+  // helper methods
   private normalizeOptions(
     options?: boolean | AddEventListenerOptions,
   ): AddEventListenerOptions {

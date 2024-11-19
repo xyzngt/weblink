@@ -30,6 +30,7 @@ import CompressWorker from "@/libs/workers/chunk-compress?worker";
 import UncompressWorker from "@/libs/workers/chunk-uncompress?worker";
 
 import { CompressionLevel } from "@/options";
+import { catchErrorAsync } from "../catch";
 
 export enum TransferMode {
   Send = 1,
@@ -151,6 +152,7 @@ export class FileTransferer {
 
   private controller: AbortController =
     new AbortController();
+  private closed: boolean = false;
   private unzipWorker?: Worker;
   private timer?: number;
 
@@ -177,12 +179,17 @@ export class FileTransferer {
     this.mode = options.mode ?? TransferMode.Receive;
     this.info = options.info ?? null;
 
-    this.controller.signal.addEventListener(
-      "abort",
+    this.addEventListener(
+      "close",
       () => {
-        this.dispatchEvent("close", undefined);
+        this.closed = true;
+        this.timer && window.clearInterval(this.timer);
+        this.controller.abort();
       },
-      { once: true },
+      {
+        signal: this.controller.signal,
+        once: true,
+      },
     );
   }
 
@@ -416,31 +423,39 @@ export class FileTransferer {
     channel.bufferedAmountLowThreshold =
       this.bufferedAmountLowThreshold;
 
-    if (this.mode === TransferMode.Receive) {
+    if (this.channels.length === 0) {
       if (channel.readyState === "open") {
         this.dispatchEvent("ready", undefined);
         this.setStatus(TransferStatus.Ready);
       } else {
+        const controller = new AbortController();
         channel.addEventListener(
           "open",
           () => {
+            controller.abort();
             this.dispatchEvent("ready", undefined);
             this.setStatus(TransferStatus.Ready);
           },
           {
-            signal: this.controller.signal,
+            signal: controller.signal,
             once: true,
           },
         );
-        channel.addEventListener("close", (err) => {}, {
-          signal: this.controller.signal,
-          once: true,
-        });
+        channel.addEventListener(
+          "close",
+          () => {
+            controller.abort();
+            this.dispatchEvent(
+              "error",
+              new Error("connection is closed"),
+            );
+          },
+          {
+            signal: controller.signal,
+            once: true,
+          },
+        );
       }
-    }
-
-    if (this.initialized && this.channels.length === 0) {
-      this.dispatchEvent("ready", undefined);
     }
     this.channels.push(channel);
   }
@@ -505,8 +520,13 @@ export class FileTransferer {
             type: "request-content",
             ranges: ranges,
           } satisfies RequestContentMessage;
-          const channel =
-            await this.getRandomAvailableChannel();
+          const [error, channel] = await catchErrorAsync(
+            this.getAnyAvailableChannel(),
+          );
+          if (error) {
+            if (this.closed) return;
+            throw error;
+          }
           channel.send(JSON.stringify(msg));
           console.log(`send msg`, msg);
         }
@@ -535,7 +555,7 @@ export class FileTransferer {
         return false;
       console.log(`trigger receive complete`);
       this.setStatus(TransferStatus.Complete);
-      this.getRandomAvailableChannel()
+      this.getAnyAvailableChannel()
         .then((channel) => {
           channel.send(
             JSON.stringify({
@@ -565,77 +585,53 @@ export class FileTransferer {
     );
   }
 
-  // random select a available dataChannel
-  private async getRandomAvailableChannel(
+  // select a available dataChannel
+  private async getAnyAvailableChannel(
     bufferedAmountLowThreshold: number = this
       .bufferedAmountLowThreshold,
   ): Promise<RTCDataChannel> {
     if (this.channels.length === 0) {
       throw new Error("no channel");
     }
-    const channel = await Promise.any(
-      this.channels.map((channel) => {
-        channel.bufferedAmountLowThreshold =
-          bufferedAmountLowThreshold;
-        return new Promise<RTCDataChannel>(
-          async (reslove) => {
-            if (
-              channel.bufferedAmount <=
-              channel.bufferedAmountLowThreshold
-            ) {
-              return reslove(channel);
-            }
-            channel.addEventListener(
-              "bufferedamountlow",
-              () => reslove(channel),
-              {
-                once: true,
-                signal: this.controller.signal,
-              },
-            );
-          },
-        );
-      }),
-    ).catch((err) => {
-      console.error(err);
-      throw err;
-    });
+    const [error, channel] = await catchErrorAsync(
+      Promise.any(
+        this.channels.map((channel) =>
+          waitBufferedAmountLowThreshold(
+            channel,
+            bufferedAmountLowThreshold,
+          ),
+        ),
+      ),
+    );
+    if (error) {
+      throw error;
+    }
     return channel;
   }
 
   public async sendFile(
     ranges?: ChunkRange[],
   ): Promise<void> {
+    if (this.closed) {
+      throw new Error("transferer is closed");
+    }
     if (this.mode !== TransferMode.Send) {
-      this.dispatchEvent(
-        "error",
-        new Error("transferer is not in send mode"),
-      );
-      return;
+      throw new Error("transferer is not in send mode");
     }
 
     const sendData = this.sendData;
 
     if (!sendData) {
-      this.dispatchEvent(
-        "error",
-        new Error(
-          "file transferer is not initialized, can not send file",
-        ),
+      throw new Error(
+        "file transferer is not initialized, can not send file",
       );
-      return;
     }
 
     const info = this.info;
     if (!info) {
-      this.dispatchEvent(
-        "error",
-        new Error(
-          "cache data is incomplete, can not send file",
-        ),
+      throw new Error(
+        "cache data is incomplete, can not send file",
       );
-
-      return;
     }
 
     const totalChunks = getTotalChunkCount(info);
@@ -687,8 +683,13 @@ export class FileTransferer {
           blockData.buffer,
         );
 
-        const channel =
-          await this.getRandomAvailableChannel();
+        const [error, channel] = await catchErrorAsync(
+          this.getAnyAvailableChannel(),
+        );
+        if (error) {
+          if (this.closed) return;
+          throw error;
+        }
 
         channel.send(packet);
       }
@@ -747,7 +748,13 @@ export class FileTransferer {
     }
     await queue;
     await this.waitBufferedAmountLowThreshold(0);
-    const channel = await this.getRandomAvailableChannel();
+    const [error, channel] = await catchErrorAsync(
+      this.getAnyAvailableChannel(),
+    );
+    if (error) {
+      if (this.closed) return;
+      throw error;
+    }
     channel.send(
       JSON.stringify({
         type: "complete",
@@ -816,8 +823,11 @@ export class FileTransferer {
     }
   }
 
-  public destroy() {
-    this.controller.abort();
+  public close() {
+    if (this.closed) return;
+    this.dispatchEvent("close", undefined);
+
+    this.channels.forEach((channel) => channel.close());
   }
 }
 

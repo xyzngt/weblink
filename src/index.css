@@ -204,6 +204,15 @@ svg {
   }
 }
 
+.input-label {
+  &:has(+ input:invalid) {
+    @apply text-red-500;
+  }
+  &:has(+ input:required:not(:read-only))::before {
+    @apply content-["*"];
+  }
+}
+
 .animate-message {
   animation: popIn 0.3s ease-out;
 }

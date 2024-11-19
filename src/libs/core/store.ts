@@ -22,7 +22,11 @@ export async function parseTurnServer(
   if (authMethod === "hmac") {
     const timestamp =
       Math.floor(Date.now() / 1000) + 24 * 3600;
-    const hmacUsername = `${timestamp}`;
+    const hmacUsernameArr = [timestamp.toString()];
+    if (username.trim().length !== 0) {
+      hmacUsernameArr.push(username);
+    }
+    const hmacUsername = hmacUsernameArr.join(":");
     const credential = await generateHMAC(
       password,
       hmacUsername,

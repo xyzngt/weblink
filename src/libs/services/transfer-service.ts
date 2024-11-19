@@ -55,7 +55,7 @@ class TransfererFactory {
       return;
     }
 
-    transferer.destroy();
+    transferer.close();
     this.setTransferers(id, undefined!);
   }
 

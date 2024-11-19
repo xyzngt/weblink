@@ -1,12 +1,12 @@
 export type ChunkRange = number | [number, number];
 
-// 合并连续索引的函数
+// merge continuous indexes
 export function mergeRanges(
   arr: number[],
 ): (number | [number, number])[] {
   if (arr.length === 0) return [];
 
-  arr.sort((a, b) => a - b); // 确保数组是排序的
+  arr.sort((a, b) => a - b); // ensure the array is sorted
   const result: ChunkRange[] = [];
 
   let start = arr[0];
@@ -14,10 +14,10 @@ export function mergeRanges(
 
   for (let i = 1; i < arr.length; i++) {
     if (arr[i] === end + 1) {
-      // 如果是连续的索引，更新 end
+      // if the indexes are continuous, update end
       end = arr[i];
     } else {
-      // 如果不是连续的，保存当前的范围
+      // if the indexes are not continuous, save the current range
       if (start === end) {
         result.push(start);
       } else {
@@ -28,7 +28,7 @@ export function mergeRanges(
     }
   }
 
-  // 保存最后的范围
+  // save the last range
   if (start === end) {
     result.push(start);
   } else {
@@ -38,7 +38,7 @@ export function mergeRanges(
   return result;
 }
 
-// 解析合并后的范围，返回原始数组的函数
+// parse the merged ranges, return the original array
 export function parseRanges(
   ranges: ChunkRange[],
 ): number[] {
@@ -46,11 +46,11 @@ export function parseRanges(
 
   for (const range of ranges) {
     if (typeof range === "number") {
-      result.push(range); // 如果是单个数字，直接加入结果数组
+      result.push(range); // if it's a single number, directly add to the result array
     } else {
       const [start, end] = range;
       for (let i = start; i <= end; i++) {
-        result.push(i); // 将范围内的数字逐个加入结果数组
+        result.push(i); // add the numbers in the range to the result array
       }
     }
   }
@@ -99,45 +99,46 @@ export function getLastIndex(ranges: ChunkRange[]): number {
 }
 
 /**
- * 计算给定总长度范围内未被排除的子范围。
+ * Calculate the subranges that are not excluded in the given total length.
  *
- * 该函数接收一个范围总长度和需要排除的范围数组，然后返回剩余的子范围。
- * 它首先生成一个全范围的索引数组，然后根据需要排除的范围依次移除不需要的部分，最后将剩余部分合并成子范围。
+ * This function takes the total length and the exclusion ranges, then returns the remaining subranges.
+ * It first generates an array of all indexes, then removes the parts that need to be excluded one by one,
+ * and finally merges the remaining parts into subranges.
  *
- * @param totalLength - 范围的总长度（即原始区块或索引的总数量）。
- * @param exclusionRanges - 要排除的范围数组，可以是单个索引或索引的范围（数组）。
- * @returns - 过滤后的子范围数组，表示剩余的未排除范围。
+ * @param totalLength - The total length of the range (i.e., the total number of original chunks or indexes).
+ * @param exclusionRanges - The exclusion ranges array, which can be a single index or an index range (array).
+ * @returns - The remaining subranges after excluding the specified parts.
  */
 export function getSubRanges(
   totalLength: number,
   exclusionRanges: ChunkRange[],
 ) {
-  // 生成一个包含所有索引的数组，表示完整的范围
+  // generate an array of all indexes, representing the complete range
   const remainingChunks = Array.from({
     length: totalLength,
   }).map((_, index) => index);
 
-  // 排序并倒序排除范围（需要从大到小移除，避免索引错位）
+  // sort and reverse the exclusion ranges (need to remove from large to small to avoid index misalignment)
   const sortedExcludedIndices = Array.from(
     rangesIterator(exclusionRanges),
   ).sort((a, b) => b - a);
 
-  // 从完整的范围中移除所有需要排除的索引
+  // remove all the indexes that need to be excluded from the complete range
   for (const index of sortedExcludedIndices) {
     remainingChunks.splice(index, 1);
   }
 
-  // 合并剩余的索引为连续的子范围
+  // merge the remaining indexes into continuous subranges
   const mergedChunks = mergeRanges(remainingChunks);
   return mergedChunks;
 }
 
 /**
- * 判断给定的 ranges 中是否包含指定的索引。
+ * Determine if the given ranges contain the specified index.
  *
- * @param ranges - 要检查的范围数组，数组中的元素可以是单个索引（number）或索引范围（number[]）。
- * @param targetIndex - 要检查的目标索引。
- * @returns - 如果目标索引在 ranges 中，则返回 true，否则返回 false。
+ * @param ranges - The ranges array to check, the elements can be a single index (number) or an index range (number[]).
+ * @param targetIndex - The target index to check.
+ * @returns - If the target index is in the ranges, return true, otherwise return false.
  */
 export function isIndexInRanges(
   ranges: ChunkRange[],
@@ -145,12 +146,12 @@ export function isIndexInRanges(
 ): boolean {
   for (const range of ranges) {
     if (typeof range === "number") {
-      // 如果是单个数字，直接检查是否等于目标索引
+      // if it's a single number, directly check if it equals the target index
       if (range === targetIndex) {
         return true;
       }
     } else {
-      // 如果是范围数组，检查索引是否在该范围内
+      // if it's a range array, check if the index is in the range
       const [start, end] = range;
       if (targetIndex >= start && targetIndex <= end) {
         return true;

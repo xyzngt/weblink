@@ -55,24 +55,23 @@ export const createRoomDialog = () => {
           }}
         >
           <label class="flex flex-col gap-2">
-            <span>
+            <span class="input-label">
               {t("common.join_form.client_id.title")}
             </span>
-            <div class="flex gap-1">
-              <Input
-                required
-                readonly
-                value={clientProfile.clientId}
-                readOnly={true}
-                class="flex-1"
-              />
-            </div>
+
+            <Input
+              required
+              readonly
+              value={clientProfile.clientId}
+              readOnly={true}
+            />
+
             <p class="muted">
               {t("common.join_form.client_id.description")}
             </p>
           </label>
           <label class="flex flex-col gap-2">
-            <span>
+            <span class="input-label">
               {t("common.join_form.room_id.title")}
             </span>
             <Input
@@ -84,11 +83,12 @@ export const createRoomDialog = () => {
                   ev.currentTarget.value,
                 )
               }
-              class="col-span-2 md:col-span-3"
             />
           </label>
           <label class="flex flex-col gap-2">
-            <span>{t("common.join_form.name")}</span>
+            <span class="input-label">
+              {t("common.join_form.name")}
+            </span>
             <Input
               required
               value={clientProfile.name}
@@ -98,11 +98,12 @@ export const createRoomDialog = () => {
                   ev.currentTarget.value,
                 )
               }
-              class="col-span-2 md:col-span-3"
             />
           </label>
           <label class="flex flex-col gap-2">
-            <span>{t("common.join_form.avatar_url")}</span>
+            <span class="input-label">
+              {t("common.join_form.avatar_url")}
+            </span>
             <Input
               placeholder="Enter a link or upload an image"
               type="url"
@@ -113,7 +114,6 @@ export const createRoomDialog = () => {
                   optional(ev.currentTarget.value),
                 )
               }
-              class="col-span-2 md:col-span-3"
             />
             <div class="flex items-center gap-2">
               <Input
@@ -144,7 +144,7 @@ export const createRoomDialog = () => {
             </div>
           </label>
           <label class="flex flex-col gap-2">
-            <span>
+            <span class="input-label">
               {t("common.join_form.password.title")}
             </span>
             <div class="flex gap-1">
@@ -159,7 +159,6 @@ export const createRoomDialog = () => {
                     optional(ev.currentTarget.value),
                   )
                 }
-                class="col-span-2 md:col-span-3"
               />
               <Button
                 variant="outline"

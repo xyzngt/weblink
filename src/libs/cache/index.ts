@@ -24,6 +24,7 @@ export type ChunkCacheEventMap = {
 export interface FileMetaData extends ChunkMetaData {
   chunkCount?: number;
   isComplete?: boolean;
+  isMerging?: boolean;
 }
 
 export const DBNAME_PREFIX: string = "file-";

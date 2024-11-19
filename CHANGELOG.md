@@ -2,11 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.0] - 2024-11-15
+## [0.7.1] - 2024-11-19
 
 ### New Features
 
 - Add progress display in file list 在文件列表中添加进度显示
+
+### Improvements
+
+- Improve the input label style 优化输入标签样式
+
+- Improve the file table status display 优化文件表的状态显示
 
 ## [0.6.5] - 2024-11-14
 

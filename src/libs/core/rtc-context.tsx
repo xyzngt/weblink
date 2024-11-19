@@ -46,9 +46,7 @@ import { toast } from "solid-sonner";
 import { ChunkMetaData, FileMetaData } from "../cache";
 import { catchErrorAsync } from "../catch";
 
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+
 
 function getClientService(
   options: ClientServiceInitOptions,
@@ -268,7 +266,9 @@ export const WebRTCProvider: Component<
 
         const info = await cache.getInfo();
         if (!info) {
-          throw new Error(`cache ${message.fid} info not found`);
+          throw new Error(
+            `cache ${message.fid} info not found`,
+          );
         }
 
         if (!info.isComplete) {
@@ -283,8 +283,14 @@ export const WebRTCProvider: Component<
         );
         messageStores.addTransfer(transferer);
 
-        transferer.addEventListener("ready", () => {
-          transferer.sendFile(message.ranges);
+        transferer.addEventListener("ready", async () => {
+          const [error] = await catchErrorAsync(
+            transferer.sendFile(message.ranges),
+          );
+          if (error) {
+            console.error(error);
+            toast.error(error.message);
+          }
         });
 
         await transferer.initialize();
@@ -364,8 +370,14 @@ export const WebRTCProvider: Component<
               );
 
             messageStores.addTransfer(transferer);
-            transferer.addEventListener("ready", () => {
-              transferer.sendFile();
+            transferer.addEventListener("ready", async () => {
+              const [error] = await catchErrorAsync(
+                transferer.sendFile(),
+              );
+              if (error) {
+                console.error(error);
+                toast.error(error.message);
+              }
             });
             await transferer.initialize();
 
@@ -403,7 +415,6 @@ export const WebRTCProvider: Component<
       } else if (message.type === "storage") {
         sessionService.setStorage(message);
       } else if (message.type === "request-storage") {
-
         const replyMessage = {
           type: "storage",
           data: (await cacheManager.getStorages()) ?? [],

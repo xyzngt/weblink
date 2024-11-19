@@ -1,9 +1,9 @@
 import { getRandomBytes, isCryptoSubtleAvailable } from ".";
 import { getCryptoJS } from ".";
 
+const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
 // check if the base64 string is valid
 function isValidBase64String(str: string) {
-  const base64Regex = /^[A-Za-z0-9+/]+={0,2}$/;
   return str.length % 4 === 0 && base64Regex.test(str);
 }
 
@@ -92,7 +92,7 @@ export async function comparePasswordHash(
   }
 
   if (isCryptoSubtleAvailable()) {
-    // 使用 Web Crypto API 的原始实现
+    // Using Web Crypto API
     try {
       // decode base64
       const combined = Uint8Array.from(
@@ -138,7 +138,7 @@ export async function comparePasswordHash(
       throw new Error("Failed to compare password");
     }
   } else {
-    // 使用 crypto-js 实现
+    // Using crypto-js
     const CryptoJS = await getCryptoJS();
     try {
       // decode base64

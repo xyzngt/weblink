@@ -93,6 +93,7 @@ type ChunkStatus =
   | "not_started"
   | "stopped"
   | "transferring"
+  | "merging"
   | "completed";
 
 const Sync = (props: RouteSectionProps) => {
@@ -508,7 +509,9 @@ const Sync = (props: RouteSectionProps) => {
       if (!info) {
         setStatus("not_started");
       } else {
-        if (info.isComplete) {
+        if (info.isMerging) {
+          setStatus("merging");
+        } else if (info.isComplete) {
           setStatus("completed");
         } else if (transfer()) {
           setStatus("transferring");
@@ -636,6 +639,12 @@ const Sync = (props: RouteSectionProps) => {
                   "common.file_table.status.transferring",
                 ),
                 value: "transferring",
+              },
+              {
+                label: t(
+                  "common.file_table.status.merging",
+                ),
+                value: "merging",
               },
               {
                 label: t(

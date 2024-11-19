@@ -20,7 +20,7 @@ export async function convertImageToPNG(
       URL.revokeObjectURL(url);
     };
     img.onerror = function () {
-      reject(new Error("图片加载失败"));
+      reject(new Error("image loading failed"));
     };
     img.src = url;
   });

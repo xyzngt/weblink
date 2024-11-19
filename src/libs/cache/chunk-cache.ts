@@ -11,6 +11,7 @@ import {
   FileMetaData,
   getTotalChunkCount,
 } from ".";
+import { sleep } from "../utils/sleep";
 
 export interface ChunkCache {
   addEventListener<K extends keyof ChunkCacheEventMap>(
@@ -307,6 +308,7 @@ export class IDBChunkCache implements ChunkCache {
           ...setData,
           isComplete: await isComplete(setData),
           chunkCount: await this.getChunkCount(),
+          isMerging: this.isMerging,
         };
         this.dispatchEvent("update", this.info);
       };
@@ -317,33 +319,29 @@ export class IDBChunkCache implements ChunkCache {
   public async getInfo(): Promise<FileMetaData | null> {
     const store = await this.getInfoStore("readonly");
     const request = store.get(this.id);
-    const info = await new Promise<ChunkMetaData | null>(
+    const dbinfo = await new Promise<ChunkMetaData | null>(
       (resolve, reject) => {
         request.onsuccess = async () => {
           const info = request.result ?? null;
-          const complete = await isComplete(info);
-          const count = await this.getChunkCount();
-          this.info = {
-            ...info,
-            isComplete: complete,
-            chunkCount: count,
-          };
           resolve(info);
         };
         request.onerror = () => reject(request.error);
       },
     );
 
-    if (!info) {
+    if (!dbinfo) {
       console.warn(`get info is null for ${this.id}`);
       return null;
     }
 
-    return {
-      ...info,
-      isComplete: await isComplete(info),
+    this.info = {
+      ...dbinfo,
+      isComplete: await isComplete(dbinfo),
       chunkCount: await this.getChunkCount(),
-    } satisfies FileMetaData;
+      isMerging: this.isMerging,
+    };
+
+    return this.info;
   }
 
   // flush memory cache to db
@@ -494,16 +492,16 @@ export class IDBChunkCache implements ChunkCache {
       console.warn(`cache is merging already`);
       return null;
     }
-
     this.isMerging = true;
-    this.dispatchEvent("merging", undefined);
-
     const info = await this.getInfo();
 
     if (!info) {
       console.warn("info is not found");
       return null;
     }
+
+    this.dispatchEvent("merging", undefined);
+    this.dispatchEvent("update", this.info);
 
     const isWorker =
       typeof WorkerGlobalScope !== "undefined" &&

@@ -210,7 +210,7 @@
     },
     "join_form": {
       "title": "编辑房间信息",
-      "description": "在这里编辑房间信息。点击确定即可创建或加入房间。",
+      "description": "在这里编辑房间信息，点击确定即可创建或加入房间。",
       "client_id": {
         "title": "客户端 ID (只读)",
         "description": "房间的客户端 ID，代表你的身份，可以在设置中更改"
@@ -259,6 +259,7 @@
         "not_started": "未开始",
         "stopped": "已停止",
         "transferring": "传输中",
+        "merging": "合并中",
         "completed": "已完成",
         "incompleted": "未完成"
       },
