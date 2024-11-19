@@ -343,7 +343,8 @@
       "link_copy_success": "链接复制成功",
       "copy_failed": "复制失败",
       "reset_options_success": "选项重置成功",
-      "unknown_error": "未知错误"
+      "unknown_error": "未知错误",
+      "processing_files": "处理文件中..."
     },
     "nav": {
       "chat": "聊天",

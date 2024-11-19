@@ -30,9 +30,7 @@ import {
   createSolidTable,
   flexRender,
   getCoreRowModel,
-  getFacetedMinMaxValues,
   getFacetedRowModel,
-  getFacetedUniqueValues,
   getFilteredRowModel,
   getSortedRowModel,
   RowSelectionState,
@@ -43,12 +41,10 @@ import {
 import { getCommonPinningStyles } from "@/components/data-table/data-table-pin-style";
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuGroupLabel,
   DropdownMenuItem,
-  DropdownMenuItemLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -71,13 +67,11 @@ import {
   IconMenu,
   IconMerge,
   IconMoreHoriz,
-  IconPageInfo,
   IconPlaceItem,
   IconPreview,
   IconSearch700,
   IconWallpaper,
 } from "@/components/icons";
-import { createDialog } from "@/components/dialogs/dialog";
 import { t } from "@/i18n";
 import { createPreviewDialog } from "@/components/preview-dialog";
 import {
@@ -105,6 +99,8 @@ import DropArea from "@/components/drop-area";
 import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
 import { Badge } from "@/components/ui/badge";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
+import { toast } from "solid-sonner";
+import { catchErrorAsync } from "@/libs/catch";
 
 const columnHelper = createColumnHelper<FileMetaData>();
 
@@ -596,9 +592,35 @@ export default function File() {
                 directory
                 onChange={async (ev) => {
                   if (!ev.currentTarget.files) return;
-                  const file = await handleSelectFolder(
-                    ev.currentTarget.files,
+                  const abortController =
+                    new AbortController();
+                  const toastId = toast.loading(
+                    t("common.notification.processing_files"),
+                    {
+                      duration: Infinity,
+                      action: {
+                        label: t("common.action.cancel"),
+                        onClick: () =>
+                          abortController.abort(
+                            "User cancelled",
+                          ),
+                      },
+                    },
                   );
+                  const [error, file] =
+                    await catchErrorAsync(
+                      handleSelectFolder(
+                        ev.currentTarget.files,
+                        abortController,
+                      ),
+                    );
+
+                  toast.dismiss(toastId);
+
+                  if (error) {
+                    console.warn(error);
+                    return;
+                  }
 
                   const cache =
                     await cacheManager.createCache();
@@ -838,9 +860,30 @@ export default function File() {
           }}
           onDrop={async (ev) => {
             if (!ev.dataTransfer) return;
-            const files = await handleDropItems(
-              ev.dataTransfer.items,
+            const abortController = new AbortController();
+            const toastId = toast.loading(
+              t("common.notification.processing_files"),
+              {
+                duration: Infinity,
+                action: {
+                  label: t("common.action.cancel"),
+                  onClick: () =>
+                    abortController.abort("User cancelled"),
+                },
+              },
             );
+            const [error, files] = await catchErrorAsync(
+              handleDropItems(
+                ev.dataTransfer.items,
+                abortController,
+              ),
+            );
+            toast.dismiss(toastId);
+            if (error) {
+              console.warn(error);
+              return;
+            }
+
             for (const file of files) {
               const cache =
                 await cacheManager.createCache();

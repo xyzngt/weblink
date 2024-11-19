@@ -78,13 +78,14 @@ import { v4 } from "uuid";
 import { appOptions, setAppOptions } from "@/options";
 import { createClipboardHistoryDialog } from "@/components/box/clipboard-history";
 import clientInfoDialog from "./components/chat-client-info";
-import { handleDropItems } from "../../../libs/utils/process-file";
+import { handleDropItems } from "@/libs/utils/process-file";
 import { ClientInfo, Client } from "@/libs/core/type";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { catchErrorAsync } from "@/libs/catch";
 
 const ChatHeader: Component<{
   info?: ClientInfo;
@@ -460,19 +461,39 @@ export default function ClientPage(
                 );
               }}
               onDrop={async (ev) => {
-                if (ev.dataTransfer?.items) {
-                  console.log(
-                    "drop",
-                    ev.dataTransfer.items,
-                  );
-                  const files = await handleDropItems(
-                    ev.dataTransfer.items,
-                  );
+                if (!ev.dataTransfer?.items) return;
+                const abortController =
+                  new AbortController();
+                const toastId = toast.loading(
+                  t("common.notification.processing_files"),
+                  {
+                    duration: Infinity,
+                    action: {
+                      label: t("common.action.cancel"),
+                      onClick: () =>
+                        abortController.abort(
+                          "User cancelled",
+                        ),
+                    },
+                  },
+                );
 
-                  files.forEach((file) => {
-                    sendFile(file, client().clientId);
-                  });
+                const [error, files] =
+                  await catchErrorAsync(
+                    handleDropItems(
+                      ev.dataTransfer.items,
+                      abortController,
+                    ),
+                  );
+                toast.dismiss(toastId);
+                if (error) {
+                  console.warn(error);
+                  return;
                 }
+
+                files.forEach((file) => {
+                  sendFile(file, client().clientId);
+                });
               }}
             >
               <ul

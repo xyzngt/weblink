@@ -30,6 +30,7 @@ import {
   handleDropItems,
   handleSelectFolder,
 } from "@/libs/utils/process-file";
+import { catchErrorAsync } from "@/libs/catch";
 
 export const ChatBar: Component<
   ComponentProps<"div"> & { client: Client }
@@ -103,9 +104,32 @@ export const ChatBar: Component<
               type="file"
               onChange={async (ev) => {
                 if (!ev.currentTarget.files) return;
-                const file = await handleSelectFolder(
-                  ev.currentTarget.files,
+                const abortController =
+                  new AbortController();
+                const toastId = toast.loading(
+                  t("common.notification.processing_files"),
+                  {
+                    duration: Infinity,
+                    action: {
+                      label: t("common.action.cancel"),
+                      onClick: () =>
+                        abortController.abort(
+                          "User cancelled",
+                        ),
+                    },
+                  },
                 );
+                const [error, file] = await catchErrorAsync(
+                  handleSelectFolder(
+                    ev.currentTarget.files,
+                    abortController,
+                  ),
+                );
+                toast.dismiss(toastId);
+                if (error) {
+                  console.warn(error);
+                  return;
+                }
                 sendFile(file, local.client.clientId);
               }}
             />
@@ -175,11 +199,37 @@ export const ChatBar: Component<
                 }
               }
               const clipboardData = ev.clipboardData;
-              const items = clipboardData?.items;
-              if (!items) return;
 
-              const files = await handleDropItems(items);
+              if (!clipboardData?.items) return;
 
+              console.log(clipboardData.items);
+
+              const abortController = new AbortController();
+              const toastId = toast.loading(
+                t("common.notification.processing_files"),
+                {
+                  duration: Infinity,
+                  action: {
+                    label: t("common.action.cancel"),
+                    onClick: () =>
+                      abortController.abort(
+                        "User cancelled",
+                      ),
+                  },
+                },
+              );
+
+              const [error, files] = await catchErrorAsync(
+                handleDropItems(
+                  clipboardData.items,
+                  abortController,
+                ),
+              );
+              toast.dismiss(toastId);
+              if (error) {
+                console.warn(error);
+                return;
+              }
               for (const file of files) {
                 const { result } = await openPreview(
                   file,

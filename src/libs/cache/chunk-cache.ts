@@ -330,7 +330,7 @@ export class IDBChunkCache implements ChunkCache {
     );
 
     if (!dbinfo) {
-      console.warn(`get info is null for ${this.id}`);
+      console.warn(`info is not found for ${this.id}`);
       return null;
     }
 

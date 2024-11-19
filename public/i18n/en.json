@@ -321,7 +321,8 @@
       "link_copy_success": "Link copied",
       "copy_failed": "Failed to copy link",
       "reset_options_success": "Options reset successfully",
-      "unknown_error": "Unknown error"
+      "unknown_error": "Unknown error",
+      "processing_files": "Processing files..."
     },
     "forward_dialog": {
       "title": "Forward items",

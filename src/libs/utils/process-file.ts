@@ -1,4 +1,7 @@
 import CompressWorker from "@/libs/workers/zip-compress?worker";
+import { toast } from "solid-sonner";
+import { LoadingSpinner } from "@/components/ui/spinner";
+import { catchErrorAsync, catchErrorSync } from "../catch";
 
 export type FileWithPath = {
   file?: File;
@@ -14,74 +17,137 @@ export type FilesMap = {
 
 export const handleSelectFolder = async (
   files: FileList,
+  abortController?: AbortController,
 ) => {
-  const fileEntries = Array.from(files).map((file) => ({
-    file,
-    fullPath: file.webkitRelativePath,
-  }));
+  return new Promise<File>(async (resolve, reject) => {
+    abortController?.signal.addEventListener("abort", () =>
+      reject(new Error(abortController?.signal.reason)),
+    );
+    const fileEntries = Array.from(files).map((file) => ({
+      file,
+      fullPath: file.webkitRelativePath,
+    }));
 
-  const folderName = getFolderName(fileEntries);
-  return processFiles(fileEntries, folderName);
+    let processedFiles: File | undefined;
+
+    const folderName = getFolderName(fileEntries);
+    let error: Error | undefined = undefined;
+    [error, processedFiles] = await catchErrorAsync(
+      processFiles(
+        fileEntries,
+        folderName,
+        abortController,
+      ),
+    );
+    if (error) return reject(error);
+
+    [error] = catchErrorSync(() =>
+      abortController?.signal.throwIfAborted(),
+    );
+    if (error) return reject(error);
+
+    resolve(processedFiles!);
+  });
 };
 
 export const handleDropItems = async (
   items: DataTransferItemList,
+  abortController?: AbortController,
 ): Promise<File[]> => {
-  const entries: FileSystemEntry[] = [];
-  const files: File[] = [];
-  for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    const entry = item.webkitGetAsEntry();
-
-    if (entry) {
-      entries.push(entry);
-      continue;
-    }
-
-    const file = item.getAsFile();
-    if (file) {
-      files.push(file);
-    }
-  }
-  if (entries.length > 0) {
-    const filesMap: FilesMap = {
-      directories: {},
-      files: [],
-    };
-
-    await Promise.all(
-      entries.map((entry) => readEntry(entry, filesMap)),
+  return new Promise<File[]>(async (resolve, reject) => {
+    abortController?.signal.addEventListener("abort", () =>
+      reject(new Error(abortController?.signal.reason)),
     );
+    const entries: FileSystemEntry[] = [];
+    const files: File[] = [];
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const entry = item.webkitGetAsEntry();
 
-    const compressedFoldersResult = await Promise.all(
-      Object.entries(filesMap.directories).map(
-        async ([
-          folderName,
-          files,
-        ]): Promise<File | null> => {
-          const filesResult = await processFiles(
-            files,
-            folderName,
-          );
-          return filesResult;
-        },
-      ),
-    );
+      if (entry) {
+        entries.push(entry);
+        continue;
+      }
 
-    const compressedFolders =
-      compressedFoldersResult.filter(Boolean) as File[];
+      const file = item.getAsFile();
+      if (file) {
+        files.push(file);
+      }
+    }
+    if (entries.length > 0) {
+      const filesMap: FilesMap = {
+        directories: {},
+        files: [],
+      };
 
-    files.push(...filesMap.files, ...compressedFolders);
-  }
-  return files;
+      let error: Error | undefined = undefined;
+      [error] = await catchErrorAsync(
+        Promise.all(
+          entries.map((entry) =>
+            readEntry(
+              entry,
+              filesMap,
+              undefined,
+              abortController,
+            ),
+          ),
+        ),
+      );
+      if (error) return reject(error);
+
+      [error] = catchErrorSync(() =>
+        abortController?.signal.throwIfAborted(),
+      );
+      if (error) return reject(error);
+
+      let compressedFoldersResult:
+        | (File | null)[]
+        | undefined;
+      [error, compressedFoldersResult] =
+        await catchErrorAsync(
+          Promise.all(
+            Object.entries(filesMap.directories).map(
+              async ([
+                folderName,
+                files,
+              ]): Promise<File | null> => {
+                const filesResult = await processFiles(
+                  files,
+                  folderName,
+                );
+                return filesResult;
+              },
+            ),
+          ),
+        );
+      if (error) return reject(error);
+
+      [error] = catchErrorSync(() =>
+        abortController?.signal.throwIfAborted(),
+      );
+      if (error) return reject(error);
+
+      const compressedFolders =
+        compressedFoldersResult!.filter(Boolean) as File[];
+
+      files.push(...filesMap.files, ...compressedFolders);
+    }
+    resolve(files);
+  });
 };
 
 function readEntry(
   entry: FileSystemEntry,
   map: FilesMap,
   folderName?: string,
+  abortController?: AbortController,
 ) {
   return new Promise<void>((resolve, reject) => {
+    const [error] = catchErrorSync(() =>
+      abortController?.signal.throwIfAborted(),
+    );
+    if (error) return reject(error);
+
     if (entry.isFile) {
       const fileEntry = entry as FileSystemFileEntry;
       fileEntry.file(
@@ -96,9 +162,7 @@ function readEntry(
           }
           resolve();
         },
-        (err) => {
-          reject(err);
-        },
+        (err) => reject(err),
       );
     } else if (entry.isDirectory) {
       const dirReader = (
@@ -121,12 +185,20 @@ function readEntry(
             return;
           }
 
-          await Promise.all(
-            entries.map((entry) =>
-              readEntry(entry, map, folderName),
+          const [error] = await catchErrorAsync(
+            Promise.all(
+              entries.map((entry) =>
+                readEntry(
+                  entry,
+                  map,
+                  folderName,
+                  abortController,
+                ),
+              ),
             ),
           );
-
+          if (error) return reject(error);
+          
           return readEntries();
         });
       };
@@ -136,17 +208,25 @@ function readEntry(
   });
 }
 
+/**
+ * Process files and return a compressed file
+ * @param files - Array of files to process
+ * @param folderName - Name of the folder to compress
+ * @param abortController - Abort controller to abort the process
+ * @returns Compressed file
+ */
 async function processFiles(
   files: FileWithPath[],
   folderName: string,
+  abortController?: AbortController,
 ): Promise<File> {
   const fileMap: Record<string, File | null> = {};
 
   files.map((file) => {
+    // If file is not a file, it's a directory
     if (!file.file) {
-      if (file.fullPath) {
-        fileMap[file.fullPath] = null;
-      }
+      // Empty directory
+      if (file.fullPath) fileMap[file.fullPath] = null;
       return;
     }
 
@@ -154,7 +234,11 @@ async function processFiles(
     fileMap[fullPath] = file.file;
   });
 
-  return await compressFiles(fileMap, folderName);
+  return await compressFiles(
+    fileMap,
+    folderName,
+    abortController,
+  );
 }
 
 function getFolderName(fileEntries: FileWithPath[]) {
@@ -170,9 +254,19 @@ function getFolderName(fileEntries: FileWithPath[]) {
 async function compressFiles(
   fileMap: Record<string, File | null>,
   folderName: string,
+  abortController?: AbortController,
 ) {
-  const worker = new CompressWorker();
+  abortController?.signal.throwIfAborted();
   return new Promise<File>((resolve, reject) => {
+    const worker = new CompressWorker();
+    abortController?.signal.addEventListener(
+      "abort",
+      () => {
+        console.warn("Aborted");
+        worker.terminate();
+        reject(new Error("Aborted"));
+      },
+    );
     worker.onmessage = (event) => {
       const result = event.data;
       if (result.error) {

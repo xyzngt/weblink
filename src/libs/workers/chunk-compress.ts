@@ -12,11 +12,11 @@ self.onmessage = (
 ) => {
   const { data, option, context } = ev.data;
 
-  const compressed = deflateSync(data, {
-    level: option.level,
-  });
-
   try {
+    const compressed = deflateSync(data, {
+      level: option.level,
+    });
+
     self.postMessage({
       data: compressed,
       context,

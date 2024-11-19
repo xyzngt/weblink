@@ -14,6 +14,8 @@ All notable changes to this project will be documented in this file.
 
 - Improve the file table status display 优化文件表的状态显示
 
+- Improve the file processing function, now can abort the file processing 优化文件处理功能，现在可以中止文件处理
+
 ## [0.6.5] - 2024-11-14
 
 ### New Features

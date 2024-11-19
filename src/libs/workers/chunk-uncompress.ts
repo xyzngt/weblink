@@ -7,10 +7,8 @@ self.onmessage = (
   }>,
 ) => {
   const { data, context } = ev.data;
-
-  const uncompressed = inflateSync(data);
-
   try {
+    const uncompressed = inflateSync(data);
     self.postMessage({
       data: uncompressed,
       context,
