@@ -81,7 +81,6 @@ import {
 } from "solid-js";
 import { v4 } from "uuid";
 import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
-import { ChunkCache } from "@/libs/cache/chunk-cache";
 import { FileTransferer } from "@/libs/core/file-transferer";
 import {
   Tooltip,

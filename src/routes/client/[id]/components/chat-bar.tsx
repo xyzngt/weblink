@@ -18,7 +18,6 @@ import {
   IconAttachFile,
   IconFolder,
   IconSend,
-  IconVideoFileFilled,
 } from "@/components/icons";
 import { t } from "@/i18n";
 import { createSendItemPreviewDialog } from "@/components/preview-dialog";

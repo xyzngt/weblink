@@ -30,7 +30,6 @@ import {
   IconDraftFilled,
   IconFolderMatch,
   IconPhotoFilled,
-  IconStorage,
   IconVideoFileFilled,
 } from "@/components/icons";
 
@@ -61,8 +60,10 @@ export const UserItem: Component<UserItemProps> = (
     () => sessionService.clientInfo[local.client.clientId],
   );
 
-  const { open, Component } =
-    createComfirmDeleteClientDialog();
+  const {
+    open: openConfirmDeleteClientDialog,
+    Component: ConfirmDeleteClientDialog,
+  } = createComfirmDeleteClientDialog();
 
   const renderLastMessage = () => {
     switch (props.message?.type) {
@@ -136,7 +137,7 @@ export const UserItem: Component<UserItemProps> = (
 
   return (
     <>
-      <Component />
+      <ConfirmDeleteClientDialog />
       <PortableContextMenu
         menu={(close) => (
           <>
@@ -155,7 +156,13 @@ export const UserItem: Component<UserItemProps> = (
             <ContextMenuItem
               class="gap-2"
               onSelect={async () => {
-                if (!(await open()).cancel) {
+                if (
+                  !(
+                    await openConfirmDeleteClientDialog(
+                      local.client.name,
+                    )
+                  ).cancel
+                ) {
                   messageStores.deleteClient(
                     local.client.clientId,
                   );

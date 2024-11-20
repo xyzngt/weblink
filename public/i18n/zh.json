@@ -281,7 +281,7 @@
     "confirm_delete_client_dialog": {
       "title": "删除客户端",
       "description": "删除后将无法恢复，请谨慎操作",
-      "content": "确认删除客户端？"
+      "content": "确认删除和客户端 {{name}} 的所有聊天记录？"
     },
     "status": {
       "online": "在线",
@@ -293,7 +293,8 @@
       "copy": "复制",
       "copy_link": "复制链接",
       "copy_file_name": "复制文件名",
-      "copy_image": "复制图片",
+      "copy_as_png": "复制为 PNG",
+      "copy_as_svg": "复制为 SVG",
       "paste": "粘贴",
       "delete": "删除",
       "download": "下载",

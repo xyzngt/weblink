@@ -1,6 +1,4 @@
 import CompressWorker from "@/libs/workers/zip-compress?worker";
-import { toast } from "solid-sonner";
-import { LoadingSpinner } from "@/components/ui/spinner";
 import { catchErrorAsync, catchErrorSync } from "../catch";
 
 export type FileWithPath = {

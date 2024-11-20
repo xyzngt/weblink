@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import { t } from "@/i18n";
 import { A, RouteSectionProps } from "@solidjs/router";
+import { t } from "@/i18n";
 
 export default function NotFound(props: RouteSectionProps) {
   return (

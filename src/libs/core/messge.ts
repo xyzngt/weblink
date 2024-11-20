@@ -52,10 +52,9 @@ export interface FileTransferMessage
     received: number;
   };
   transferStatus?:
-    | "processing"
+    | "transfering"
     | "complete"
-    | "merging"
-    | "ready"
+    | "paused"
     | "error";
 }
 
@@ -241,7 +240,7 @@ class MessageStores {
           messages.map((message) => {
             if (message.type === "file") {
               if (message.transferStatus !== "complete") {
-                message.transferStatus = "ready";
+                message.transferStatus = "paused";
               }
             }
             return message;
@@ -594,24 +593,11 @@ class MessageStores {
     if (index === -1) {
       return false;
     }
-    const setter = this.getMessageSetter(index)!;
-    cache.addEventListener(
-      "merging",
-      () => {
-        setter(
-          (state) => (state.transferStatus = "merging"),
-        );
-      },
-      { once: true, signal: controller.signal },
-    );
 
     cache.addEventListener(
       "complete",
       () => {
-        setter((state) => {
-          state.transferStatus = "complete";
-          controller.abort("complete");
-        });
+        controller.abort("complete");
       },
       { once: true, signal: controller.signal },
     );
@@ -659,7 +645,7 @@ class MessageStores {
       () => {
         setter((state) => {
           state.error = undefined;
-          state.transferStatus = "ready";
+          state.transferStatus = "paused";
         });
       },
       {
@@ -676,7 +662,7 @@ class MessageStores {
             total: total,
             received: received,
           };
-          state.transferStatus = "processing";
+          state.transferStatus = "transfering";
         });
       },
       {

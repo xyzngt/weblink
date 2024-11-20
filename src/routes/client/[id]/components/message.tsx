@@ -18,7 +18,6 @@ import {
   ProgressValueLabel,
 } from "@/components/ui/progress";
 import { clientProfile } from "@/libs/core/store";
-import { ChunkCache } from "@/libs/cache/chunk-cache";
 import {
   FileTransferer,
   TransferMode,
@@ -34,6 +33,7 @@ import {
   SendTextMessage,
   SessionMessage,
   StoreMessage,
+  TextMessage,
 } from "@/libs/core/messge";
 import { cacheManager } from "@/libs/services/cache-serivce";
 import { transferManager } from "@/libs/services/transfer-service";
@@ -63,6 +63,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { catchErrorAsync } from "@/libs/catch";
+import { toast } from "solid-sonner";
 
 export interface MessageCardProps
   extends ComponentProps<"li"> {
@@ -81,19 +83,21 @@ const FileMessageCard: Component<FileMessageCardProps> = (
   const { requestFile, resumeFile } = useWebRTC();
 
   const transferer = createMemo<FileTransferer | null>(
-    () =>
-      props.message.fid
-        ? (transferManager.transferers[props.message.fid] ??
-          null)
-        : null,
+    () => {
+      if (!props.message.fid) return null;
+      return (
+        transferManager.transferers[props.message.fid] ??
+        null
+      );
+    },
   );
 
-  const isSelf = createMemo(() => {
+  const isSender = createMemo(() => {
     return props.message.client === clientProfile.clientId;
   });
 
   const targetClientInfo = createMemo(() => {
-    if (isSelf()) {
+    if (isSender()) {
       return sessionService.clientInfo[
         props.message.target
       ];
@@ -108,22 +112,55 @@ const FileMessageCard: Component<FileMessageCardProps> = (
         : undefined,
   );
 
-  // createEffect(async () => {
-  //   const cacheData = cache();
-  //   if (cacheData) {
-  //     const info = await cacheData.getInfo();
-  //     const done = await cacheData.isDone();
-  //     if (done && !info?.file) {
-  //       messageStores.addCache(cacheData);
-  //       cacheData.getFile();
-  //     }
-  //   }
-  // });
+  const localStatus = createMemo(() => {
+    if (cacheData()?.isComplete) return "complete";
+    else if (cacheData()?.isMerging) return "merging";
+    else if (transferer()) return "transfering";
+    else return "paused";
+  });
+
+  const shouldShowResumeButton = createMemo(() => {
+    if (targetClientInfo()?.onlineStatus !== "online")
+      return false;
+    if (props.message.status !== "received") return false;
+    if (!props.message.transferStatus) return false;
+    if (isSender()) {
+      if (
+        ["complete", "transfering", "merging"].includes(
+          localStatus(),
+        ) &&
+        ["complete", "transfering"].includes(
+          props.message.transferStatus,
+        )
+      ) {
+        return false;
+      } else return true;
+    } else {
+      if (
+        ["complete", "transfering", "merging"].includes(
+          localStatus(),
+        )
+      ) {
+        return false;
+      } else return true;
+    }
+  });
 
   createEffect(() => {
     if (props.message.type === "file") {
       props.onLoad?.();
     }
+  });
+
+  const transferProgress = createMemo(() => {
+    if (!props.message.progress) return undefined;
+    if (isSender()) {
+      if (props.message.transferStatus !== "transfering")
+        return undefined;
+    } else {
+      if (localStatus() !== "transfering") return undefined;
+    }
+    return props.message.progress;
   });
 
   return (
@@ -259,60 +296,48 @@ const FileMessageCard: Component<FileMessageCardProps> = (
               }}
             </Show>
 
-            <Switch>
-              <Match
-                when={
-                  props.message.transferStatus ===
-                  "processing"
-                }
-              >
-                <Show when={props.message.progress}>
-                  {(progress) => {
-                    const speed = createTransferSpeed(
-                      () => progress().received,
-                    );
+            <Show when={transferProgress()}>
+              {(progress) => {
+                const speed = createTransferSpeed(
+                  () => progress().received,
+                );
 
-                    return (
-                      <Progress
-                        value={progress().received}
-                        maxValue={progress().total}
-                        getValueLabel={({ value, max }) =>
-                          `${((value / max) * 100).toFixed(
-                            2,
-                          )}% ${formatBtyeSize(value)}/${formatBtyeSize(max)}`
-                        }
-                      >
-                        <div
-                          class="mb-1 flex justify-between gap-2 font-mono text-xs
-                            text-muted-foreground"
-                        >
-                          <ProgressLabel>
-                            {progress().received !==
-                            progress().total
-                              ? speed()
-                                ? `${formatBtyeSize(speed()!, 2)}/s`
-                                : `waiting...`
-                              : progress().received === 0
-                                ? `starting...`
-                                : `loading...`}
-                          </ProgressLabel>
-                          <ProgressValueLabel />
-                        </div>
-                      </Progress>
-                    );
-                  }}
-                </Show>
-              </Match>
-              <Match
-                when={
-                  props.message.transferStatus === "merging"
-                }
-              >
-                <p class="font-mono text-sm text-muted-foreground">
-                  merging...
-                </p>
-              </Match>
-            </Switch>
+                return (
+                  <Progress
+                    value={progress().received}
+                    maxValue={progress().total}
+                    getValueLabel={({ value, max }) =>
+                      `${((value / max) * 100).toFixed(
+                        2,
+                      )}% ${formatBtyeSize(value)}/${formatBtyeSize(max)}`
+                    }
+                  >
+                    <div
+                      class="mb-1 flex justify-between gap-2 font-mono text-xs
+                        text-muted-foreground"
+                    >
+                      <ProgressLabel>
+                        {progress().received !==
+                        progress().total
+                          ? speed()
+                            ? `${formatBtyeSize(speed()!, 2)}/s`
+                            : `waiting...`
+                          : progress().received === 0
+                            ? `starting...`
+                            : `loading...`}
+                      </ProgressLabel>
+                      <ProgressValueLabel />
+                    </div>
+                  </Progress>
+                );
+              }}
+            </Show>
+
+            <Show when={localStatus() === "merging"}>
+              <p class="font-mono text-sm text-muted-foreground">
+                {t("common.file_table.status.merging")}
+              </p>
+            </Show>
 
             <div class="flex items-center justify-end gap-1">
               <Show when={cache().file}>
@@ -334,21 +359,12 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                 )}
               </Show>
 
-              <Show
-                when={
-                  !transferer() &&
-                  !["merging", "complete"].includes(
-                    props.message.transferStatus ?? "",
-                  ) &&
-                  targetClientInfo()?.onlineStatus ===
-                    "online"
-                }
-              >
+              <Show when={shouldShowResumeButton()}>
                 <Button
                   size="icon"
                   variant="outline"
                   onClick={() => {
-                    if (isSelf()) {
+                    if (isSender()) {
                       resumeFile(
                         cache().id,
                         props.message.target,
@@ -389,17 +405,26 @@ export const MessageContent: Component<MessageCardProps> = (
   );
   const contentOptions = {
     text: (props: {
-      message: StoreMessage;
+      message: TextMessage;
       close: () => void;
     }) => (
       <ContextMenuItem
         class="gap-2"
-        onSelect={() => {
-          if (local.message.type === "text")
+        onSelect={async () => {
+          const [err] = await catchErrorAsync(
             navigator.clipboard.writeText(
-              local.message.data,
+              props.message.data,
+            ),
+          );
+          if (err) {
+            toast.error(
+              t("common.notification.copy_failed"),
             );
-
+          } else {
+            toast.success(
+              t("common.notification.copy_success"),
+            );
+          }
           props.close();
         }}
       >
@@ -414,11 +439,22 @@ export const MessageContent: Component<MessageCardProps> = (
       <>
         <ContextMenuItem
           class="gap-2"
-          onSelect={() => {
-            if (local.message.type === "file")
+          onSelect={async () => {
+            const [err] = await catchErrorAsync(
               navigator.clipboard.writeText(
-                local.message.fileName,
+                props.message.fileName,
+              ),
+            );
+
+            if (err) {
+              toast.error(
+                t("common.notification.copy_failed"),
               );
+            } else {
+              toast.success(
+                t("common.notification.copy_success"),
+              );
+            }
 
             props.close();
           }}
@@ -427,34 +463,83 @@ export const MessageContent: Component<MessageCardProps> = (
           {t("common.action.copy_file_name")}
         </ContextMenuItem>
         <Show
-          when={(
-            props.message as FileTransferMessage
-          ).mimeType?.startsWith("image")}
+          when={props.message.mimeType?.startsWith("image")}
         >
           <ContextMenuItem
             class="gap-2"
             onSelect={async () => {
-              if (local.message.type === "file") {
-                if (!local.message.fid) return;
-                const cache = cacheManager.getCache(
-                  local.message.fid,
+              if (!props.message.fid) return;
+              const cache = cacheManager.getCache(
+                props.message.fid,
+              );
+              if (!cache) return;
+              const file = await cache.getFile();
+              if (!file) return;
+              const blob = await convertImageToPNG(file);
+              const item = new ClipboardItem({
+                [blob.type]: blob,
+              });
+              const [err] = await catchErrorAsync(
+                navigator.clipboard.write([item]),
+              );
+
+              if (err) {
+                toast.error(
+                  t("common.notification.copy_failed"),
                 );
-                if (!cache) return;
-                const file = await cache.getFile();
-                if (!file) return;
-                const blob = await convertImageToPNG(file);
-                const item = new ClipboardItem({
-                  [blob.type]: blob,
-                });
-                navigator.clipboard.write([item]);
+              } else {
+                toast.success(
+                  t("common.notification.copy_success"),
+                );
               }
 
               props.close();
             }}
           >
             <IconFileCopy class="size-4" />
-            {t("common.action.copy_image")}
+            {t("common.action.copy_as_png")}
           </ContextMenuItem>
+          <Show
+            when={
+              ClipboardItem.supports("image/svg+xml") &&
+              props.message.mimeType === "image/svg+xml"
+            }
+          >
+            <ContextMenuItem
+              class="gap-2"
+              onSelect={async () => {
+                if (!props.message.fid) return;
+                const cache = cacheManager.getCache(
+                  props.message.fid,
+                );
+                if (!cache) return;
+                const file = await cache.getFile();
+                if (!file) return;
+                if (file.type !== "image/svg+xml") return;
+                const item = new ClipboardItem({
+                  [file.type]: file,
+                });
+                const [err] = await catchErrorAsync(
+                  navigator.clipboard.write([item]),
+                );
+
+                if (err) {
+                  toast.error(
+                    t("common.notification.copy_failed"),
+                  );
+                } else {
+                  toast.success(
+                    t("common.notification.copy_success"),
+                  );
+                }
+
+                props.close();
+              }}
+            >
+              <IconFileCopy class="size-4" />
+              {t("common.action.copy_as_svg")}
+            </ContextMenuItem>
+          </Show>
         </Show>
       </>
     ),
@@ -468,7 +553,7 @@ export const MessageContent: Component<MessageCardProps> = (
       <>
         <Dynamic
           component={contentOptions[props.message.type]}
-          message={props.message}
+          message={props.message as any}
           close={props.close}
         />
 

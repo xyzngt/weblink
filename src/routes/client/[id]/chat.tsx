@@ -9,7 +9,6 @@ import {
   createMemo,
   createSignal,
   For,
-  Index,
   onCleanup,
   onMount,
   Show,
@@ -17,7 +16,6 @@ import {
 
 import {
   Button,
-  buttonVariants,
 } from "@/components/ui/button";
 import {
   createScrollEnd,
@@ -39,7 +37,6 @@ import PhotoSwipeLightbox from "photoswipe/lightbox";
 import {
   SendClipboardMessage,
   messageStores,
-  SessionMessage,
   StoreMessage,
 } from "@/libs/core/messge";
 import { getInitials } from "@/libs/utils/name";
@@ -227,7 +224,7 @@ const ChatHeader: Component<{
                       onSelect={async () => {
                         if (
                           !(
-                            await openConfirmDeleteClientDialog()
+                            await openConfirmDeleteClientDialog(props.client.name)
                           ).cancel
                         ) {
                           messageStores.deleteClient(

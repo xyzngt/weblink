@@ -11,9 +11,9 @@ import {
   FileMetaData,
   getTotalChunkCount,
 } from ".";
-import { sleep } from "../utils/sleep";
 
 export interface ChunkCache {
+  readonly id: string;
   addEventListener<K extends keyof ChunkCacheEventMap>(
     eventName: K,
     handler: EventHandler<ChunkCacheEventMap[K]>,
@@ -25,10 +25,6 @@ export interface ChunkCache {
     options?: boolean | EventListenerOptions,
   ): void;
 
-  readonly id: string;
-  // readonly status: Accessor<
-  //   "writing" | "merging" | "completed" | "error"
-  // >;
   initialize(): Promise<void>;
   storeChunk(
     chunckIndex: number,
@@ -55,12 +51,6 @@ export interface IDBChunkCacheOptions {
 
 export class IDBChunkCache implements ChunkCache {
   private db: IDBDatabase | null = null;
-  // status: Accessor<
-  //   "writing" | "merging" | "completed" | "error"
-  // >;
-  // private setStatus: Setter<
-  //   "writing" | "merging" | "completed" | "error"
-  // >;
   private isMerging = false;
   private eventEmitter =
     new MultiEventEmitter<ChunkCacheEventMap>();
@@ -74,11 +64,6 @@ export class IDBChunkCache implements ChunkCache {
   constructor(options: IDBChunkCacheOptions) {
     this.id = options.id;
     this.maxMomeryCacheSize = options.maxMomeryCacheSize;
-    // const [status, setStatus] = createSignal<
-    //   "writing" | "merging" | "completed" | "error"
-    // >("writing");
-    // this.status = status;
-    // this.setStatus = setStatus;
   }
 
   async initialize() {
@@ -93,12 +78,6 @@ export class IDBChunkCache implements ChunkCache {
     }
 
     await this.isEmpty();
-
-    // if (done) {
-    //   if (info?.file) {
-    //     this.dispatchEvent("complete", info.file);
-    //   }
-    // }
   }
 
   addEventListener<K extends keyof ChunkCacheEventMap>(

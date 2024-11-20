@@ -5,7 +5,7 @@ import {
   SetStoreFunction,
 } from "solid-js/store";
 import { PeerSession } from "../core/session";
-import { ClientID, ClientInfo, Client } from "../core/type";
+import { ClientID, ClientInfo } from "../core/type";
 import {
   ClientService,
   TransferClient,
@@ -13,10 +13,8 @@ import {
 import { Accessor, createSignal, Setter } from "solid-js";
 import {
   SendClipboardMessage,
-  SessionMessage,
   StorageMessage,
 } from "../core/messge";
-import { ChunkMetaData } from "../cache";
 import { v4 } from "uuid";
 
 class SessionService {

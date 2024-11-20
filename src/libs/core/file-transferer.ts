@@ -18,7 +18,6 @@ import {
   mergeRanges,
   rangesIterator,
 } from "../utils/range";
-import { Accessor, createSignal, Setter } from "solid-js";
 import { RequestFileMessage } from "./messge";
 import {
   blobToArrayBuffer,
@@ -28,21 +27,12 @@ import {
 
 import CompressWorker from "@/libs/workers/chunk-compress?worker";
 import UncompressWorker from "@/libs/workers/chunk-uncompress?worker";
-
 import { CompressionLevel } from "@/options";
 import { catchErrorAsync } from "../catch";
 
 export enum TransferMode {
   Send = 1,
   Receive = 2,
-}
-
-export enum TransferStatus {
-  New = 1,
-  Ready = 2,
-  Process = 3,
-  Complete = 4,
-  Error = 5,
 }
 
 export interface BaseTransferMessage {
@@ -69,16 +59,11 @@ export interface CompleteMessage
   type: "complete";
 }
 
-export interface ReadyMessage extends BaseTransferMessage {
-  type: "ready";
-}
-
 export type TransferMessage =
   | RequestContentMessage
   | RequestHeadMessage
   | HeadMessage
-  | CompleteMessage
-  | ReadyMessage;
+  | CompleteMessage;
 
 interface ReceiveData {
   receiveBytes: number;
@@ -136,10 +121,10 @@ export class FileTransferer {
   private sendData?: SendData;
   private initialized: boolean = false;
   private compressionLevel: CompressionLevel = 6;
+  private isComplete: boolean = false;
+  private isReady: boolean = false;
 
   readonly cache: ChunkCache;
-  readonly status: Accessor<TransferStatus>;
-  private setStatus: Setter<TransferStatus>;
   private blockCache: {
     [chunkIndex: number]: {
       blocks: {
@@ -165,10 +150,6 @@ export class FileTransferer {
   readonly mode: TransferMode;
 
   constructor(options: FileTransfererOptions) {
-    const [status, setStatus] =
-      createSignal<TransferStatus>(TransferStatus.New);
-    this.status = status;
-    this.setStatus = setStatus;
     this.cache = options.cache;
     this.blockSize = options.blockSize ?? this.blockSize;
     this.bufferedAmountLowThreshold =
@@ -397,10 +378,7 @@ export class FileTransferer {
       if (index !== -1) {
         this.channels.splice(index, 1);
       }
-      if (
-        this.status() !== TransferStatus.Complete &&
-        this.channels.length === 0
-      ) {
+      if (!this.isComplete && this.channels.length === 0) {
         this.dispatchEvent(
           "error",
           Error(`connection is closed`),
@@ -426,7 +404,7 @@ export class FileTransferer {
     if (this.channels.length === 0) {
       if (channel.readyState === "open") {
         this.dispatchEvent("ready", undefined);
-        this.setStatus(TransferStatus.Ready);
+        this.isReady = true;
       } else {
         const controller = new AbortController();
         channel.addEventListener(
@@ -434,7 +412,7 @@ export class FileTransferer {
           () => {
             controller.abort();
             this.dispatchEvent("ready", undefined);
-            this.setStatus(TransferStatus.Ready);
+            this.isReady = true;
           },
           {
             signal: controller.signal,
@@ -551,10 +529,10 @@ export class FileTransferer {
     const complete =
       this.receivedData.indexes.size === chunkslength;
     if (complete) {
-      if (this.status() === TransferStatus.Complete)
-        return false;
+      if (this.isComplete) return false;
       console.log(`trigger receive complete`);
-      this.setStatus(TransferStatus.Complete);
+      this.isComplete = true;
+
       this.getAnyAvailableChannel()
         .then((channel) => {
           channel.send(
@@ -566,6 +544,10 @@ export class FileTransferer {
         })
         .then(() => {
           this.dispatchEvent("complete", undefined);
+        })
+        .catch((err) => {
+          this.dispatchEvent("error", err);
+          this.close();
         });
     }
     return complete;
@@ -601,9 +583,14 @@ export class FileTransferer {
             bufferedAmountLowThreshold,
           ),
         ),
-      ),
+      ).catch(() => {
+        throw new Error(
+          "Can not get any available channel",
+        );
+      }),
     );
     if (error) {
+      this.dispatchEvent("error", error);
       throw error;
     }
     return channel;
@@ -650,8 +637,6 @@ export class FileTransferer {
       transferRange,
     );
 
-    this.setStatus(TransferStatus.Process);
-
     const spliteToBlock = async (
       chunkIndex: number,
       compressedChunk: Uint8Array,
@@ -687,8 +672,7 @@ export class FileTransferer {
           this.getAnyAvailableChannel(),
         );
         if (error) {
-          if (this.closed) return;
-          throw error;
+          return this.close();
         }
 
         channel.send(packet);
@@ -752,21 +736,20 @@ export class FileTransferer {
       this.getAnyAvailableChannel(),
     );
     if (error) {
-      if (this.closed) return;
-      throw error;
+      return this.close();
     }
     channel.send(
       JSON.stringify({
         type: "complete",
       } satisfies CompleteMessage),
     );
-    this.setStatus(TransferStatus.Complete);
+    this.isComplete = true;
   }
 
   // handle receive message
   handleReceiveMessage(data: any) {
     try {
-      this.setStatus(TransferStatus.Process);
+      // this.setStatus(TransferStatus.Process);
 
       if (this.mode === TransferMode.Receive) {
         if (typeof data === "string") {
@@ -809,11 +792,8 @@ export class FileTransferer {
           }
           this.sendFile(message.ranges);
         } else if (message.type === "complete") {
-          this.setStatus(TransferStatus.Complete);
+          this.isComplete = true;
           this.dispatchEvent("complete", undefined);
-        } else if (message.type === "ready") {
-          // this.ready?.resolve();
-          this.dispatchEvent("ready", undefined);
         }
       }
     } catch (error) {

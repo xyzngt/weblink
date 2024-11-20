@@ -5,7 +5,6 @@ import {
 import {
   FileTransferer,
   TransferMode,
-  TransferStatus,
 } from "../core/file-transferer";
 import { FileID } from "../core/type";
 import { ChunkCache } from "../cache/chunk-cache";
@@ -35,15 +34,11 @@ class TransfererFactory {
   }
 
   addChannel(fileId: FileID, channel: RTCDataChannel) {
-    console.log(`addChannel`, fileId, channel.label);
-
     const transfer = this.transferers[fileId];
     if (transfer) {
       transfer.addChannel(channel);
     } else {
-      if (!this.channels[fileId]) {
-        this.channels[fileId] = [];
-      }
+      this.channels[fileId] ??= [];
       this.channels[fileId].push(channel);
     }
   }

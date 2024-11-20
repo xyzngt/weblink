@@ -9,19 +9,16 @@ import {
 import {
   createStore,
   SetStoreFunction,
-  StoreSetter,
 } from "solid-js/store";
 import { FileID } from "../core/type";
 import {
   Accessor,
-  batch,
   createSignal,
   Setter,
 } from "solid-js";
 import { appOptions } from "@/options";
 import {
   ChunkCacheInfo,
-  ChunkMetaData,
   DBNAME_PREFIX,
   FileMetaData,
 } from "../cache";

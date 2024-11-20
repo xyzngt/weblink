@@ -260,7 +260,7 @@
     "confirm_delete_client_dialog": {
       "title": "Delete Client",
       "description": "This operation deletes the client and messages",
-      "content": "Are you really sure you want to delete this client?"
+      "content": "Are you really sure you want to delete client {{name}} and all messages?"
     },
     "reset_options_dialog": {
       "title": "Reset Options",
@@ -292,7 +292,8 @@
       "copy": "Copy",
       "copy_link": "Copy Link",
       "copy_file_name": "Copy File Name",
-      "copy_image": "Copy Image",
+      "copy_as_png": "Copy as PNG",
+      "copy_as_svg": "Copy as SVG",
       "paste": "Paste",
       "delete": "Delete",
       "download": "Download",

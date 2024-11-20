@@ -4,8 +4,6 @@ import {
 } from "@solidjs/router";
 
 import {
-  createEffect,
-  createSignal,
   onCleanup,
   onMount,
   ParentProps,
@@ -28,12 +26,9 @@ import { useWebRTC } from "./libs/core/rtc-context";
 import {
   JoinRoomButton,
   createRoomDialog,
-  joinUrl,
 } from "./components/join-dialog";
 import { toast } from "solid-sonner";
 import { sessionService } from "./libs/services/session-service";
-import { createDialog } from "./components/dialogs/dialog";
-import { QRCode } from "./components/qrcode";
 import { Button } from "./components/ui/button";
 import { IconQRCode } from "./components/icons";
 import { t } from "./i18n";
