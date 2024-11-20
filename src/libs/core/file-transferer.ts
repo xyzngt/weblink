@@ -139,6 +139,7 @@ export class FileTransferer {
     new AbortController();
   private closed: boolean = false;
   private unzipWorker?: Worker;
+  private compressWorker?: Worker;
   private timer?: number;
 
   get id() {
@@ -705,6 +706,8 @@ export class FileTransferer {
       enqueueTask(() => spliteToBlock(chunkIndex, data));
     };
 
+    this.compressWorker = compressWorker;
+
     for (const chunkIndex of rangesIterator(
       transferRange,
     )) {
@@ -806,7 +809,8 @@ export class FileTransferer {
   public close() {
     if (this.closed) return;
     this.dispatchEvent("close", undefined);
-
+    this.unzipWorker?.terminate();
+    this.compressWorker?.terminate();
     this.channels.forEach((channel) => channel.close());
   }
 }

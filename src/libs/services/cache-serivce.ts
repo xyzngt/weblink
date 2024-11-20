@@ -24,16 +24,9 @@ import {
 } from "../cache";
 import { v4 } from "uuid";
 
-type EventMap = {
-  update: string;
-  cleanup: string;
-};
-
 class FileCacheFactory {
   status: Accessor<"ready" | "loading">;
   private setStatus: Setter<"ready" | "loading">;
-  private eventEmitter: MultiEventEmitter<EventMap> =
-    new MultiEventEmitter();
   readonly cacheInfo: Record<FileID, FileMetaData>;
   private setCacheInfo: SetStoreFunction<
     Record<FileID, FileMetaData>
@@ -58,36 +51,6 @@ class FileCacheFactory {
     >({});
     this.cacheInfo = cacheInfo;
     this.setCacheInfo = setCacheInfo;
-  }
-
-  addEventListener<K extends keyof EventMap>(
-    eventName: K,
-    handler: EventHandler<EventMap[K]>,
-  ) {
-    return this.eventEmitter.addEventListener(
-      eventName,
-      handler,
-    );
-  }
-
-  removeEventListener<K extends keyof EventMap>(
-    eventName: K,
-    handler: EventHandler<EventMap[K]>,
-  ) {
-    return this.eventEmitter.removeEventListener(
-      eventName,
-      handler,
-    );
-  }
-
-  private dispatchEvent<K extends keyof EventMap>(
-    eventName: K,
-    event: EventMap[K],
-  ) {
-    return this.eventEmitter.dispatchEvent(
-      eventName,
-      event,
-    );
   }
 
   async initialize() {
