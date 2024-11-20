@@ -595,7 +595,9 @@ export default function File() {
                   const abortController =
                     new AbortController();
                   const toastId = toast.loading(
-                    t("common.notification.processing_files"),
+                    t(
+                      "common.notification.processing_files",
+                    ),
                     {
                       duration: Infinity,
                       action: {
@@ -611,7 +613,7 @@ export default function File() {
                     await catchErrorAsync(
                       handleSelectFolder(
                         ev.currentTarget.files,
-                        abortController,
+                        abortController.signal,
                       ),
                     );
 
@@ -619,6 +621,11 @@ export default function File() {
 
                   if (error) {
                     console.warn(error);
+                    if (
+                      error.message !== "User cancelled"
+                    ) {
+                      toast.error(error.message);
+                    }
                     return;
                   }
 
@@ -875,12 +882,15 @@ export default function File() {
             const [error, files] = await catchErrorAsync(
               handleDropItems(
                 ev.dataTransfer.items,
-                abortController,
+                abortController.signal,
               ),
             );
             toast.dismiss(toastId);
             if (error) {
               console.warn(error);
+              if (error.message !== "User cancelled") {
+                toast.error(error.message);
+              }
               return;
             }
 

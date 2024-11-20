@@ -15,11 +15,12 @@ export type FilesMap = {
 
 export const handleSelectFolder = async (
   files: FileList,
-  abortController?: AbortController,
+  signal?: AbortSignal,
 ) => {
+  signal?.throwIfAborted();
   return new Promise<File>(async (resolve, reject) => {
-    abortController?.signal.addEventListener("abort", () =>
-      reject(new Error(abortController?.signal.reason)),
+    signal?.addEventListener("abort", () =>
+      reject(new Error(signal?.reason)),
     );
     const fileEntries = Array.from(files).map((file) => ({
       file,
@@ -31,16 +32,12 @@ export const handleSelectFolder = async (
     const folderName = getFolderName(fileEntries);
     let error: Error | undefined = undefined;
     [error, processedFiles] = await catchErrorAsync(
-      processFiles(
-        fileEntries,
-        folderName,
-        abortController,
-      ),
+      processFiles(fileEntries, folderName, signal),
     );
     if (error) return reject(error);
 
     [error] = catchErrorSync(() =>
-      abortController?.signal.throwIfAborted(),
+      signal?.throwIfAborted(),
     );
     if (error) return reject(error);
 
@@ -50,11 +47,12 @@ export const handleSelectFolder = async (
 
 export const handleDropItems = async (
   items: DataTransferItemList,
-  abortController?: AbortController,
+  signal?: AbortSignal,
 ): Promise<File[]> => {
+  signal?.throwIfAborted();
   return new Promise<File[]>(async (resolve, reject) => {
-    abortController?.signal.addEventListener("abort", () =>
-      reject(new Error(abortController?.signal.reason)),
+    signal?.addEventListener("abort", () =>
+      reject(new Error(signal?.reason)),
     );
     const entries: FileSystemEntry[] = [];
     const files: File[] = [];
@@ -82,19 +80,9 @@ export const handleDropItems = async (
       [error] = await catchErrorAsync(
         Promise.all(
           entries.map((entry) =>
-            readEntry(
-              entry,
-              filesMap,
-              undefined,
-              abortController,
-            ),
+            readEntry(entry, filesMap, undefined, signal),
           ),
         ),
-      );
-      if (error) return reject(error);
-
-      [error] = catchErrorSync(() =>
-        abortController?.signal.throwIfAborted(),
       );
       if (error) return reject(error);
 
@@ -105,24 +93,15 @@ export const handleDropItems = async (
         await catchErrorAsync(
           Promise.all(
             Object.entries(filesMap.directories).map(
-              async ([
-                folderName,
-                files,
-              ]): Promise<File | null> => {
-                const filesResult = await processFiles(
+              async ([folderName, files]) =>
+                await processFiles(
                   files,
                   folderName,
-                );
-                return filesResult;
-              },
+                  signal,
+                ),
             ),
           ),
         );
-      if (error) return reject(error);
-
-      [error] = catchErrorSync(() =>
-        abortController?.signal.throwIfAborted(),
-      );
       if (error) return reject(error);
 
       const compressedFolders =
@@ -138,14 +117,10 @@ function readEntry(
   entry: FileSystemEntry,
   map: FilesMap,
   folderName?: string,
-  abortController?: AbortController,
+  signal?: AbortSignal,
 ) {
+  signal?.throwIfAborted();
   return new Promise<void>((resolve, reject) => {
-    const [error] = catchErrorSync(() =>
-      abortController?.signal.throwIfAborted(),
-    );
-    if (error) return reject(error);
-
     if (entry.isFile) {
       const fileEntry = entry as FileSystemFileEntry;
       fileEntry.file(
@@ -186,24 +161,28 @@ function readEntry(
           const [error] = await catchErrorAsync(
             Promise.all(
               entries.map((entry) =>
-                readEntry(
-                  entry,
-                  map,
-                  folderName,
-                  abortController,
-                ),
+                readEntry(entry, map, folderName, signal),
               ),
             ),
           );
           if (error) return reject(error);
-          
+
           return readEntries();
         });
       };
-
       readEntries();
     }
   });
+}
+
+function getFolderName(fileEntries: FileWithPath[]) {
+  if (!fileEntries.length) return Date.now().toString();
+  const firstPath = fileEntries[0].fullPath;
+  if (!firstPath) return Date.now().toString();
+  const parts = firstPath.split("/");
+  return parts.length > 1
+    ? parts[0]
+    : Date.now().toString();
 }
 
 /**
@@ -216,7 +195,7 @@ function readEntry(
 async function processFiles(
   files: FileWithPath[],
   folderName: string,
-  abortController?: AbortController,
+  signal?: AbortSignal,
 ): Promise<File> {
   const fileMap: Record<string, File | null> = {};
 
@@ -232,47 +211,27 @@ async function processFiles(
     fileMap[fullPath] = file.file;
   });
 
-  return await compressFiles(
-    fileMap,
-    folderName,
-    abortController,
-  );
-}
-
-function getFolderName(fileEntries: FileWithPath[]) {
-  if (!fileEntries.length) return Date.now().toString();
-  const firstPath = fileEntries[0].fullPath;
-  if (!firstPath) return Date.now().toString();
-  const parts = firstPath.split("/");
-  return parts.length > 1
-    ? parts[0]
-    : Date.now().toString();
+  return await compressFiles(fileMap, folderName, signal);
 }
 
 async function compressFiles(
   fileMap: Record<string, File | null>,
   folderName: string,
-  abortController?: AbortController,
+  signal?: AbortSignal,
 ) {
-  abortController?.signal.throwIfAborted();
+  signal?.throwIfAborted();
+  const worker = new CompressWorker();
   return new Promise<File>((resolve, reject) => {
-    const worker = new CompressWorker();
-    abortController?.signal.addEventListener(
-      "abort",
-      () => {
-        console.warn("Aborted");
-        worker.terminate();
-        reject(new Error("Aborted"));
-      },
-    );
+    signal?.addEventListener("abort", () => {
+      reject(new Error(signal?.reason));
+    });
     worker.onmessage = (event) => {
       const result = event.data;
-      if (result.error) {
-        reject(result.error);
-        return;
-      }
+      if (result.error) return reject(result.error);
       resolve(result.data);
     };
     worker.postMessage({ fileMap, folderName });
+  }).finally(() => {
+    worker.terminate();
   });
 }

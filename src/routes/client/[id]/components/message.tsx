@@ -132,18 +132,17 @@ const FileMessageCard: Component<FileMessageCardProps> = (
         ["complete", "transfering"].includes(
           props.message.transferStatus,
         )
-      ) {
+      )
         return false;
-      } else return true;
     } else {
       if (
         ["complete", "transfering", "merging"].includes(
           localStatus(),
         )
-      ) {
+      )
         return false;
-      } else return true;
     }
+    return true;
   });
 
   createEffect(() => {

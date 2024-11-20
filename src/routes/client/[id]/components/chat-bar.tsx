@@ -121,12 +121,15 @@ export const ChatBar: Component<
                 const [error, file] = await catchErrorAsync(
                   handleSelectFolder(
                     ev.currentTarget.files,
-                    abortController,
+                    abortController.signal,
                   ),
                 );
                 toast.dismiss(toastId);
                 if (error) {
                   console.warn(error);
+                  if (error.message !== "User cancelled") {
+                    toast.error(error.message);
+                  }
                   return;
                 }
                 sendFile(file, local.client.clientId);
@@ -221,12 +224,15 @@ export const ChatBar: Component<
               const [error, files] = await catchErrorAsync(
                 handleDropItems(
                   clipboardData.items,
-                  abortController,
+                  abortController.signal,
                 ),
               );
               toast.dismiss(toastId);
               if (error) {
                 console.warn(error);
+                if (error.message !== "User cancelled") {
+                  toast.error(error.message);
+                }
                 return;
               }
               for (const file of files) {

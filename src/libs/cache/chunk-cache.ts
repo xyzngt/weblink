@@ -509,6 +509,7 @@ export class IDBChunkCache implements ChunkCache {
         },
       ).finally(() => {
         this.isMerging = false;
+        worker.terminate();
       });
     }
 

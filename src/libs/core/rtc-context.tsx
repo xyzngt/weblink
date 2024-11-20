@@ -46,8 +46,6 @@ import { toast } from "solid-sonner";
 import { ChunkMetaData, FileMetaData } from "../cache";
 import { catchErrorAsync } from "../catch";
 
-
-
 function getClientService(
   options: ClientServiceInitOptions,
 ): ClientService {
@@ -370,15 +368,18 @@ export const WebRTCProvider: Component<
               );
 
             messageStores.addTransfer(transferer);
-            transferer.addEventListener("ready", async () => {
-              const [error] = await catchErrorAsync(
-                transferer.sendFile(),
-              );
-              if (error) {
-                console.error(error);
-                toast.error(error.message);
-              }
-            });
+            transferer.addEventListener(
+              "ready",
+              async () => {
+                const [error] = await catchErrorAsync(
+                  transferer.sendFile(),
+                );
+                if (error) {
+                  console.error(error);
+                  toast.error(error.message);
+                }
+              },
+            );
             await transferer.initialize();
 
             for (

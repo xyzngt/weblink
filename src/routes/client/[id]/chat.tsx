@@ -14,9 +14,7 @@ import {
   Show,
 } from "solid-js";
 
-import {
-  Button,
-} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   createScrollEnd,
   keepBottom,
@@ -224,7 +222,9 @@ const ChatHeader: Component<{
                       onSelect={async () => {
                         if (
                           !(
-                            await openConfirmDeleteClientDialog(props.client.name)
+                            await openConfirmDeleteClientDialog(
+                              props.client.name,
+                            )
                           ).cancel
                         ) {
                           messageStores.deleteClient(
@@ -479,12 +479,15 @@ export default function ClientPage(
                   await catchErrorAsync(
                     handleDropItems(
                       ev.dataTransfer.items,
-                      abortController,
+                      abortController.signal,
                     ),
                   );
                 toast.dismiss(toastId);
                 if (error) {
                   console.warn(error);
+                  if (error.message !== "User cancelled") {
+                    toast.error(error.message);
+                  }
                   return;
                 }
 

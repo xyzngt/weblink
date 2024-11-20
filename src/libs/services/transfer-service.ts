@@ -94,6 +94,7 @@ class TransfererFactory {
         this.destroyTransfer(transferer.id);
 
         controller.abort();
+        
       },
       { once: true, signal: controller.signal },
     );
