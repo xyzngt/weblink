@@ -94,30 +94,21 @@ export class PeerSession {
       if (
         this.peerConnection.connectionState === "connected"
       ) {
+        console.warn(
+          `session ${this.clientId} already connected`,
+        );
         return;
       }
 
       this.disconnect();
     }
 
+    this.controller = new AbortController();
     const pc = new RTCPeerConnection(
       await getConfiguration(),
     );
-
-    this.controller = new AbortController();
-    this.controller.signal.addEventListener("abort", () => {
-      this.makingOffer = false;
-      this.channels.length = 0;
-      this.messageChannel = null;
-      this.dispatchEvent("messageChannelChange", "closed");
-      if (this.peerConnection) {
-        this.peerConnection.close();
-        this.peerConnection = null;
-        this.dispatchEvent("disconnect", undefined);
-      }
-    });
-
     this.peerConnection = pc;
+
     if (pc.getTransceivers().length === 0) {
       pc.addTransceiver("video", {
         direction: "recvonly",
@@ -286,12 +277,13 @@ export class PeerSession {
 
     document.addEventListener(
       "visibilitychange",
-      (ev) => {
+      () => {
         if (document.visibilityState === "visible") {
           if (
             this.peerConnection?.connectionState !==
             "connected"
           ) {
+            this.disconnect();
           }
         }
       },
@@ -640,21 +632,20 @@ export class PeerSession {
       );
       return;
     }
-    const abortController = new AbortController();
+    const connectAbortController = new AbortController();
 
     return new Promise<void>(async (resolve, reject) => {
       const timer = window.setTimeout(() => {
         reject(new Error("connect timeout"));
-        abortController.abort();
+        connectAbortController.abort();
         this.disconnect();
       }, 10000);
 
       const onConnectionStateChange = () => {
         switch (pc.connectionState) {
           case "connected":
-            clearTimeout(timer);
-            abortController.abort();
             resolve();
+            connectAbortController.abort();
             break;
           case "failed":
           case "closed":
@@ -664,8 +655,8 @@ export class PeerSession {
                 `Connection failed with state: ${pc.connectionState}`,
               ),
             );
-            abortController.abort();
             this.disconnect();
+            connectAbortController.abort();
             break;
           default:
             break;
@@ -675,7 +666,7 @@ export class PeerSession {
       pc.addEventListener(
         "connectionstatechange",
         onConnectionStateChange,
-        { signal: abortController.signal },
+        { signal: connectAbortController.signal },
       );
 
       const onIceStateChange = () => {
@@ -688,13 +679,13 @@ export class PeerSession {
             break;
           case "closed":
           case "disconnected":
-            abortController.abort();
-            this.disconnect();
             reject(
               new Error(
                 `ICE connection failed with state: ${pc.iceConnectionState}`,
               ),
             );
+            this.disconnect();
+            connectAbortController.abort();
             break;
           default:
             break;
@@ -704,31 +695,31 @@ export class PeerSession {
       pc.addEventListener(
         "icestatechange",
         onIceStateChange,
-        { signal: abortController.signal },
+        { signal: connectAbortController.signal },
       );
 
       const onSignalingStateChange = () => {
         if (pc.signalingState === "closed") {
-          abortController.abort();
-          this.disconnect();
-
           reject(
             new Error(
               `Signaling connection failed with state: ${pc.signalingState}`,
             ),
           );
+          this.disconnect();
+          connectAbortController.abort();
         }
       };
 
       pc.addEventListener(
         "signalingstatechange",
         onSignalingStateChange,
-        { signal: abortController.signal },
+        { signal: connectAbortController.signal },
       );
 
-      abortController.signal.addEventListener(
+      connectAbortController.signal.addEventListener(
         "abort",
         () => {
+          clearTimeout(timer);
           reject(new Error("connect aborted"));
         },
         { once: true },
@@ -757,6 +748,18 @@ export class PeerSession {
 
   disconnect() {
     this.controller?.abort();
+    this.makingOffer = false;
+    this.channels.length = 0;
+    if (this.messageChannel) {
+      this.messageChannel.close();
+      this.messageChannel = null;
+      this.dispatchEvent("messageChannelChange", "closed");
+    }
+    if (this.peerConnection) {
+      this.peerConnection.close();
+      this.peerConnection = null;
+      this.dispatchEvent("disconnect", undefined);
+    }
   }
 
   close() {
