@@ -52,7 +52,7 @@ import { transferManager } from "@/libs/services/transfer-service";
 import { downloadFile } from "@/libs/utils/download-file";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
 import { getInitials } from "@/libs/utils/name";
-import { ConnectionBadge } from "@/routes/components/connection-badge";
+import { ConnectionBadge } from "@/components/connection-badge";
 import { makePersisted } from "@solid-primitives/storage";
 import { A, RouteSectionProps } from "@solidjs/router";
 import {
@@ -80,7 +80,7 @@ import {
   Show,
 } from "solid-js";
 import { v4 } from "uuid";
-import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { createComfirmDeleteItemsDialog } from "@/components/confirm-delete-dialog";
 import { FileTransferer } from "@/libs/core/file-transferer";
 import {
   Tooltip,
@@ -382,7 +382,7 @@ const Sync = (props: RouteSectionProps) => {
   const {
     open: openDeleteDialog,
     Component: DeleteDialog,
-  } = createComfirmDeleteDialog();
+  } = createComfirmDeleteItemsDialog();
 
   const [storage, setStorage] = createSignal<
     ChunkCacheInfo[]

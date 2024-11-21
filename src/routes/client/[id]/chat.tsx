@@ -66,7 +66,7 @@ import {
 } from "@/components/icons";
 import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
-import { ConnectionBadge } from "@/routes/components/connection-badge";
+import { ConnectionBadge } from "@/components/connection-badge";
 import { toast } from "solid-sonner";
 import { PeerSession } from "@/libs/core/session";
 import { v4 } from "uuid";

@@ -474,9 +474,10 @@ export const MessageContent: Component<MessageCardProps> = (
               if (!cache) return;
               const file = await cache.getFile();
               if (!file) return;
-              const blob = await convertImageToPNG(file);
+              const convertedPng =
+                await convertImageToPNG(file);
               const item = new ClipboardItem({
-                [blob.type]: blob,
+                [convertedPng.type]: convertedPng,
               });
               const [err] = await catchErrorAsync(
                 navigator.clipboard.write([item]),

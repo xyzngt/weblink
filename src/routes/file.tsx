@@ -96,7 +96,7 @@ import {
   handleSelectFolder,
 } from "@/libs/utils/process-file";
 import DropArea from "@/components/drop-area";
-import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { createComfirmDeleteItemsDialog } from "@/components/confirm-delete-dialog";
 import { Badge } from "@/components/ui/badge";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { toast } from "solid-sonner";
@@ -567,7 +567,7 @@ export default function File() {
   const {
     open: openDeleteDialog,
     Component: DeleteDialogComponent,
-  } = createComfirmDeleteDialog();
+  } = createComfirmDeleteItemsDialog();
   return (
     <>
       <DeleteDialogComponent />
