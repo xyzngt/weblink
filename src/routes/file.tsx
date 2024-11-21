@@ -684,14 +684,12 @@ export default function File() {
           </label>
         )}
       </PortableContextMenu>
+
       <div
-        class="container pointer-events-none fixed inset-0 z-[-1]
-          backdrop-blur"
-      />
-      <div
-        class="container z-[10] flex min-h-[calc(100%-3rem)] flex-col gap-4
-          bg-background/80 px-0 py-4"
+        class="container relative z-[10] flex min-h-[calc(100%-3rem)]
+          flex-col gap-4 bg-background/80 px-0 pt-4 pb-20"
       >
+        <div class="pointer-events-none absolute inset-0 z-[-1] backdrop-blur" />
         <h2 class="h2 px-2">{t("cache.title")}</h2>
         <StorageStatus class="px-2" />
         <div class="sticky top-12 z-10 flex gap-2 p-2 backdrop-blur">

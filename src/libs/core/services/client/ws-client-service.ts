@@ -28,8 +28,7 @@ export class WebSocketClientService
   private password: string | null;
   private client: TransferClient;
   private socket: WebSocket | null = null;
-  private controller: AbortController =
-    new AbortController();
+  private controller: AbortController | null = null;
   private signalingServices: Map<
     string,
     WebSocketSignalingService
@@ -58,31 +57,6 @@ export class WebSocketClientService
     this.client = { ...client, createdAt: Date.now() };
     this.websocketUrl =
       websocketUrl ?? import.meta.env.VITE_WEBSOCKET_URL;
-    window.addEventListener(
-      "beforeunload",
-      () => {
-        this.destroy();
-      },
-      { signal: this.controller.signal },
-    );
-    window.addEventListener(
-      "unload",
-      () => {
-        this.destroy();
-      },
-      { signal: this.controller.signal },
-    );
-    document.addEventListener(
-      "visibilitychange",
-      (ev) => {
-        if (document.visibilityState === "visible") {
-          if (this.socket?.readyState !== WebSocket.OPEN) {
-            this.reconnect();
-          }
-        }
-      },
-      { signal: this.controller.signal },
-    );
   }
 
   private dispatchEvent<
@@ -118,6 +92,27 @@ export class WebSocketClientService
   }
 
   private async initialize(resume?: boolean) {
+    if (this.socket) {
+      if (this.socket.readyState === WebSocket.OPEN) {
+        console.warn(
+          `WebSocket already initialized, return existing socket`,
+        );
+        return this.socket;
+      } else if (
+        this.socket.readyState === WebSocket.CONNECTING
+      ) {
+        console.warn(
+          `WebSocket is connecting, wait for connection`,
+        );
+        return this.socket;
+      } else {
+        console.warn(
+          `WebSocket is not open, destroy existing socket`,
+        );
+        this.destroy();
+      }
+    }
+
     const wsUrl = new URL(this.websocketUrl);
 
     wsUrl.searchParams.append("room", this.roomId);
@@ -136,34 +131,81 @@ export class WebSocketClientService
       }
     }
     const socket = new WebSocket(wsUrl);
+    const controller = new AbortController();
+    this.controller = controller;
 
-    socket.addEventListener("message", (ev) => {
-      const signal: RawSignal = JSON.parse(ev.data);
-      switch (signal.type) {
-        case "join":
-          this.emit("join", signal.data as TransferClient);
-          break;
-        case "leave":
-          this.emit("leave", signal.data as TransferClient);
-          break;
-        case "ping":
-          socket.send(JSON.stringify({ type: "pong" }));
-        default:
-          break;
-      }
-    });
+    window.addEventListener(
+      "beforeunload",
+      () => {
+        this.destroy();
+      },
+      { signal: controller.signal },
+    );
+    window.addEventListener(
+      "unload",
+      () => {
+        this.destroy();
+      },
+      { signal: controller.signal },
+    );
+    document.addEventListener(
+      "visibilitychange",
+      () => {
+        if (document.visibilityState !== "visible") return;
+        if (this.socket?.readyState === WebSocket.OPEN)
+          return;
+        
+        this.dispatchEvent("status-change", "disconnected");
+        this.reconnect();
+      },
+      { signal: controller.signal },
+    );
+
+    socket.addEventListener(
+      "message",
+      (ev) => {
+        const signal: RawSignal = JSON.parse(ev.data);
+        switch (signal.type) {
+          case "join":
+            this.emit(
+              "join",
+              signal.data as TransferClient,
+            );
+            break;
+          case "leave":
+            this.emit(
+              "leave",
+              signal.data as TransferClient,
+            );
+            break;
+          case "ping":
+            socket.send(JSON.stringify({ type: "pong" }));
+          default:
+            break;
+        }
+      },
+      { signal: controller.signal },
+    );
+
+    socket.addEventListener(
+      "error",
+      (ev) => {
+        this.dispatchEvent("status-change", "disconnected");
+        console.warn(`WebSocket error: ${ev}`);
+      },
+      { signal: controller.signal },
+    );
 
     socket.addEventListener(
       "close",
-      () => this.reconnect(),
+      () => {
+        this.dispatchEvent("status-change", "disconnected");
+        this.reconnect();
+      },
       {
-        signal: this.controller.signal,
+        signal: controller.signal,
       },
     );
-
-    this.controller.signal.addEventListener("abort", () => {
-      this.dispatchEvent("status-change", "disconnected");
-    });
 
     this.socket = socket;
 
@@ -185,7 +227,7 @@ export class WebSocketClientService
           reject(new Error(`WebSocket error occurred`));
           this.destroy();
         },
-        { once: true, signal: this.controller.signal },
+        { once: true, signal: controller.signal },
       );
       socket.addEventListener(
         "message",
@@ -230,11 +272,11 @@ export class WebSocketClientService
             );
             resolve(socket);
           } else if (message.type === "error") {
-            reject(new Error(message.data));
             this.destroy();
+            reject(new Error(message.data));
           }
         },
-        { once: true, signal: this.controller.signal },
+        { once: true, signal: controller.signal },
       );
     });
   }
@@ -317,12 +359,10 @@ export class WebSocketClientService
     await this.initialize();
   }
   destroy() {
-    this.dispatchEvent("status-change", "disconnected");
     this.signalingServices.forEach((service) =>
       service.destroy(),
     );
     this.eventListeners.clear();
-
     if (this.socket) {
       if (this.socket.readyState === WebSocket.OPEN) {
         this.socket.send(
@@ -334,8 +374,11 @@ export class WebSocketClientService
       }
       this.socket = null;
     }
-
-    this.controller.abort();
+    if (this.controller) {
+      this.controller.abort();
+      this.controller = null;
+    }
+    this.dispatchEvent("status-change", "disconnected");
   }
   private emit(event: string, data: any) {
     const listeners = this.eventListeners.get(event) || [];

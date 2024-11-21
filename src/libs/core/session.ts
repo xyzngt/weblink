@@ -302,7 +302,8 @@ export class PeerSession {
   }
 
   async listen() {
-    if ((await this.createConnection()) === undefined) {
+    const pc = await this.createConnection();
+    if (pc === undefined) {
       console.warn(`session connection is created`);
       return;
     }
@@ -310,9 +311,12 @@ export class PeerSession {
     this.sender.addEventListener(
       "signal",
       async (ev) => {
-        const pc = this.peerConnection;
-        if (!pc) return;
-
+        if (this.peerConnection !== pc) {
+          console.warn(
+            `peer connection is changed, ignore signal`,
+          );
+          return;
+        }
         console.log(
           `client received signal ${ev.detail.type}`,
           ev.detail,
@@ -322,19 +326,14 @@ export class PeerSession {
 
         const signal = ev.detail;
         if (signal.type === "offer") {
-          if (pc.signalingState !== "stable") {
-            console.warn(
-              `offer ignored due to signalingState is ${pc.signalingState}`,
-            );
-            return;
-          }
-
           const offerCollision =
             this.makingOffer ||
             pc.signalingState !== "stable";
           this.ignoreOffer = !this.polite && offerCollision;
           if (this.ignoreOffer) {
-            console.warn("Offer ignored due to collision");
+            console.warn(
+              `Offer ignored due to collision, signalingState: ${pc.signalingState}`,
+            );
             return;
           }
 
@@ -368,6 +367,9 @@ export class PeerSession {
           }
 
           if (!pc.localDescription) {
+            console.warn(
+              `localDescription is null, signalingState: ${pc.signalingState}`,
+            );
             return;
           }
 
@@ -511,12 +513,12 @@ export class PeerSession {
   }
 
   async renegotiate() {
-    if (this.polite) {
-      console.log(
-        `session ${this.clientId} is polite, skip renegotiate`,
-      );
-      return;
-    }
+    // if (this.polite) {
+    //   console.log(
+    //     `session ${this.clientId} is polite, skip renegotiate`,
+    //   );
+    //   return;
+    // }
     if (!this.peerConnection) {
       console.warn(
         `renegotiate failed, peer connection is not created`,
@@ -651,8 +653,8 @@ export class PeerSession {
         switch (pc.connectionState) {
           case "connected":
             clearTimeout(timer);
-            resolve();
             abortController.abort();
+            resolve();
             break;
           case "failed":
           case "closed":
