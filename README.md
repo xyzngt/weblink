@@ -152,6 +152,18 @@ The application currently supports LAN use in non-secure environments. Ensure th
 
 And at the same time, run [weblink-ws-server](https://github.com/99percentpeople/weblink-ws-server) to support WEBSOCKET connections.
 
+#### Public STUN Server
+
+This application defaults to using Google's STUN server. If you cannot connect, please configure your own STUN server. You can refer to [https://gist.github.com/mondain/b0ec1cf5f60ae726202e](https://gist.github.com/mondain/b0ec1cf5f60ae726202e) for a list of public STUN servers.
+
+#### Cloudflare Calls TURN Server
+
+You can use the TURN server provided by Cloudflare Calls, please visit [https://developers.cloudflare.com/calls/turn](https://developers.cloudflare.com/calls/turn).
+
+#### Self-Hosted TURN Server
+
+You can refer to [https://github.com/coturn/coturn](https://github.com/coturn/coturn) to set up your own TURN server.
+
 ## Contribution
 
 Contributions are welcome! Please feel free to submit issues or pull requests.

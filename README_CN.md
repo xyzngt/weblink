@@ -30,7 +30,6 @@ Weblink 目前支持以下功能：
 
 更多信息请查看 [CHANGELOG](CHANGELOG.md) 了解最新更新。
 
-
 ## 使用方法
 
 ### 本地运行
@@ -143,6 +142,18 @@ VITE_WEBSOCKET_URL=your-websocket-url
 turn:turn1.example.com:3478|user1|pass1|longterm
 turns:turn2.example.com:5349|user2|pass2|hmac
 ```
+
+#### 公共 STUN 服务器
+
+此应用默认使用 Google 的 STUN 服务器，如果无法连接，请自行配置 STUN 服务器。可以参考 [https://gist.github.com/mondain/b0ec1cf5f60ae726202e](https://gist.github.com/mondain/b0ec1cf5f60ae726202e) 获取公共 STUN 服务器列表。
+
+#### Cloudflare Calls TURN 服务器
+
+可以使用 Cloudflare Calls 提供的 TURN 服务器，请访问 [https://developers.cloudflare.com/calls/turn](https://developers.cloudflare.com/calls/turn)。
+
+#### 自建 TURN 服务器
+
+可以参考 [https://github.com/coturn/coturn](https://github.com/coturn/coturn) 自建 TURN 服务器。
 
 ### 局域网内使用
 
