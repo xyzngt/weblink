@@ -7,9 +7,6 @@ import {
   NavigationRoute,
   registerRoute,
 } from "workbox-routing";
-import { CacheFirst } from "workbox-strategies";
-import { CacheableResponsePlugin } from "workbox-cacheable-response";
-import { ExpirationPlugin } from "workbox-expiration";
 
 declare let self: ServiceWorkerGlobalScope;
 
@@ -18,10 +15,8 @@ self.__WB_DISABLE_DEV_LOGS = true;
 
 precacheAndRoute(self.__WB_MANIFEST);
 
-self.addEventListener("install", (event) => {
+self.addEventListener("install", () => {
   self.skipWaiting();
-  // delete old i18n cache
-  event.waitUntil(caches.delete("i18n-cache"));
   if (
     "Notification" in self &&
     Notification.permission === "granted"
@@ -110,23 +105,4 @@ registerRoute(
   new NavigationRoute(
     createHandlerBoundToURL("index.html"),
   ),
-);
-
-// Cache i18n JSON files
-registerRoute(
-  ({ request }) =>
-    request.url.includes("/i18n/") &&
-    request.url.endsWith(".json"),
-  new CacheFirst({
-    cacheName: "i18n-cache",
-    plugins: [
-      new CacheableResponsePlugin({
-        statuses: [0, 200],
-      }),
-      new ExpirationPlugin({
-        maxEntries: 10,
-        maxAgeSeconds: 30 * 24 * 60 * 60,
-      }),
-    ],
-  }),
 );

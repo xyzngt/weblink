@@ -280,9 +280,11 @@ export default function App(props: RouteSectionProps) {
             --background-image-opacity: ${appOptions.backgroundImageOpacity};
           }`}
         </Style>
+        <ColorModeScript
+          storageType={storageManager.type}
+        />
       </MetaProvider>
       <Toaster />
-      <ColorModeScript storageType={storageManager.type} />
       <ColorModeProvider storageManager={storageManager}>
         <ChatProvider>
           <InnerApp> {props.children}</InnerApp>

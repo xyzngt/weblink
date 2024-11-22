@@ -3,8 +3,8 @@ import { createStore } from "solid-js/store";
 import { ClientID, FileID } from "./libs/core/type";
 import { createEffect, createSignal } from "solid-js";
 import { cacheManager } from "./libs/services/cache-serivce";
-
-export type Locale = "en" | "zh";
+import languages from "@/assets/i18n/languages.json";
+export type Locale = string;
 
 export type TurnServerOptions = {
   url: string;
@@ -68,6 +68,21 @@ export const defaultWebsocketUrl =
   import.meta.env.VITE_WEBSOCKET_URL ??
   window.env.VITE_WEBSOCKET_URL;
 
+export const localeOptionsMap = languages as Record<
+  Locale,
+  string
+>;
+
+export function localFromLanguage(
+  language: string,
+): Locale {
+  return (
+    Object.keys(localeOptionsMap).find((locale) =>
+      locale.toLowerCase().includes(language.toLowerCase()),
+    ) ?? "en-us"
+  );
+}
+
 export const getDefaultAppOptions = () => {
   return {
     channelsNumber: 1,
@@ -85,9 +100,7 @@ export const getDefaultAppOptions = () => {
       turns: [],
     },
     compressionLevel: 0,
-    locale: navigator.language.startsWith("zh")
-      ? "zh"
-      : "en",
+    locale: localFromLanguage(navigator.language),
     showAboutDialog: true,
     shareServersWithOthers: false,
     backgroundImageOpacity: 0.5,
