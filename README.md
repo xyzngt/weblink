@@ -135,25 +135,22 @@ VITE_WEBSOCKET_URL=your-websocket-url
 
 ## Notes
 
-### Configuring TURN Server (Non-LAN Connections)
+### STUN and TURN Server Configuration
 
-If you are using P2P connections outside a local area network (in a NAT environment), you may need to configure a TURN server to ensure connections are established. In the settings page, you can configure the TURN server with the following format:
+If you are using P2P connections outside a local area network (in a NAT environment), you may need to configure a TURN server to ensure connections are established. In the settings page, you can configure the TURN server with the following format, support coturn and Cloudflare TURN server, and separate multiple configurations with newline characters:
 
 **TURN Configuration Format:**
 
 ```plaintext
+# use coturn with account and password
 turn:turn1.example.com:3478|user1|pass1|longterm
+# use coturn with timestamp
 turns:turn2.example.com:5349|user2|pass2|hmac
+# use cloudflare turn server
 name|TURN_TOKEN_ID|API_TOKEN|cloudflare
 ```
 
-### Use in LAN
-
-The application currently supports LAN use in non-secure environments. Ensure that your devices are in the same LAN and the firewall does not block P2P connections.
-
-And at the same time, run [weblink-ws-server](https://github.com/99percentpeople/weblink-ws-server) to support WEBSOCKET connections.
-
-### STUN and TURN Server Configuration
+Here are some methods to get public STUN and TURN servers:
 
 #### Public STUN Server
 
@@ -163,9 +160,15 @@ This application defaults to using Google's STUN server. If you cannot connect, 
 
 You can use the TURN server provided by Cloudflare Calls, please visit [https://developers.cloudflare.com/calls/turn](https://developers.cloudflare.com/calls/turn). Then add the TURN server in format `name|TURN_TOKEN_ID|API_TOKEN|cloudflare` to the TURN server list in the settings page.
 
-#### Self-Hosted TURN Server
+#### Self-Hosted STUN/TURN Server
 
 You can refer to [https://github.com/coturn/coturn](https://github.com/coturn/coturn) to set up your own TURN server.
+
+### Use in LAN
+
+The application currently supports LAN use in non-secure environments. Ensure that your devices are in the same LAN and the firewall does not block P2P connections.
+
+And at the same time, run [weblink-ws-server](https://github.com/99percentpeople/weblink-ws-server) to support WEBSOCKET connections.
 
 ## Contribution
 

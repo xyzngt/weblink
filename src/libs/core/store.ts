@@ -81,7 +81,7 @@ export async function parseTurnServer(
   }
 }
 
-export async function getConfiguration() {
+export async function getIceServers() {
   const servers: RTCIceServer[] = [];
   for (const stun of appOptions.servers.stuns) {
     if (stun.trim().length === 0) continue;
@@ -102,10 +102,7 @@ export async function getConfiguration() {
       servers.push(server);
     }
 
-  return {
-    iceServers: servers,
-    iceTransportPolicy: "all",
-  } satisfies RTCConfiguration;
+  return servers;
 }
 
 export const getDefaultProfile = () => {

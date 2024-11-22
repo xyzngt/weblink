@@ -132,17 +132,22 @@ VITE_WEBSOCKET_URL=your-websocket-url
 
 ## 注意事项
 
-### 配置 TURN 服务器（非局域网连接）
+### STUN 和 TURN 服务器配置
 
-如果你在非局域网（NAT 环境）下使用 P2P 连接，可能需要配置 TURN 服务器以确保能够建立连接。在设置页面中，你可以根据以下格式配置 TURN 服务器：
+如果你在非局域网（NAT 环境）下使用 P2P 连接，可能需要配置 TURN 服务器以确保能够建立连接。在设置页面中，你可以根据以下格式配置 TURN 服务器，支持 coturn 和 Cloudflare 提供的 TURN 服务，配置项之间用换行符分隔：
 
 **TURN 配置格式**：
 
 ```plaintext
+# coturn 使用账号密码进行验证
 turn:turn1.example.com:3478|user1|pass1|longterm
+# coturn 使用时间戳进行验证
 turns:turn2.example.com:5349|user2|pass2|hmac
+# 使用 Cloudflare 提供的 TURN 服务器
 name|TURN_TOKEN_ID|API_TOKEN|cloudflare
 ```
+
+以下为一些公共 STUN 和 TURN 服务器的获取方法：
 
 #### 公共 STUN 服务器
 

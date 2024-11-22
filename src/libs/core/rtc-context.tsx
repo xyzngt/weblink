@@ -477,7 +477,7 @@ export const WebRTCProvider: Component<
       console.log(`new client join in `, targetClient);
 
       const session =
-        sessionService.addClient(targetClient);
+        await sessionService.addClient(targetClient);
       if (!session) {
         console.error(`no client service setted`);
         return;
@@ -523,12 +523,7 @@ export const WebRTCProvider: Component<
       //     );
       //   }
       // };
-
-      // setClientSessionInfo(targetClient.clientId, {
-      //   ...targetClient,
-      //   onlineStatus: "offline",
-      // } satisfies ClientInfo);
-
+      
       const localStream = props.localStream;
 
       session.addEventListener("message", async (ev) => {

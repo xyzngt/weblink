@@ -1,8 +1,4 @@
-import { getConfiguration } from "./store";
-import {
-  ClientSignal,
-  SignalingService,
-} from "./services/type";
+import { SignalingService } from "./services/type";
 import {
   EventHandler,
   MultiEventEmitter,
@@ -14,6 +10,7 @@ import { catchErrorAsync, catchErrorSync } from "../catch";
 
 export interface PeerSessionOptions {
   polite?: boolean;
+  iceServers?: RTCIceServer[];
 }
 
 export type PeerSessionEventMap = {
@@ -40,13 +37,14 @@ export class PeerSession {
 
   private channels: RTCDataChannel[] = [];
   private messageChannel: RTCDataChannel | null = null;
-
+  private iceServers: RTCIceServer[] = [];
   constructor(
     sender: SignalingService,
-    { polite = true }: PeerSessionOptions = {},
+    { polite = true, iceServers }: PeerSessionOptions = {},
   ) {
     this.sender = sender;
     this.polite = polite;
+    this.iceServers = iceServers ?? [];
   }
 
   get clientId() {
@@ -104,9 +102,10 @@ export class PeerSession {
     }
 
     this.controller = new AbortController();
-    const pc = new RTCPeerConnection(
-      await getConfiguration(),
-    );
+    const pc = new RTCPeerConnection({
+      iceServers: this.iceServers,
+      iceTransportPolicy: "all",
+    });
     this.peerConnection = pc;
 
     if (pc.getTransceivers().length === 0) {

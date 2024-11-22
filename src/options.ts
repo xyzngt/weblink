@@ -86,12 +86,12 @@ export function localFromLanguage(
 export const getDefaultAppOptions = () => {
   return {
     channelsNumber: 1,
-    chunkSize: 1024 * 1024,
-    blockSize: 64 * 1024,
+    chunkSize: 512 * 1024,
+    blockSize: 32 * 1024,
     ordered: false,
     enableClipboard: navigator.clipboard !== undefined,
     automaticCacheDeletion: false,
-    bufferedAmountLowThreshold: 64 * 1024,
+    bufferedAmountLowThreshold: 32 * 1024,
     maxMomeryCacheSlices: 12,
     videoMaxBitrate: 128 * 1024 * 1024,
     audioMaxBitrate: 512 * 1024,
@@ -99,13 +99,14 @@ export const getDefaultAppOptions = () => {
       stuns: ["stun:stun.l.google.com:19302"],
       turns: [],
     },
-    compressionLevel: 0,
+    compressionLevel: 6,
     locale: localFromLanguage(navigator.language),
     showAboutDialog: true,
     shareServersWithOthers: false,
     backgroundImageOpacity: 0.5,
     automaticDownload: false,
     websocketUrl: defaultWebsocketUrl,
+    // todo: add dialog to prompt user the file size
     maxFileSize: 1024 * 1024 * 1024, // 1GB
   } satisfies AppOption;
 };
