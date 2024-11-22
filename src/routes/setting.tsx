@@ -120,15 +120,13 @@ function parseTurnServers(
     const [url, username, password, authMethod] = parts.map(
       (part) => part.trim(),
     );
-    if (!/^turns?:/.test(url)) {
-      throw Error(`URL format error: ${url}`);
-    }
     if (
-      authMethod !== "longterm" &&
-      authMethod !== "hmac"
+      !["longterm", "hmac", "cloudflare"].includes(
+        authMethod,
+      )
     ) {
       throw Error(
-        `auth method error, should be "longterm" or "hmac": ${authMethod}`,
+        `auth method error, should be "longterm" or "hmac" or "cloudflare": ${authMethod}`,
       );
     }
     return {
@@ -480,6 +478,7 @@ export default function Settings() {
               {t("setting.connection.turn_servers.title")}
             </Label>
             <Textarea
+              class="overflow-x-auto text-nowrap scrollbar-thin resize-none"
               ref={(ref) => {
                 createEffect(() => {
                   textareaAutoResize(
@@ -491,7 +490,7 @@ export default function Settings() {
                 });
               }}
               placeholder={
-                "turn:turn1.example.com:3478|user1|pass1|longterm\nturns:turn2.example.com:5349|user2|pass2|hmac"
+                "turn:turn1.example.com:3478|user1|pass1|longterm\nturns:turn2.example.com:5349|user2|pass2|hmac\nname|TURN_TOKEN_ID|API_TOKEN|cloudflare"
               }
               value={stringifyTurnServers(
                 appOptions.servers.turns ?? [],
@@ -499,7 +498,7 @@ export default function Settings() {
               onChange={(ev) => {
                 try {
                   const turns = parseTurnServers(
-                    ev.currentTarget.value,
+                    ev.currentTarget.value.trim(),
                   );
                   setAppOptions(
                     "servers",
@@ -551,6 +550,7 @@ export default function Settings() {
                               });
                               continue;
                             }
+
                             promises.push(
                               checkTurnServerAvailability(
                                 server,

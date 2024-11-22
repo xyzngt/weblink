@@ -3,6 +3,7 @@ export async function checkTurnServerAvailability(
   timeout = 5000,
 ): Promise<boolean> {
   return new Promise((resolve, reject) => {
+    console.log("check turn server:", turnConfig);
     const configuration: RTCConfiguration = {
       iceServers: [turnConfig],
       iceTransportPolicy: "relay", // force to use TURN server only
@@ -65,7 +66,7 @@ export async function checkTurnServerAvailability(
       if (!isCompleted) {
         isCompleted = true;
         clearTimeout(timer);
-        reject(new Error("ice candidate error"));
+        reject(new Error(`ice candidate error: ${event.errorText}`));
         pc.close();
       }
     };

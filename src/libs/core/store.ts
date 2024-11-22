@@ -3,9 +3,9 @@ import { createStore } from "solid-js/store";
 import { faker } from "@faker-js/faker";
 import { Client } from "./type";
 import { v4 } from "uuid";
-import { SignalingService } from "./services/type";
 import { generateHMAC } from "./utils/encrypt/hmac";
 import { appOptions, TurnServerOptions } from "@/options";
+import { catchErrorAsync } from "../catch";
 
 export interface ClientProfile extends Client {
   roomId: string;
@@ -16,9 +16,8 @@ export interface ClientProfile extends Client {
 
 export async function parseTurnServer(
   turn: TurnServerOptions,
-): Promise<RTCIceServer | null> {
+): Promise<RTCIceServer> {
   const { authMethod, username, password, url } = turn;
-  if (url.trim().length === 0) return null;
   if (authMethod === "hmac") {
     const timestamp =
       Math.floor(Date.now() / 1000) + 24 * 3600;
@@ -42,11 +41,37 @@ export async function parseTurnServer(
       username: username,
       credential: password,
     } satisfies RTCIceServer;
-  } else {
-    console.warn(
-      `failed to add server ${url}, invalid method ${authMethod}`,
+  } else if (authMethod === "cloudflare") {
+    const response = await fetch(
+      `https://rtc.live.cloudflare.com/v1/turn/keys/${username}/credentials/generate`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${password}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ttl: 86400,
+        }),
+      },
     );
-    return null;
+    const iceServers = (await response
+      .json()
+      .then((data) => data.iceServers)) as RTCIceServer;
+
+    iceServers.urls = "turns:turn.cloudflare.com:5349";
+    // if (Array.isArray(iceServers.urls)) {
+    // iceServers.urls = iceServers.urls
+    //   .filter((url) => url.startsWith("turn"))
+    //   .map((url) => url.replace(/\?transport=.*$/, ""));
+    // // deduplicate
+    // iceServers.urls = [...new Set(iceServers.urls)];
+    // }
+
+    console.log("cloudflare iceServers:", iceServers);
+    return iceServers satisfies RTCIceServer;
+  } else {
+    throw new Error(`parseTurnServer: invalid method ${authMethod}`);
   }
 }
 
@@ -60,8 +85,15 @@ export async function getConfiguration() {
   }
   if (appOptions.servers.turns)
     for (const turn of appOptions.servers.turns) {
-      const server = await parseTurnServer(turn);
-      if (server) servers.push(server);
+      const [error, server] = await catchErrorAsync(
+        parseTurnServer(turn),
+      );
+      if (error) {
+        console.error(error);
+        continue;
+      }
+
+      servers.push(server);
     }
 
   return {

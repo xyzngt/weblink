@@ -144,6 +144,7 @@ If you are using P2P connections outside a local area network (in a NAT environm
 ```plaintext
 turn:turn1.example.com:3478|user1|pass1|longterm
 turns:turn2.example.com:5349|user2|pass2|hmac
+name|TURN_TOKEN_ID|API_TOKEN|cloudflare
 ```
 
 ### Use in LAN

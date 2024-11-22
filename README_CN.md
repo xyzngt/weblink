@@ -141,6 +141,7 @@ VITE_WEBSOCKET_URL=your-websocket-url
 ```plaintext
 turn:turn1.example.com:3478|user1|pass1|longterm
 turns:turn2.example.com:5349|user2|pass2|hmac
+name|TURN_TOKEN_ID|API_TOKEN|cloudflare
 ```
 
 #### 公共 STUN 服务器
