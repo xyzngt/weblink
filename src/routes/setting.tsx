@@ -88,6 +88,7 @@ import { ComponentProps } from "solid-js";
 import { checkTurnServerAvailability } from "@/libs/core/utils/turn";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import DropArea from "@/components/drop-area";
+import { catchErrorAsync } from "@/libs/catch";
 type MediaDeviceInfoType = Omit<MediaDeviceInfo, "toJSON">;
 
 export const [devices, setDevices] = makePersisted(
@@ -446,7 +447,7 @@ export default function Settings() {
               {t("setting.connection.stun_servers.title")}
             </Label>
             <Textarea
-              placeholder="stun.l.google.com:19302"
+              placeholder="stun:stun.l.google.com:19302"
               ref={(ref) => {
                 createEffect(() => {
                   textareaAutoResize(ref, () =>
@@ -478,7 +479,7 @@ export default function Settings() {
               {t("setting.connection.turn_servers.title")}
             </Label>
             <Textarea
-              class="overflow-x-auto text-nowrap scrollbar-thin resize-none"
+              class="resize-none overflow-x-auto text-nowrap scrollbar-thin"
               ref={(ref) => {
                 createEffect(() => {
                   textareaAutoResize(
@@ -540,13 +541,15 @@ export default function Settings() {
                             [];
 
                           for (const turn of turns()) {
-                            const server =
-                              await parseTurnServer(turn);
-                            if (!server) {
+                            const [error, server] =
+                              await catchErrorAsync(
+                                parseTurnServer(turn),
+                              );
+                            if (error) {
                               results.push({
                                 server: turn.url,
                                 isAvailable:
-                                  "invalid turn server",
+                                  error.message,
                               });
                               continue;
                             }

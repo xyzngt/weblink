@@ -153,13 +153,15 @@ The application currently supports LAN use in non-secure environments. Ensure th
 
 And at the same time, run [weblink-ws-server](https://github.com/99percentpeople/weblink-ws-server) to support WEBSOCKET connections.
 
+### STUN and TURN Server Configuration
+
 #### Public STUN Server
 
-This application defaults to using Google's STUN server. If you cannot connect, please configure your own STUN server. You can refer to [https://gist.github.com/mondain/b0ec1cf5f60ae726202e](https://gist.github.com/mondain/b0ec1cf5f60ae726202e) for a list of public STUN servers.
+This application defaults to using Google's STUN server. If you cannot connect, please configure your own STUN server. You can refer to [https://gist.github.com/mondain/b0ec1cf5f60ae726202e](https://gist.github.com/mondain/b0ec1cf5f60ae726202e) for a list of public STUN servers. Then add the stun server in format `stun:xxxx:xxxx` to the STUN server list in the settings page such as `stun:stun.l.google.com:19302`.
 
 #### Cloudflare Calls TURN Server
 
-You can use the TURN server provided by Cloudflare Calls, please visit [https://developers.cloudflare.com/calls/turn](https://developers.cloudflare.com/calls/turn).
+You can use the TURN server provided by Cloudflare Calls, please visit [https://developers.cloudflare.com/calls/turn](https://developers.cloudflare.com/calls/turn). Then add the TURN server in format `name|TURN_TOKEN_ID|API_TOKEN|cloudflare` to the TURN server list in the settings page.
 
 #### Self-Hosted TURN Server
 

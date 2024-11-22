@@ -14,6 +14,12 @@ export interface ClientProfile extends Client {
   firstTime: boolean;
 }
 
+/**
+ * parse turn server options to RTCIceServer
+ * @param turn - turn server options
+ * @returns RTCIceServer
+ * @throws Error
+ */
 export async function parseTurnServer(
   turn: TurnServerOptions,
 ): Promise<RTCIceServer> {
@@ -55,23 +61,23 @@ export async function parseTurnServer(
         }),
       },
     );
+
+    if (!response.ok) {
+      throw new Error(
+        `parseTurnServer: cloudflare error response: ${response.status}`,
+      );
+    }
+
     const iceServers = (await response
       .json()
       .then((data) => data.iceServers)) as RTCIceServer;
 
-    iceServers.urls = "turns:turn.cloudflare.com:5349";
-    // if (Array.isArray(iceServers.urls)) {
-    // iceServers.urls = iceServers.urls
-    //   .filter((url) => url.startsWith("turn"))
-    //   .map((url) => url.replace(/\?transport=.*$/, ""));
-    // // deduplicate
-    // iceServers.urls = [...new Set(iceServers.urls)];
-    // }
-
     console.log("cloudflare iceServers:", iceServers);
     return iceServers satisfies RTCIceServer;
   } else {
-    throw new Error(`parseTurnServer: invalid method ${authMethod}`);
+    throw new Error(
+      `parseTurnServer: invalid method ${authMethod}`,
+    );
   }
 }
 

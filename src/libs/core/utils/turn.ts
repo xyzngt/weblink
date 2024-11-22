@@ -1,6 +1,6 @@
 export async function checkTurnServerAvailability(
   turnConfig: RTCIceServer,
-  timeout = 5000,
+  timeout = 10000,
 ): Promise<boolean> {
   return new Promise((resolve, reject) => {
     console.log("check turn server:", turnConfig);
@@ -34,13 +34,7 @@ export async function checkTurnServerAvailability(
           event.candidate.type === "relay" ||
           event.candidate.candidate.includes("relay")
         ) {
-          if (!isCompleted) {
-            isCompleted = true;
-            isTurnAvailable = true;
-            clearTimeout(timer);
-            resolve(true); // TURN server available
-            pc.close();
-          }
+          isTurnAvailable = true;
         }
       } else {
         // ICE candidate collection completed
@@ -60,15 +54,10 @@ export async function checkTurnServerAvailability(
       }
     };
 
-    // listen to ice candidate error event
+    // Modify the error handler to not reject immediately
     pc.onicecandidateerror = (event) => {
       console.error("ice candidate error:", event);
-      if (!isCompleted) {
-        isCompleted = true;
-        clearTimeout(timer);
-        reject(new Error(`ice candidate error: ${event.errorText}`));
-        pc.close();
-      }
+      // Do not reject immediately, allow ICE gathering to continue
     };
 
     pc.createDataChannel("test"); // create data channel, trigger ICE collection

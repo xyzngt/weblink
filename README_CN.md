@@ -146,11 +146,11 @@ name|TURN_TOKEN_ID|API_TOKEN|cloudflare
 
 #### 公共 STUN 服务器
 
-此应用默认使用 Google 的 STUN 服务器，如果无法连接，请自行配置 STUN 服务器。可以参考 [https://gist.github.com/mondain/b0ec1cf5f60ae726202e](https://gist.github.com/mondain/b0ec1cf5f60ae726202e) 获取公共 STUN 服务器列表。
+此应用默认使用 Google 的 STUN 服务器，如果无法连接，请自行配置 STUN 服务器。可以参考 [https://gist.github.com/mondain/b0ec1cf5f60ae726202e](https://gist.github.com/mondain/b0ec1cf5f60ae726202e) 获取公共 STUN 服务器列表。然后在设置页面中添加 STUN 服务器，格式为 `stun:xxxx:xxxx`。例如： `stun:stun.l.google.com:19302`。
 
 #### Cloudflare Calls TURN 服务器
 
-可以使用 Cloudflare Calls 提供的 TURN 服务器，请访问 [https://developers.cloudflare.com/calls/turn](https://developers.cloudflare.com/calls/turn)。
+可以使用 Cloudflare Calls 提供的 TURN 服务器，请访问 [https://developers.cloudflare.com/calls/turn](https://developers.cloudflare.com/calls/turn)。然后在设置页面中添加 TURN 服务器，格式为 `name|TURN_TOKEN_ID|API_TOKEN|cloudflare`。
 
 #### 自建 TURN 服务器
 
