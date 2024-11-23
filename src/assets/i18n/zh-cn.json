@@ -37,8 +37,7 @@
       },
       "turn_servers": {
         "title": "TURN 服务器",
-        "description": "更改应用程序的 TURN 服务器，如果你希望在 NAT 环境下使用此应用程序，你可能需要设置 TURN 服务器",
-        "check_availability": "检查可用性"
+        "description": "更改应用程序的 TURN 服务器，如果你希望在 NAT 环境下使用此应用程序，你可能需要设置 TURN 服务器"
       },
       "websocket_url": {
         "title": "Websocket URL",
@@ -317,7 +316,8 @@
       "forward": "转发",
       "request_download": "请求下载",
       "resume": "恢复",
-      "add_folder": "添加文件夹"
+      "add_folder": "添加文件夹",
+      "check_availability": "检查可用性"
     },
     "clipboard_history": {
       "title": "剪贴板历史"

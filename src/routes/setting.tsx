@@ -3,6 +3,7 @@ import {
   createEffect,
   createMemo,
   createSignal,
+  For,
   Show,
 } from "solid-js";
 
@@ -85,7 +86,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ComponentProps } from "solid-js";
-import { checkTurnServerAvailability } from "@/libs/core/utils/turn";
+import { checkIceServerAvailability } from "@/libs/core/utils/turn";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import DropArea from "@/components/drop-area";
 import { catchErrorAsync } from "@/libs/catch";
@@ -111,33 +112,38 @@ function parseTurnServers(
   input: string,
 ): TurnServerOptions[] {
   if (input.trim() === "") return [];
-  const lines = input.split("\n");
-  const turnServers = lines.map((line) => {
-    const parts = line.split("|");
-    if (parts.length !== 4)
-      throw Error(
-        `config error, should be 4 parts: ${line}`,
-      );
-    const [url, username, password, authMethod] = parts.map(
-      (part) => part.trim(),
-    );
-    if (
-      !["longterm", "hmac", "cloudflare"].includes(
+
+  return input
+    .split("\n")
+    .map((line, index) => {
+      if (line.trim() === "") return null;
+      const parts = line.split("|");
+      if (parts.length !== 4)
+        throw Error(
+          `config error, line ${index + 1} should be 4 parts`,
+        );
+      const [url, username, password, authMethod] =
+        parts.map((part) => part.trim());
+      const validAuthMethods = [
+        "longterm",
+        "hmac",
+        "cloudflare",
+      ];
+      if (!validAuthMethods.includes(authMethod)) {
+        throw Error(
+          `auth method error, line ${index + 1} given ${authMethod} expected ${validAuthMethods.join(
+            " or ",
+          )}`,
+        );
+      }
+      return {
+        url,
+        username,
+        password,
         authMethod,
-      )
-    ) {
-      throw Error(
-        `auth method error, should be "longterm" or "hmac" or "cloudflare": ${authMethod}`,
-      );
-    }
-    return {
-      url,
-      username,
-      password,
-      authMethod,
-    } satisfies TurnServerOptions;
-  });
-  return turnServers;
+      } satisfies TurnServerOptions;
+    })
+    .filter((turn) => turn !== null);
 }
 
 function stringifyTurnServers(
@@ -447,6 +453,7 @@ export default function Settings() {
               {t("setting.connection.stun_servers.title")}
             </Label>
             <Textarea
+              class="resize-none overflow-x-auto text-nowrap scrollbar-thin"
               placeholder="stun:stun.l.google.com:19302"
               ref={(ref) => {
                 createEffect(() => {
@@ -455,15 +462,20 @@ export default function Settings() {
                   );
                 });
               }}
-              value={appOptions.servers.stuns.join("\n")}
+              value={
+                appOptions.servers.stuns.join("\n") +
+                (appOptions.servers.stuns.length > 0
+                  ? "\n"
+                  : "")
+              }
               onChange={(ev) =>
                 setAppOptions(
                   "servers",
                   "stuns",
                   reconcile(
-                    optional(ev.currentTarget.value)?.split(
-                      "\n",
-                    ) ?? [],
+                    ev.currentTarget.value
+                      .trim()
+                      .split("\n"),
                   ),
                 )
               }
@@ -473,6 +485,82 @@ export default function Settings() {
                 "setting.connection.stun_servers.description",
               )}
             </p>
+            <Show
+              when={
+                appOptions.servers.stuns.length > 0 &&
+                appOptions.servers.stuns
+              }
+            >
+              {(stuns) => {
+                const [disabled, setDisabled] =
+                  createSignal(false);
+                return (
+                  <div class="self-end">
+                    <Button
+                      variant="outline"
+                      disabled={disabled()}
+                      onClick={async () => {
+                        setDisabled(true);
+                        const results: {
+                          server: string;
+                          isAvailable: string;
+                        }[] = [];
+
+                        const promises: Promise<void>[] =
+                          [];
+
+                        for (const stun of stuns()) {
+                          promises.push(
+                            checkIceServerAvailability(
+                              {
+                                urls: [stun],
+                              },
+                              {
+                                iceTransportPolicy: "all",
+                                candidateType: "srflx",
+                              },
+                            )
+                              .then((isAvailable) => {
+                                results.push({
+                                  server: stun,
+                                  isAvailable: isAvailable
+                                    ? "available"
+                                    : "unavailable",
+                                });
+                              })
+                              .catch((err) => {
+                                results.push({
+                                  server: stun,
+                                  isAvailable: err.message,
+                                });
+                              }),
+                          );
+                        }
+
+                        await Promise.all(promises);
+                        toast.info(
+                          <div class="flex flex-col gap-2 text-xs">
+                            <For each={results}>
+                              {(result) => (
+                                <p>
+                                  {result.server}:
+                                  {result.isAvailable}
+                                </p>
+                              )}
+                            </For>
+                          </div>,
+                        );
+                        setDisabled(false);
+                      }}
+                    >
+                      {t(
+                        "common.action.check_availability",
+                      )}
+                    </Button>
+                  </div>
+                );
+              }}
+            </Show>
           </label>
           <label class="flex flex-col gap-2">
             <Label>
@@ -493,14 +581,20 @@ export default function Settings() {
               placeholder={
                 "turn:turn1.example.com:3478|user1|pass1|longterm\nturns:turn2.example.com:5349|user2|pass2|hmac\nname|TURN_TOKEN_ID|API_TOKEN|cloudflare"
               }
-              value={stringifyTurnServers(
-                appOptions.servers.turns ?? [],
-              )}
+              value={
+                stringifyTurnServers(
+                  appOptions.servers.turns,
+                ) +
+                (appOptions.servers.turns.length > 0
+                  ? "\n"
+                  : "")
+              }
               onChange={(ev) => {
                 try {
                   const turns = parseTurnServers(
                     ev.currentTarget.value.trim(),
                   );
+
                   setAppOptions(
                     "servers",
                     "turns",
@@ -520,7 +614,12 @@ export default function Settings() {
                 "setting.connection.turn_servers.description",
               )}
             </p>
-            <Show when={appOptions.servers.turns}>
+            <Show
+              when={
+                appOptions.servers.turns.length > 0 &&
+                appOptions.servers.turns
+              }
+            >
               {(turns) => {
                 const [disabled, setDisabled] =
                   createSignal(false);
@@ -548,15 +647,18 @@ export default function Settings() {
                             if (error) {
                               results.push({
                                 server: turn.url,
-                                isAvailable:
-                                  error.message,
+                                isAvailable: error.message,
                               });
                               continue;
                             }
 
                             promises.push(
-                              checkTurnServerAvailability(
+                              checkIceServerAvailability(
                                 server,
+                                {
+                                  iceTransportPolicy:
+                                    "relay",
+                                },
                               )
                                 .then((isAvailable) => {
                                   results.push({
@@ -582,18 +684,22 @@ export default function Settings() {
                             setDisabled(false);
                           });
 
-                          const resultMessage = results
-                            .map(
-                              (result) =>
-                                `${result.server}: ${result.isAvailable}`,
-                            )
-                            .join("\n");
-
-                          toast.info(resultMessage);
+                          toast.info(
+                            <div class="flex flex-col gap-2 text-xs">
+                              <For each={results}>
+                                {(result) => (
+                                  <p>
+                                    {result.server}:
+                                    {result.isAvailable}
+                                  </p>
+                                )}
+                              </For>
+                            </div>,
+                          );
                         }}
                       >
                         {t(
-                          "setting.connection.turn_servers.check_availability",
+                          "common.action.check_availability",
                         )}
                       </Button>
                     </div>

@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.2] - 2024-11-20
+## [0.7.3] - 2024-11-23
 
 ### New Features
 
@@ -15,6 +15,10 @@ All notable changes to this project will be documented in this file.
 - Improve the file table status display 优化文件表的状态显示
 
 - Improve the file processing function, now can abort the file processing 优化文件处理功能，现在可以中止文件处理
+
+### Bug Fixes
+
+- Fix the bug that check ice server availability works incorrectly 修复了检查 ICE 服务器可用性不正确的问题
 
 ## [0.6.5] - 2024-11-14
 

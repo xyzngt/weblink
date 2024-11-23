@@ -37,8 +37,7 @@
       },
       "turn_servers": {
         "title": "TURN Servers",
-        "description": "Change the TURN servers of the app, if you want to use this app in a NAT environment, you may need to set up TURN servers",
-        "check_availability": "Check Availability"
+        "description": "Change the TURN servers of the app, if you want to use this app in a NAT environment, you may need to set up TURN servers"
       },
       "websocket_url": {
         "title": "Websocket URL",
@@ -315,7 +314,8 @@
       "forward": "Forward",
       "request_download": "Request Download",
       "resume": "Resume",
-      "add_folder": "Add Folder"
+      "add_folder": "Add Folder",
+      "check_availability": "Check Availability"
     },
     "notification": {
       "copy_success": "Copy success",
