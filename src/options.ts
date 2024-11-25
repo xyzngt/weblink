@@ -102,7 +102,7 @@ export const getDefaultAppOptions = () => {
     compressionLevel: 6,
     locale: localFromLanguage(navigator.language),
     showAboutDialog: true,
-    shareServersWithOthers: false,
+    shareServersWithOthers: true,
     backgroundImageOpacity: 0.5,
     automaticDownload: false,
     websocketUrl: defaultWebsocketUrl,
@@ -137,4 +137,10 @@ createEffect(async () => {
   if (!file) return;
   const url = URL.createObjectURL(file);
   setBackgroundImage(url);
+});
+
+createEffect(() => {
+  document
+    .querySelector("html")
+    ?.setAttribute("lang", appOptions.locale);
 });

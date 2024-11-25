@@ -38,6 +38,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "./ui/tooltip";
+import { Spinner } from "./spinner";
 
 export const createRoomDialog = () => {
   const { open, close, submit, Component } = createDialog({
@@ -260,7 +261,18 @@ export function JoinRoomButton(
               variant="destructive"
               size="icon"
             >
-              <IconLogout class="size-6" />
+              <Show
+                when={
+                  sessionService.clientServiceStatus() ===
+                  "connecting"
+                }
+                fallback={<IconLogout class="size-6" />}
+              >
+                <Spinner
+                  size="md"
+                  class="bg-black dark:bg-white"
+                />
+              </Show>
             </TooltipTrigger>
             <TooltipContent>
               {t("common.nav.leave_room")}

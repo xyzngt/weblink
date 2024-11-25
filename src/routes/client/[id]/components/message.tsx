@@ -65,6 +65,7 @@ import {
 } from "@/components/ui/tooltip";
 import { catchErrorAsync } from "@/libs/catch";
 import { toast } from "solid-sonner";
+import { Spinner } from "@/components/spinner";
 
 export interface MessageCardProps
   extends ComponentProps<"li"> {
@@ -120,8 +121,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
   });
 
   const shouldShowResumeButton = createMemo(() => {
-    if (targetClientInfo()?.onlineStatus !== "online")
-      return false;
+    if (!targetClientInfo()?.messageChannel) return false;
     if (props.message.status !== "received") return false;
     if (!props.message.transferStatus) return false;
     if (isSender()) {
@@ -295,6 +295,14 @@ const FileMessageCard: Component<FileMessageCardProps> = (
               }}
             </Show>
 
+            <Show
+              when={props.message.transferStatus === "init"}
+            >
+              <Spinner
+                size="sm"
+                class="bg-black dark:bg-white"
+              />
+            </Show>
             <Show when={transferProgress()}>
               {(progress) => {
                 const speed = createTransferSpeed(
@@ -333,9 +341,15 @@ const FileMessageCard: Component<FileMessageCardProps> = (
             </Show>
 
             <Show when={localStatus() === "merging"}>
-              <p class="font-mono text-sm text-muted-foreground">
-                {t("common.file_table.status.merging")}
-              </p>
+              <div class="flex items-center gap-1">
+                <Spinner
+                  size="sm"
+                  class="bg-black dark:bg-white"
+                />
+                <p class="font-mono text-sm text-muted-foreground">
+                  {t("common.file_table.status.merging")}
+                </p>
+              </div>
             </Show>
 
             <div class="flex items-center justify-end gap-1">
@@ -402,6 +416,13 @@ export const MessageContent: Component<MessageCardProps> = (
   const session = createMemo(
     () => sessionService.sessions[local.message.target],
   );
+
+  const shouldShowRestoreButton = createMemo(() => {
+    if (!targetClientInfo()?.messageChannel) return false;
+    if (props.message.status !== "error") return false;
+    return true;
+  });
+
   const contentOptions = {
     text: (props: {
       message: TextMessage;
@@ -630,58 +651,51 @@ export const MessageContent: Component<MessageCardProps> = (
                 </Tooltip>
               )}
             </Show>
-            <Show when={props.message.status === "error"}>
-              <Show
-                when={
-                  targetClientInfo()?.onlineStatus ===
-                  "online"
-                }
+            <Show when={shouldShowRestoreButton()}>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => {
+                  let sessionMessage:
+                    | SessionMessage
+                    | undefined;
+
+                  if (props.message.type === "text") {
+                    sessionMessage = {
+                      id: props.message.id,
+                      type: "send-text",
+                      client: props.message.client,
+                      target: props.message.target,
+                      data: props.message.data,
+                      createdAt: props.message.createdAt,
+                    } satisfies SendTextMessage;
+                  } else if (
+                    props.message.type === "file"
+                  ) {
+                    if (!props.message.fid) return;
+                    sessionMessage = {
+                      id: props.message.id,
+                      type: "send-file",
+                      client: props.message.client,
+                      target: props.message.target,
+                      fid: props.message.fid,
+                      fileName: props.message.fileName,
+                      mimeType: props.message.mimeType,
+                      chunkSize: props.message.chunkSize,
+                      createdAt: props.message.createdAt,
+                      fileSize: props.message.fileSize,
+                    } satisfies SendFileMessage;
+                  }
+                  if (!sessionMessage) return;
+
+                  messageStores.setReceiveMessage(
+                    sessionMessage,
+                  );
+                  session().sendMessage(sessionMessage);
+                }}
               >
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => {
-                    let sessionMessage:
-                      | SessionMessage
-                      | undefined;
-
-                    if (props.message.type === "text") {
-                      sessionMessage = {
-                        id: props.message.id,
-                        type: "send-text",
-                        client: props.message.client,
-                        target: props.message.target,
-                        data: props.message.data,
-                        createdAt: props.message.createdAt,
-                      } satisfies SendTextMessage;
-                    } else if (
-                      props.message.type === "file"
-                    ) {
-                      if (!props.message.fid) return;
-                      sessionMessage = {
-                        id: props.message.id,
-                        type: "send-file",
-                        client: props.message.client,
-                        target: props.message.target,
-                        fid: props.message.fid,
-                        fileName: props.message.fileName,
-                        mimeType: props.message.mimeType,
-                        chunkSize: props.message.chunkSize,
-                        createdAt: props.message.createdAt,
-                        fileSize: props.message.fileSize,
-                      } satisfies SendFileMessage;
-                    }
-                    if (!sessionMessage) return;
-
-                    messageStores.setReceiveMessage(
-                      sessionMessage,
-                    );
-                    session().sendMessage(sessionMessage);
-                  }}
-                >
-                  <IconRestore class="size-6" />
-                </Button>
-              </Show>
+                <IconRestore class="size-6" />
+              </Button>
             </Show>
           </div>
           <div

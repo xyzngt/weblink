@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.3] - 2024-11-23
+## [0.7.4] - 2024-11-25
 
 ### New Features
 
@@ -19,6 +19,8 @@ All notable changes to this project will be documented in this file.
 ### Bug Fixes
 
 - Fix the bug that check ice server availability works incorrectly 修复了检查 ICE 服务器可用性不正确的问题
+
+- Fix the bug that the file transfer status is displayed incorrectly when starting 修复了文件传输状态在开始时显示不正确的问题
 
 ## [0.6.5] - 2024-11-14
 

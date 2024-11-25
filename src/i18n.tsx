@@ -64,11 +64,6 @@ onMount(() => {
 });
 
 const LocaleSelector = () => {
-  createEffect(() => {
-    document
-      .querySelector("html")
-      ?.setAttribute("lang", appOptions.locale);
-  });
   return (
     <Select
       value={appOptions.locale}

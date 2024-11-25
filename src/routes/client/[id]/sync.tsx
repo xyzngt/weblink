@@ -278,7 +278,9 @@ const Sync = (props: RouteSectionProps) => {
                 <Show
                   when={localCache()}
                   fallback={
-                    <>
+                    <Show
+                      when={clientInfo()?.messageChannel}
+                    >
                       <DropdownMenuItem
                         class="gap-2"
                         onSelect={() => {
@@ -298,7 +300,7 @@ const Sync = (props: RouteSectionProps) => {
                           "common.action.request_download",
                         )}
                       </DropdownMenuItem>
-                    </>
+                    </Show>
                   }
                 >
                   {(cache) => (

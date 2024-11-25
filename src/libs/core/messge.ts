@@ -52,6 +52,7 @@ export interface FileTransferMessage
     received: number;
   };
   transferStatus?:
+    | "init"
     | "transfering"
     | "complete"
     | "paused"
@@ -439,6 +440,7 @@ class MessageStores {
           createdAt: sessionMsg.createdAt,
           client: sessionMsg.target,
           target: sessionMsg.client,
+          transferStatus: "init",
         } satisfies FileTransferMessage;
         this.setMessages(
           produce((state) => {
@@ -504,6 +506,7 @@ class MessageStores {
           createdAt: sessionMsg.createdAt,
           client: sessionMsg.target,
           target: sessionMsg.client,
+          transferStatus: "init",
         } satisfies FileTransferMessage;
         this.setMessages(
           produce((state) => {
@@ -591,6 +594,12 @@ class MessageStores {
       (msg) => msg.type === "file" && msg.fid === cache.id,
     );
     if (index === -1) {
+      console.warn(`cache for message not existed`);
+      return false;
+    }
+    const setter = this.getMessageSetter(index);
+    if (!setter) {
+      console.warn(`setter for message not existed`);
       return false;
     }
 
@@ -598,6 +607,9 @@ class MessageStores {
       "complete",
       () => {
         controller.abort("complete");
+        setter((state) => {
+          state.transferStatus = "complete";
+        });
       },
       { once: true, signal: controller.signal },
     );
@@ -628,14 +640,14 @@ class MessageStores {
     );
     if (index === -1) {
       console.warn(`transferer for message not existed`);
-
       return;
     }
-
+    const setter = this.getMessageSetter(index);
+    if (!setter) {
+      console.warn(`setter for message not existed`);
+      return;
+    }
     const controller = this.getController(transferer.id);
-
-    const setter = this.getMessageSetter(index)!;
-
     if (transferer.mode === TransferMode.Receive) {
       this.addCache(transferer.cache);
     }
@@ -645,7 +657,7 @@ class MessageStores {
       () => {
         setter((state) => {
           state.error = undefined;
-          state.transferStatus = "paused";
+          state.transferStatus = "transfering";
         });
       },
       {
