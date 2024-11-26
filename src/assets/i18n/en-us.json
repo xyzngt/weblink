@@ -315,7 +315,8 @@
       "request_download": "Request Download",
       "resume": "Resume",
       "add_folder": "Add Folder",
-      "check_availability": "Check Availability"
+      "check_availability": "Check Availability",
+      "reload": "Reload"
     },
     "notification": {
       "copy_success": "Copy success",

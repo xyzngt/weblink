@@ -1,6 +1,7 @@
 import { cn } from "@/libs/cn";
 import {
   Component,
+  createEffect,
   createSignal,
   JSX,
   Setter,
@@ -47,11 +48,11 @@ export const createModal = <T extends any>(
   };
 
   const close = () => {
-    setIsOpen(false);
     reslovePromise()?.({
       result: undefined,
       cancel: true,
     });
+    setIsOpen(false);
   };
 
   const submit = (data: T) => {
@@ -74,6 +75,7 @@ export const createModal = <T extends any>(
       console.error(err);
     }
   };
+
   const ModalComponent = (props: { class?: string }) => {
     return (
       <Component

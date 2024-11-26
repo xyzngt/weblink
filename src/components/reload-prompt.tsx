@@ -1,4 +1,6 @@
+import { t } from "@/i18n";
 import { Component, createEffect, onMount } from "solid-js";
+import { toast } from "solid-sonner";
 import { useRegisterSW } from "virtual:pwa-register/solid";
 
 export const ReloadPrompt: Component = () => {
@@ -19,13 +21,19 @@ export const ReloadPrompt: Component = () => {
       onRegisterError(error) {
         console.error("SW registration error", error);
       },
-    });
-
-    createEffect(() => {
-      if (offlineReady()) {
+      onNeedRefresh() {
+        toast.info("New version available, click to ", {
+          action: {
+            label: t("common.action.reload"),
+            onClick: () => updateServiceWorker(true),
+          },
+        });
+      },
+      onOfflineReady() {
         console.log("App ready to work offline");
-      }
+      },
     });
   });
+
   return <></>;
 };

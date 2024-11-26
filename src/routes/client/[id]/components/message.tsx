@@ -49,6 +49,7 @@ import {
   IconFileCopy,
   IconFileUpload,
   IconInsertDriveFile,
+  IconPreview,
   IconRestore,
   IconResume,
   IconSchedule,
@@ -67,6 +68,8 @@ import {
 import { catchErrorAsync } from "@/libs/catch";
 import { toast } from "solid-sonner";
 import { Spinner } from "@/components/spinner";
+import { createPreviewDialog } from "@/components/preview-dialog";
+import { downloadFile } from "@/libs/utils/download-file";
 
 export interface MessageCardProps
   extends ComponentProps<"li"> {
@@ -284,7 +287,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                       />
 
                       <video
-                        class="aspect-video h-full max-h-72 object-cover"
+                        class="aspect-video h-full max-h-72 object-contain"
                         controls
                         src={url}
                         onCanPlay={() => props.onLoad?.()}
@@ -432,6 +435,10 @@ export const MessageContent: Component<MessageCardProps> = (
   const session = createMemo(
     () => sessionService.sessions[local.message.target],
   );
+  const {
+    open: openPreviewDialog,
+    Component: PreviewDialogComponent,
+  } = createPreviewDialog();
 
   const shouldShowRestoreButton = createMemo(() => {
     if (!targetClientInfo()?.messageChannel) return false;
@@ -578,6 +585,42 @@ export const MessageContent: Component<MessageCardProps> = (
             </ContextMenuItem>
           </Show>
         </Show>
+        <ContextMenuItem
+          class="gap-2"
+          onSelect={async () => {
+            props.close();
+            if (!props.message.fid) return;
+            const cache = cacheManager.getCache(
+              props.message.fid,
+            );
+            if (!cache) return;
+            const file = await cache.getFile();
+            if (!file) return;
+            setTimeout(() => {
+              openPreviewDialog(file);
+            }, 350);
+          }}
+        >
+          <IconPreview class="size-4" />
+          {t("common.action.preview")}
+        </ContextMenuItem>
+        <ContextMenuItem
+          class="gap-2"
+          onSelect={async () => {
+            if (!props.message.fid) return;
+            const cache = cacheManager.getCache(
+              props.message.fid,
+            );
+            if (!cache) return;
+            const file = await cache.getFile();
+            if (!file) return;
+            downloadFile(file);
+            props.close();
+          }}
+        >
+          <IconDownload class="size-4" />
+          {t("common.action.download")}
+        </ContextMenuItem>
       </>
     ),
   } as const;
@@ -627,6 +670,7 @@ export const MessageContent: Component<MessageCardProps> = (
           {...p}
           {...other}
         >
+          <PreviewDialogComponent />
           <article class="w-full select-text whitespace-pre-wrap break-all text-sm">
             <Switch>
               <Match

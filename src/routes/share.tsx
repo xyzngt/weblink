@@ -7,14 +7,7 @@ import { ClientInfo } from "@/libs/core/type";
 import { sessionService } from "@/libs/services/session-service";
 import { getInitials } from "@/libs/utils/name";
 import { RouteSectionProps } from "@solidjs/router";
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-  onCleanup,
-  onMount,
-} from "solid-js";
+import { createMemo, For } from "solid-js";
 
 const ShareClientItem = (props: { client: ClientInfo }) => {
   return (

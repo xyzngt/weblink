@@ -1,4 +1,4 @@
-import { Component, createSignal, JSX } from "solid-js";
+import { Component } from "solid-js";
 import {
   Dialog,
   DialogContent,
@@ -43,11 +43,13 @@ const BaseDialog: Component<BaseModalProps> = (props) => {
 };
 
 interface DialogProps<T>
-  extends Omit<ModalOptions<T>, "component"> {
-}
+  extends Omit<ModalOptions<T>, "component"> {}
 
 export const createDialog = <T extends any>(
   options: DialogProps<T>,
 ) => {
-  return createModal<T>({ ...options, component: BaseDialog });
+  return createModal<T>({
+    ...options,
+    component: BaseDialog,
+  });
 };

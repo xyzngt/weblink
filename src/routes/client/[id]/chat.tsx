@@ -28,10 +28,8 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@/components/ui/avatar";
-
 import { FloatingButton } from "@/components/floating-button";
 import { createElementSize } from "@solid-primitives/resize-observer";
-
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import {
   SendClipboardMessage,
@@ -39,7 +37,6 @@ import {
   StoreMessage,
 } from "@/libs/core/messge";
 import { getInitials } from "@/libs/utils/name";
-import { MessageContent } from "@/routes/client/[id]/components/message";
 import { ChatBar } from "@/routes/client/[id]/components/chat-bar";
 import { sessionService } from "@/libs/services/session-service";
 import {
@@ -63,7 +60,6 @@ import {
   IconFolderMatch,
   IconMenu,
   IconPlaceItem,
-  IconStorage,
 } from "@/components/icons";
 import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
@@ -83,6 +79,7 @@ import {
 } from "@/components/ui/tooltip";
 import { catchErrorAsync } from "@/libs/catch";
 import { ChatMoreMessageButton } from "./components/chat-more-message-button";
+import { MessageContent } from "./components/message";
 
 const ChatHeader: Component<{
   info?: ClientInfo;

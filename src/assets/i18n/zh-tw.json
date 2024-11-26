@@ -317,7 +317,8 @@
       "request_download": "請求下載",
       "resume": "恢復",
       "add_folder": "添加資料夾",
-      "check_availability": "檢查可用性"
+      "check_availability": "檢查可用性",
+      "reload": "重新加載"
     },
     "clipboard_history": {
       "title": "剪貼簿歷史"

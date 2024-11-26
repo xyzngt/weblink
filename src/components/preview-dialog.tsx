@@ -102,9 +102,9 @@ export const createPreviewDialog = () => {
     ),
   });
 
-  const handleOpen = (src: File) => {
+  const handleOpen = async (src: File) => {
     setSrc(src);
-    open();
+    return await open();
   };
 
   return {

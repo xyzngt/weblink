@@ -5,7 +5,6 @@ import type { VitePWAOptions } from "vite-plugin-pwa";
 import solidSvg from "vite-plugin-solid-svg";
 import { compression } from "vite-plugin-compression2";
 import { readFileSync } from "fs";
-import { resolve } from "path";
 
 const packageJson = JSON.parse(
   readFileSync("./package.json", "utf-8"),
