@@ -18,6 +18,8 @@ All notable changes to this project will be documented in this file.
 
 - Improve the file processing function, now can abort the file processing 优化文件处理功能，现在可以中止文件处理
 
+- Improve the chat interface for loading more message on scroll 优化消息滚动加载的聊天界面
+
 ### Bug Fixes
 
 - Fix the bug that check ice server availability works incorrectly 修复了检查 ICE 服务器可用性不正确的问题

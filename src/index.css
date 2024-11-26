@@ -127,7 +127,7 @@ body::before {
 }
 
 body {
-  @apply overflow-y-auto;
+  @apply overflow-y-auto overscroll-none;
 
   min-height: calc(
     100vh - constant(safe-area-inset-bottom)

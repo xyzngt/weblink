@@ -12,6 +12,7 @@ import {
   onCleanup,
   onMount,
   Show,
+  untrack,
 } from "solid-js";
 
 import { Button } from "@/components/ui/button";
@@ -81,6 +82,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { catchErrorAsync } from "@/libs/catch";
+import { ChatMoreMessageButton } from "./components/chat-more-message-button";
 
 const ChatHeader: Component<{
   info?: ClientInfo;
@@ -306,7 +308,11 @@ export default function ClientPage(
     }
   });
 
-  const messages = createMemo<StoreMessage[]>(
+  const [messages, setMessages] = createSignal<
+    StoreMessage[]
+  >([]);
+
+  const allMessages = createMemo<StoreMessage[]>(
     () =>
       messageStores.messages.filter(
         (message) =>
@@ -314,33 +320,84 @@ export default function ClientPage(
           message.target === props.params.id,
       ) ?? [],
   );
+
+  const getMoreMessages = (count: number) => {
+    const msgs: StoreMessage[] = [];
+    const currentMessages = untrack(messages);
+    const totalMessages = untrack(allMessages);
+
+    const tailIndex =
+      totalMessages.length - currentMessages.length - 1;
+    if (tailIndex < 0) {
+      console.warn("no more messages");
+      return;
+    }
+    for (let i = tailIndex; i >= 0; i--) {
+      if (msgs.length >= count) break;
+      const message = totalMessages[i];
+      msgs.push(message);
+    }
+    setMessages([...msgs.reverse(), ...currentMessages]);
+  };
+
+  // load messages after message store is ready
+  createEffect(() => {
+    if (props.location.pathname) {
+      setMessages([]);
+    }
+
+    if (messageStores.status() === "ready") {
+      getMoreMessages(10);
+    }
+  });
+
+  // always keep the last message in the message list
+  createEffect(() => {
+    if (allMessages().length === messages().length) return;
+    if (allMessages().length === 0) return;
+
+    const lastMessage =
+      allMessages()[allMessages().length - 1];
+    if (!lastMessage) return;
+    const currentLastMessage =
+      messages()[messages().length - 1];
+    if (!currentLastMessage) {
+      return;
+    }
+    if (lastMessage.id !== currentLastMessage.id) {
+      setMessages([...messages(), lastMessage]);
+      toBottom(10, false);
+    }
+  });
   let toBottom: (
     delay: number | undefined,
     instant: boolean,
   ) => void;
   onMount(() => {
     toBottom = keepBottom(document, enable);
-
-    toBottom(50, true);
-
     createEffect(() => {
       if (props.location.pathname !== "/") {
-        toBottom(50, true);
+        toBottom(0, true);
+        toBottom(100, true);
       }
     });
-    createEffect(() => {
-      if (messages().length) {
-        toBottom(10, false);
-      }
-    });
+
     createEffect(() => {
       if (
         clientInfo()?.onlineStatus === "online" &&
         enable()
       ) {
-        toBottom(10, true);
+        toBottom(100, true);
       }
     });
+  });
+
+  const [loaded, setLoaded] = createSignal(false);
+
+  createEffect(() => {
+    if (loaded()) {
+      toBottom(0, true);
+    }
   });
 
   const [bottomElem, setBottomElem] =
@@ -392,7 +449,7 @@ export default function ClientPage(
     <div class="flex h-full w-full flex-col">
       <Show when={client()}>
         {(client) => (
-          <div class={cn("flex flex-1 flex-col [&>*]:p-1")}>
+          <div class={cn("flex flex-1 flex-col [&>*]:p-2")}>
             <FloatingButton
               onClick={async () => {
                 toBottom?.(0, false);
@@ -519,21 +576,12 @@ export default function ClientPage(
                         order: 8,
                         isButton: true,
                         tagName: "a",
-
-                        // SVG with outline
                         html: {
                           isCustomSVG: true,
                           inner:
                             '<path d="M20.5 14.3 17.1 18V10h-2.2v7.9l-3.4-3.6L10 16l6 6.1 6-6.1ZM23 23H9v2h14Z" id="pswp__icn-download"/>',
                           outlineID: "pswp__icn-download",
                         },
-
-                        // Or provide full svg:
-                        // html: '<svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true" class="pswp__icn"><path d="M20.5 14.3 17.1 18V10h-2.2v7.9l-3.4-3.6L10 16l6 6.1 6-6.1ZM23 23H9v2h14Z" /></svg>',
-
-                        // Or provide any other markup:
-                        // html: '<i class="fa-solid fa-download"></i>'
-
                         onInit: (el, pswp) => {
                           const e = el as HTMLAnchorElement;
 
@@ -559,22 +607,41 @@ export default function ClientPage(
                   });
                 }}
               >
+                <Show
+                  when={
+                    messages().length !==
+                    allMessages().length
+                  }
+                >
+                  <div class="flex justify-center">
+                    <ChatMoreMessageButton
+                      onIntersect={() => {
+                        const prevScrollHeight =
+                          document.documentElement
+                            .scrollHeight;
+
+                        getMoreMessages(5);
+
+                        document.documentElement.scrollTop +=
+                          document.documentElement
+                            .scrollHeight -
+                          prevScrollHeight;
+                      }}
+                    />
+                  </div>
+                </Show>
                 <For each={messages()}>
                   {(message, index) => (
                     <MessageContent
                       message={message}
                       onLoad={() => {
-                        if (message.type === "file") {
-                          console.log(
-                            `${message.fileName} loaded`,
-                          );
-                        }
+                        console.log(
+                          `message ${index()} loaded: ${message.type}`,
+                        );
                         clearTimeout(loadedTimer);
                         loadedTimer = window.setTimeout(
-                          () => {
-                            toBottom(250, false);
-                          },
-                          250,
+                          () => setLoaded(true),
+                          100,
                         );
                       }}
                       class={cn(

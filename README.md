@@ -1,8 +1,8 @@
 # Weblink
 
-## Introduction
-
 **English Introduction** | [**中文介绍**](README_CN.md)
+
+## Introduction
 
 Weblink is a pure web-based file transfer and chat application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase and WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
 

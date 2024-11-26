@@ -5,6 +5,7 @@ import {
   ComponentProps,
   createEffect,
   createMemo,
+  createSignal,
   Match,
   Show,
   splitProps,
@@ -209,7 +210,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
             >
               {(file) => {
                 const url = URL.createObjectURL(file());
-
+                const [isLong, setIsLong] =
+                  createSignal(false);
                 return (
                   <Switch
                     fallback={
@@ -236,10 +238,15 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         id="image"
                         href={url}
                         target="_blank"
+                        class={cn(
+                          `flex h-full max-h-64 items-center justify-center
+                          overflow-hidden rounded-sm hover:cursor-pointer`,
+                          isLong()
+                            ? "aspect-square"
+                            : "aspect-video",
+                        )}
                       >
                         <img
-                          class="flex max-h-48 rounded-sm bg-muted hover:cursor-pointer
-                            lg:max-h-72 xl:max-h-96"
                           src={url}
                           alt={cache().fileName}
                           onload={(ev) => {
@@ -253,6 +260,14 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                             parent.dataset.download =
                               cache().fileName;
 
+                            const diff =
+                              ev.currentTarget
+                                .naturalWidth -
+                              ev.currentTarget
+                                .naturalHeight;
+                            if (diff <= 0) {
+                              setIsLong(true);
+                            }
                             props.onLoad?.();
                           }}
                         />
@@ -267,8 +282,9 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         type="video"
                         name={props.message.fileName}
                       />
+
                       <video
-                        class="max-h-60 lg:max-h-72 xl:max-h-96"
+                        class="aspect-video h-full max-h-72 object-cover"
                         controls
                         src={url}
                         onCanPlay={() => props.onLoad?.()}
@@ -284,7 +300,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         name={props.message.fileName}
                       />
                       <audio
-                        class="max-h-60 lg:max-h-72 xl:max-h-96"
+                        class=""
                         controls
                         src={url}
                         onCanPlay={() => props.onLoad?.()}
@@ -611,7 +627,7 @@ export const MessageContent: Component<MessageCardProps> = (
           {...p}
           {...other}
         >
-          <article class="w-fit select-text whitespace-pre-wrap break-all text-sm">
+          <article class="w-full select-text whitespace-pre-wrap break-all text-sm">
             <Switch>
               <Match
                 when={

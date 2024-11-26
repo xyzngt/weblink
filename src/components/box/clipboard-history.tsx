@@ -26,7 +26,7 @@ export const createClipboardHistoryDialog = () => {
                 <TooltipTrigger
                   as="li"
                   class="flex cursor-pointer flex-col rounded-md border border-border
-                    p-1 text-sm hover:bg-muted"
+                    p-2 text-sm hover:bg-muted"
                   onClick={() => {
                     navigator.clipboard &&
                       navigator.clipboard

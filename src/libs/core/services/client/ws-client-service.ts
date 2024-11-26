@@ -154,7 +154,7 @@ export class WebSocketClientService
         if (document.visibilityState !== "visible") return;
         if (this.socket?.readyState === WebSocket.OPEN)
           return;
-        
+
         this.dispatchEvent("status-change", "disconnected");
         this.reconnect();
       },
@@ -223,8 +223,8 @@ export class WebSocketClientService
 
       socket.addEventListener(
         "error",
-        () => {
-          reject(new Error(`WebSocket error occurred`));
+        (ev) => {
+          reject(new Error(`WebSocket error: ${ev}`));
           this.destroy();
         },
         { once: true, signal: controller.signal },
@@ -377,8 +377,8 @@ export class WebSocketClientService
     if (this.controller) {
       this.controller.abort();
       this.controller = null;
+      this.dispatchEvent("status-change", "disconnected");
     }
-    this.dispatchEvent("status-change", "disconnected");
   }
   private emit(event: string, data: any) {
     const listeners = this.eventListeners.get(event) || [];
