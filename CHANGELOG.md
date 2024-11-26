@@ -2,11 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.4] - 2024-11-25
+## [0.7.5] - 2024-11-26
 
 ### New Features
 
 - Add progress display in file list 在文件列表中添加进度显示
+
+- Add double click to preview file in file table, and request file when status is not_started or stopped in sync page 在文件表中添加双击预览文件功能，当状态为 not_started 或 stopped 时在同步页面请求文件
 
 ### Improvements
 

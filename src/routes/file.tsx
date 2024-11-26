@@ -241,31 +241,6 @@ export default function File() {
           : true;
       },
       cell: ({ row }) => {
-        return (
-          <p class="max-w-xs overflow-hidden text-ellipsis">
-            <Badge variant="outline">
-              {getStatus(row.original).label}
-            </Badge>
-          </p>
-        );
-      },
-    }),
-    columnHelper.display({
-      id: "progress",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("common.file_table.columns.progress")}
-        />
-      ),
-      sortingFn: (rowA, rowB) => {
-        return (
-          (rowA.original.chunkCount ?? 0) -
-          (rowB.original.chunkCount ?? 0)
-        );
-      },
-      sortUndefined: "last",
-      cell: ({ row }) => {
         const progress = createMemo(() => {
           if (!row.original.chunkCount) return 0;
           const totalChunkCount = getTotalChunkCount(
@@ -277,14 +252,19 @@ export default function File() {
           );
         });
         return (
-          <Show
-            when={!row.original.isComplete}
-            fallback={<div class="min-w-12"></div>}
+          <p
+            class="flex max-w-xs items-center gap-1 overflow-hidden
+              text-ellipsis text-xs"
           >
-            <span class="font-mono">
-              {`${progress().toFixed(2)}%`}
-            </span>
-          </Show>
+            <Badge variant="outline">
+              {getStatus(row.original).label}
+            </Badge>
+            <Show when={!row.original.isComplete}>
+              <span class="font-mono">
+                {`${progress().toFixed(2)}%`}
+              </span>
+            </Show>
+          </p>
         );
       },
     }),
@@ -687,7 +667,7 @@ export default function File() {
 
       <div
         class="container relative z-[10] flex min-h-[calc(100%-3rem)]
-          flex-col gap-4 bg-background/80 px-0 pt-4 pb-20"
+          flex-col gap-4 bg-background/80 px-0 pb-20 pt-4"
       >
         <div class="pointer-events-none absolute inset-0 z-[-1] backdrop-blur" />
         <h2 class="h2 px-2">{t("cache.title")}</h2>
@@ -930,7 +910,15 @@ export default function File() {
                   }
                 >
                   {(row, rowIndex) => (
-                    <TableRow>
+                    <TableRow
+                      onDblClick={() => {
+                        if (row.original.file) {
+                          openPreviewDialog(
+                            row.original.file,
+                          );
+                        }
+                      }}
+                    >
                       <For each={row.getVisibleCells()}>
                         {(cell, index) => (
                           <TableCell

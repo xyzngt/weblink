@@ -523,7 +523,7 @@ export const WebRTCProvider: Component<
       //     );
       //   }
       // };
-      
+
       const localStream = props.localStream;
 
       session.addEventListener("message", async (ev) => {

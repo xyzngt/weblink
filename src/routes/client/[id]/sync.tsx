@@ -159,47 +159,34 @@ const Sync = (props: RouteSectionProps) => {
       },
       cell: ({ row }) => {
         const status = statuses()[row.index];
-        return (
-          <Badge variant="outline">
-            {t(`common.file_table.status.${status()}`)}
-          </Badge>
-        );
-      },
-    }),
-    columnHelper.display({
-      id: "progress",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("common.file_table.columns.progress")}
-        />
-      ),
-      cell: ({ row }) => {
-        const cacheInfo = createMemo<
-          FileMetaData | undefined
-        >(() => cacheManager.cacheInfo[row.original.id]);
-        const status = statuses()[row.index];
         const progress = createMemo(() => {
-          const info = cacheInfo();
+          const info =
+            cacheManager.cacheInfo[row.original.id];
           if (!info?.chunkCount) return 0;
           return (
             (info?.chunkCount / getTotalChunkCount(info)) *
             100
           );
         });
-
         return (
-          <Show
-            when={status() === "transferring"}
-            fallback={<div class="min-w-12"></div>}
-          >
-            <span class="font-mono">
-              {`${progress().toFixed(2)}%`}
-            </span>
-          </Show>
+          <div class="flex items-center gap-1 text-xs">
+            <Badge variant="outline">
+              {t(`common.file_table.status.${status()}`)}
+            </Badge>
+            <Show
+              when={["transferring", "stopped"].includes(
+                status(),
+              )}
+            >
+              <span class="font-mono">
+                {`${progress().toFixed(2)}%`}
+              </span>
+            </Show>
+          </div>
         );
       },
     }),
+
     columnHelper.accessor("fileSize", {
       header: ({ column }) => (
         <DataTableColumnHeader
@@ -707,7 +694,32 @@ const Sync = (props: RouteSectionProps) => {
                 }
               >
                 {(row) => (
-                  <TableRow>
+                  <TableRow
+                    onDblClick={() => {
+                      const status = statuses()[row.index];
+                      if (status() === "completed") {
+                        const file =
+                          cacheManager.cacheInfo[
+                            row.original.id
+                          ]?.file;
+                        if (file) {
+                          openPreview(file);
+                        }
+                      } else if (
+                        ["not_started", "stopped"].includes(
+                          status(),
+                        )
+                      ) {
+                        const resume =
+                          status() === "stopped";
+                        requestFile(
+                          props.params.id,
+                          row.original,
+                          resume,
+                        );
+                      }
+                    }}
+                  >
                     <For each={row.getVisibleCells()}>
                       {(cell) => (
                         <TableCell
