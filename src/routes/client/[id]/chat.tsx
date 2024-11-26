@@ -350,7 +350,6 @@ export default function ClientPage(
 
   // always keep the last message in the message list
   createEffect(() => {
-    if (allMessages().length === messages().length) return;
     if (allMessages().length === 0) return;
 
     const lastMessage =
@@ -359,6 +358,7 @@ export default function ClientPage(
     const currentLastMessage =
       messages()[messages().length - 1];
     if (!currentLastMessage) {
+      setMessages([lastMessage]);
       return;
     }
     if (lastMessage.id !== currentLastMessage.id) {
@@ -631,6 +631,19 @@ export default function ClientPage(
                   {(message, index) => (
                     <MessageContent
                       message={message}
+                      onDelete={() => {
+                        console.log(
+                          `delete message ${message.id}`,
+                        );
+                        messageStores.deleteMessage(
+                          message.id,
+                        );
+                        setMessages(
+                          messages().filter(
+                            (m) => m.id !== message.id,
+                          ),
+                        );
+                      }}
                       onLoad={() => {
                         console.log(
                           `message ${index()} loaded: ${message.type}`,

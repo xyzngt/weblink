@@ -75,6 +75,7 @@ export interface MessageCardProps
   extends ComponentProps<"li"> {
   message: StoreMessage;
   onLoad?: () => void;
+  onDelete?: () => void;
 }
 
 export interface FileMessageCardProps {
@@ -628,6 +629,7 @@ export const MessageContent: Component<MessageCardProps> = (
   const Menu = (props: {
     message: StoreMessage;
     close: () => void;
+    onDelete?: () => void;
   }) => {
     return (
       <>
@@ -636,17 +638,18 @@ export const MessageContent: Component<MessageCardProps> = (
           message={props.message as any}
           close={props.close}
         />
-
-        <ContextMenuItem
-          class="gap-2"
-          onSelect={() => {
-            messageStores.deleteMessage(props.message.id);
-            props.close();
-          }}
-        >
-          <IconDelete class="size-4" />
-          {t("common.action.delete")}
-        </ContextMenuItem>
+        <Show when={props.onDelete !== undefined}>
+          <ContextMenuItem
+            class="gap-2"
+            onSelect={() => {
+              props.onDelete?.();
+              props.close();
+            }}
+          >
+            <IconDelete class="size-4" />
+            {t("common.action.delete")}
+          </ContextMenuItem>
+        </Show>
       </>
     );
   };
@@ -654,7 +657,11 @@ export const MessageContent: Component<MessageCardProps> = (
   return (
     <PortableContextMenu
       menu={(close) => (
-        <Menu message={props.message} close={close} />
+        <Menu
+          message={props.message}
+          close={close}
+          onDelete={props.onDelete}
+        />
       )}
     >
       {(p) => (
