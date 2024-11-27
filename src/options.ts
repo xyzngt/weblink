@@ -51,6 +51,7 @@ export type AppOption = {
   servers: ConnectionOptions;
   shareServersWithOthers: boolean;
   websocketUrl?: string;
+  relayOnly: boolean;
 
   // Appearance
   locale: Locale;
@@ -99,6 +100,7 @@ export const getDefaultAppOptions = () => {
       stuns: ["stun:stun.l.google.com:19302"],
       turns: [],
     },
+    relayOnly: false,
     compressionLevel: 6,
     locale: localFromLanguage(navigator.language),
     showAboutDialog: true,

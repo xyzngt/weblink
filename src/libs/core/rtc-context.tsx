@@ -118,28 +118,6 @@ export interface WebRTCProviderProps extends ParentProps {
 export const WebRTCProvider: Component<
   WebRTCProviderProps
 > = (props) => {
-  // createEffect(() => {
-  //   const info: Record<string, ClientInfo> = {};
-  //   messageStores.clients.forEach((client) => {
-  //     info[client.clientId] = {
-  //       ...client,
-  //       onlineStatus: "offline",
-  //     };
-  //   });
-
-  //   setClientSessionInfo(info);
-
-  //   if (!clientService()) {
-  //     setClientSessionInfo(
-  //       produce((state) =>
-  //         Object.values(state).forEach(
-  //           (info) => (info.onlineStatus = "offline"),
-  //         ),
-  //       ),
-  //     );
-  //   }
-  // });
-
   let clipboardCacheData: SendClipboardMessage[] = [];
 
   onMount(() => {
@@ -482,47 +460,6 @@ export const WebRTCProvider: Component<
         console.error(`no client service setted`);
         return;
       }
-      // const updateStats = async (pc: RTCPeerConnection) => {
-      //   const reports: any[] = [];
-      //   const stats = await pc.getStats();
-
-      //   let candidateType: string | undefined;
-      //   stats.forEach((report) => {
-      //     reports.push(report);
-      //     if (report.type === "transport") {
-      //       let activeCandidatePair = stats.get(
-      //         report.selectedCandidatePairId,
-      //       ) as RTCIceCandidatePairStats;
-      //       if (!activeCandidatePair) return;
-      //       let remoteCandidate = stats.get(
-      //         activeCandidatePair.remoteCandidateId,
-      //       );
-      //       let localCandidate = stats.get(
-      //         activeCandidatePair.localCandidateId,
-      //       );
-      //       if (
-      //         localCandidate?.candidateType ||
-      //         remoteCandidate?.candidateType
-      //       ) {
-      //         candidateType =
-      //           localCandidate?.candidateType ??
-      //           remoteCandidate?.candidateType;
-      //       }
-      //     }
-      //   });
-      //   if (clientSessionInfo[targetClient.clientId]) {
-      //     setClientSessionInfo(
-      //       targetClient.clientId,
-      //       "statsReports",
-      //       reports,
-      //     );
-      //     setClientSessionInfo(
-      //       targetClient.clientId,
-      //       "candidateType",
-      //       candidateType,
-      //     );
-      //   }
-      // };
 
       const localStream = props.localStream;
 

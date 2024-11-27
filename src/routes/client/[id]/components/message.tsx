@@ -597,8 +597,8 @@ export const MessageContent: Component<MessageCardProps> = (
             if (!cache) return;
             const file = await cache.getFile();
             if (!file) return;
+            openPreviewDialog(file);
             setTimeout(() => {
-              openPreviewDialog(file);
             }, 350);
           }}
         >

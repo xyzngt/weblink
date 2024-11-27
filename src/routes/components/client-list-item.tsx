@@ -21,6 +21,8 @@ import {
 } from "@/libs/core/messge";
 import { PortableContextMenu } from "@/components/portable-contextmenu";
 import {
+  ContextMenuGroup,
+  ContextMenuGroupLabel,
   ContextMenuItem,
   ContextMenuSeparator,
 } from "@/components/ui/context-menu";
@@ -140,7 +142,11 @@ export const UserItem: Component<UserItemProps> = (
       <ConfirmDeleteClientDialog />
       <PortableContextMenu
         menu={(close) => (
-          <>
+          <ContextMenuGroup>
+            <ContextMenuGroupLabel>
+              {local.client.name}
+            </ContextMenuGroupLabel>
+            <ContextMenuSeparator />
             <ContextMenuItem
               as={A}
               href={`/client/${local.client.clientId}/sync`}
@@ -152,7 +158,7 @@ export const UserItem: Component<UserItemProps> = (
               <IconFolderMatch class="size-4" />
               {t("client.sync.title")}
             </ContextMenuItem>
-            <ContextMenuSeparator />
+
             <ContextMenuItem
               class="gap-2"
               onSelect={async () => {
@@ -173,7 +179,7 @@ export const UserItem: Component<UserItemProps> = (
               <IconDelete class="size-4" />
               {t("common.action.delete")}
             </ContextMenuItem>
-          </>
+          </ContextMenuGroup>
         )}
       >
         {(p) => (

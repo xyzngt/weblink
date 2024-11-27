@@ -181,6 +181,9 @@ class SessionService {
     const session = new PeerSession(sender, {
       polite,
       iceServers: await this.iceServers,
+      relayOnly:
+        appOptions.servers.turns.length > 0 &&
+        appOptions.relayOnly,
     });
 
     this.setClientInfo(client.clientId, {

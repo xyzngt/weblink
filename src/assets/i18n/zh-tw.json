@@ -11,10 +11,6 @@
         "title": "語言",
         "description": "更改應用程式的語言"
       },
-      "share_servers_with_others": {
-        "title": "分享伺服器給他人",
-        "description": "在生成加入 URL 時，分享 STUN 和 TURN 伺服器給他人"
-      },
       "background_image": {
         "title": "背景圖片",
         "description": "更改應用程式的背景圖片，也可以在檔案快取中選擇",
@@ -38,6 +34,14 @@
       "turn_servers": {
         "title": "TURN 伺服器",
         "description": "更改應用程式的 TURN 伺服器，如果你希望在 NAT 環境下使用此應用程式，你可能需要設定 TURN 伺服器"
+      },
+      "share_servers_with_others": {
+        "title": "分享伺服器給他人",
+        "description": "在生成加入 URL 時，分享 STUN 和 TURN 伺服器給他人"
+      },
+      "relay_only": {
+        "title": "僅使用中繼伺服器",
+        "description": "啟用後，應用程式將僅使用 TURN 伺服器"
       },
       "websocket_url": {
         "title": "WebSocket URL",
@@ -222,7 +226,7 @@
       "avatar_url": "頭像 URL",
       "password": {
         "title": "房間密碼",
-        "description": "可選，房間的密碼，用於加密客戶端之間的信令訊息，你可以點擊按鈕生成一個強密碼"
+        "description": "可選，房間的密碼，用於加密客戶端之間的信令訊息，防止其他人加入，你可以點擊按鈕生成一個強密碼"
       },
       "auto_join": "下次自動加入"
     },
@@ -275,6 +279,7 @@
       "client_id": "客戶端 ID",
       "created_at": "創建時間",
       "stats_reports": "統計報告",
+      "candidate_type": "候選類型",
       "leave": "離開"
     },
     "confirm_delete_client_dialog": {

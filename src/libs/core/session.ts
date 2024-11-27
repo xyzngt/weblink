@@ -11,6 +11,7 @@ import { catchErrorAsync, catchErrorSync } from "../catch";
 export interface PeerSessionOptions {
   polite?: boolean;
   iceServers?: RTCIceServer[];
+  relayOnly?: boolean;
 }
 
 export type PeerSessionEventMap = {
@@ -38,13 +39,19 @@ export class PeerSession {
   private channels: RTCDataChannel[] = [];
   private messageChannel: RTCDataChannel | null = null;
   private iceServers: RTCIceServer[] = [];
+  private relayOnly: boolean;
   constructor(
     sender: SignalingService,
-    { polite = true, iceServers }: PeerSessionOptions = {},
+    {
+      polite = true,
+      iceServers,
+      relayOnly = false,
+    }: PeerSessionOptions = {},
   ) {
     this.sender = sender;
     this.polite = polite;
     this.iceServers = iceServers ?? [];
+    this.relayOnly = relayOnly;
   }
 
   get clientId() {
@@ -104,7 +111,9 @@ export class PeerSession {
     this.controller = new AbortController();
     const pc = new RTCPeerConnection({
       iceServers: this.iceServers,
-      iceTransportPolicy: "all",
+      iceTransportPolicy: this.relayOnly ? "relay" : "all",
+      iceCandidatePoolSize: 10,
+      bundlePolicy: "max-bundle",
     });
     this.peerConnection = pc;
 

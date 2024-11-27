@@ -11,10 +11,6 @@
         "title": "Language",
         "description": "Change the language of the app"
       },
-      "share_servers_with_others": {
-        "title": "Share Servers with Others",
-        "description": "Share the STUN and TURN servers with others when generating the join URL"
-      },
       "background_image": {
         "title": "Background Image",
         "description": "Change the background image of the app, also can be selected in the file cache",
@@ -38,6 +34,14 @@
       "turn_servers": {
         "title": "TURN Servers",
         "description": "Change the TURN servers of the app, if you want to use this app in a NAT environment, you may need to set up TURN servers"
+      },
+      "share_servers_with_others": {
+        "title": "Share Servers with Others",
+        "description": "Share the STUN and TURN servers with others when generating the join URL"
+      },
+      "relay_only": {
+        "title": "Relay Only",
+        "description": "When enabled, the app will only use the TURN server"
       },
       "websocket_url": {
         "title": "Websocket URL",
@@ -215,7 +219,7 @@
       "avatar_url": "Avatar URL",
       "password": {
         "title": "Room Password",
-        "description": "Optional, the password of the room, used to encrypt the signaling messages sent between clients, you can click the button to generate a strong password"
+        "description": "Optional, the password of the room, used to encrypt the signaling messages sent between clients, preventing others from joining, you can click the button to generate a strong password"
       },
       "auto_join": "Auto Join Next Time"
     },
@@ -254,6 +258,7 @@
       "client_id": "Client ID",
       "created_at": "Created At",
       "stats_reports": "Stats Reports",
+      "candidate_type": "Candidate Type",
       "leave": "Leave"
     },
     "confirm_delete_client_dialog": {
