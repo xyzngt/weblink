@@ -72,23 +72,29 @@ export class FirebaseSignalingService
     callback: EventHandler<SignalingServiceEventMap[K]>,
     options?: boolean | AddEventListenerOptions,
   ): void {
-    const unsubscribe = this.listenForSignal((signal) => {
-      if (typeof options !== "boolean") {
-        if (options?.once) {
-          unsubscribe();
-        }
-        if (options?.signal) {
-          options.signal.addEventListener("abort", () => {
+    if (event === "signal") {
+      const unsubscribe = this.listenForSignal((signal) => {
+        if (typeof options !== "boolean") {
+          if (options?.once) {
             unsubscribe();
-          });
+          }
+          if (options?.signal) {
+            options.signal.addEventListener("abort", () => {
+              unsubscribe();
+            });
+          }
         }
-      }
-      callback(new CustomEvent(event, { detail: signal }));
-    });
-    this.listeners[event] = [
-      ...(this.listeners[event] || []),
-      { callback: callback.toString(), unsubscribe },
-    ];
+        callback(
+          new CustomEvent(event, {
+            detail: signal,
+          }) as CustomEvent<SignalingServiceEventMap[K]>,
+        );
+      });
+      this.listeners[event] = [
+        ...(this.listeners[event] || []),
+        { callback: callback.toString(), unsubscribe },
+      ];
+    }
   }
 
   removeEventListener<

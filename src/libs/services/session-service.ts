@@ -103,11 +103,9 @@ class SessionService {
       this.destoryService();
     }
     this.service = cs;
+
     cs.addEventListener("status-change", (ev) => {
       this.setClientServiceStatus(ev.detail);
-
-      if (ev.detail === "disconnected") {
-      }
     });
   }
 
@@ -227,6 +225,7 @@ class SessionService {
           "offline",
         );
         controller.abort();
+        this.destorySession(session.clientId);
       },
       { signal: controller.signal },
     );
@@ -239,7 +238,6 @@ class SessionService {
           "onlineStatus",
           "offline",
         );
-        session.listen();
       },
       { signal: controller.signal },
     );
@@ -267,10 +265,6 @@ class SessionService {
         }
       },
     );
-
-    controller.signal.addEventListener("abort", () => {
-      this.destorySession(session.clientId);
-    });
 
     return session;
   }

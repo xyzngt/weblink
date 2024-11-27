@@ -18,6 +18,7 @@ import {
 } from "../type";
 import { UpdateClientOptions } from "./firebase-client-service";
 import { toast } from "solid-sonner";
+import { catchErrorAsync } from "@/libs/catch";
 
 export class WebSocketClientService
   implements ClientService
@@ -190,7 +191,6 @@ export class WebSocketClientService
     socket.addEventListener(
       "error",
       (ev) => {
-        this.dispatchEvent("status-change", "disconnected");
         console.warn(`WebSocket error: ${ev}`);
       },
       { signal: controller.signal },
@@ -282,16 +282,10 @@ export class WebSocketClientService
   }
 
   private async reconnect() {
-    try {
-      await this.initialize(true);
-
-      this.signalingServices.forEach((service) => {
-        service.setSocket(this.socket!);
-      });
-
-      this.reconnectAttempts = 0;
-      console.log(`Reconnect success`);
-    } catch (error) {
+    const [error, socket] = await catchErrorAsync(
+      this.initialize(true),
+    );
+    if (error) {
       this.reconnectAttempts++;
       console.log(
         `Reconnect failed, attempt: ${this.reconnectAttempts}`,
@@ -309,7 +303,15 @@ export class WebSocketClientService
         );
         this.destroy();
       }
+      return;
     }
+
+    this.signalingServices.forEach((service) => {
+      service.resetSocket(socket);
+    });
+
+    this.reconnectAttempts = 0;
+    console.log(`WebSocket reconnect success`);
   }
 
   createSender(

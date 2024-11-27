@@ -43,6 +43,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { catchErrorAsync } from "@/libs/catch";
 
 export const ChatHeader: Component<{
   info?: ClientInfo;
@@ -135,7 +136,9 @@ export const ChatHeader: Component<{
                     <Show
                       when={
                         props.info?.onlineStatus ===
-                        "offline"
+                          "offline" &&
+                        sessionService.clientServiceStatus() ===
+                          "connected"
                       }
                     >
                       <DropdownMenuItem
@@ -145,17 +148,13 @@ export const ChatHeader: Component<{
                             sessionService.sessions[
                               props.client.clientId
                             ];
-                          if (session) {
-                            try {
-                              await session.listen();
-                              if (!session.polite)
-                                await session.connect();
-                            } catch (error) {
-                              console.error(error);
-                              if (error instanceof Error) {
-                                toast.error(error.message);
-                              }
-                            }
+                          if (!session) return;
+                          const [error] =
+                            await catchErrorAsync(
+                              session.reconnect(),
+                            );
+                          if (error) {
+                            toast.error(error.message);
                           }
                         }}
                       >

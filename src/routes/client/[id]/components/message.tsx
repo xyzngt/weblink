@@ -452,44 +452,15 @@ export const MessageContent: Component<MessageCardProps> = (
       message: TextMessage;
       close: () => void;
     }) => (
-      <ContextMenuItem
-        class="gap-2"
-        onSelect={async () => {
-          const [err] = await catchErrorAsync(
-            navigator.clipboard.writeText(
-              props.message.data,
-            ),
-          );
-          if (err) {
-            toast.error(
-              t("common.notification.copy_failed"),
-            );
-          } else {
-            toast.success(
-              t("common.notification.copy_success"),
-            );
-          }
-          props.close();
-        }}
-      >
-        <IconContentCopy class="size-4" />
-        {t("common.action.copy")}
-      </ContextMenuItem>
-    ),
-    file: (props: {
-      message: FileTransferMessage;
-      close: () => void;
-    }) => (
-      <>
+      <Show when={navigator.clipboard !== undefined}>
         <ContextMenuItem
           class="gap-2"
           onSelect={async () => {
             const [err] = await catchErrorAsync(
               navigator.clipboard.writeText(
-                props.message.fileName,
+                props.message.data,
               ),
             );
-
             if (err) {
               toast.error(
                 t("common.notification.copy_failed"),
@@ -499,33 +470,27 @@ export const MessageContent: Component<MessageCardProps> = (
                 t("common.notification.copy_success"),
               );
             }
-
             props.close();
           }}
         >
           <IconContentCopy class="size-4" />
-          {t("common.action.copy_file_name")}
+          {t("common.action.copy")}
         </ContextMenuItem>
-        <Show
-          when={props.message.mimeType?.startsWith("image")}
-        >
+      </Show>
+    ),
+    file: (props: {
+      message: FileTransferMessage;
+      close: () => void;
+    }) => (
+      <>
+        <Show when={navigator.clipboard !== undefined}>
           <ContextMenuItem
             class="gap-2"
             onSelect={async () => {
-              if (!props.message.fid) return;
-              const cache = cacheManager.getCache(
-                props.message.fid,
-              );
-              if (!cache) return;
-              const file = await cache.getFile();
-              if (!file) return;
-              const convertedPng =
-                await convertImageToPNG(file);
-              const item = new ClipboardItem({
-                [convertedPng.type]: convertedPng,
-              });
               const [err] = await catchErrorAsync(
-                navigator.clipboard.write([item]),
+                navigator.clipboard.writeText(
+                  props.message.fileName,
+                ),
               );
 
               if (err) {
@@ -541,14 +506,14 @@ export const MessageContent: Component<MessageCardProps> = (
               props.close();
             }}
           >
-            <IconFileCopy class="size-4" />
-            {t("common.action.copy_as_png")}
+            <IconContentCopy class="size-4" />
+            {t("common.action.copy_file_name")}
           </ContextMenuItem>
+
           <Show
-            when={
-              ClipboardItem.supports("image/svg+xml") &&
-              props.message.mimeType === "image/svg+xml"
-            }
+            when={props.message.mimeType?.startsWith(
+              "image",
+            )}
           >
             <ContextMenuItem
               class="gap-2"
@@ -560,9 +525,10 @@ export const MessageContent: Component<MessageCardProps> = (
                 if (!cache) return;
                 const file = await cache.getFile();
                 if (!file) return;
-                if (file.type !== "image/svg+xml") return;
+                const convertedPng =
+                  await convertImageToPNG(file);
                 const item = new ClipboardItem({
-                  [file.type]: file,
+                  [convertedPng.type]: convertedPng,
                 });
                 const [err] = await catchErrorAsync(
                   navigator.clipboard.write([item]),
@@ -582,8 +548,49 @@ export const MessageContent: Component<MessageCardProps> = (
               }}
             >
               <IconFileCopy class="size-4" />
-              {t("common.action.copy_as_svg")}
+              {t("common.action.copy_as_png")}
             </ContextMenuItem>
+            <Show
+              when={
+                ClipboardItem.supports("image/svg+xml") &&
+                props.message.mimeType === "image/svg+xml"
+              }
+            >
+              <ContextMenuItem
+                class="gap-2"
+                onSelect={async () => {
+                  if (!props.message.fid) return;
+                  const cache = cacheManager.getCache(
+                    props.message.fid,
+                  );
+                  if (!cache) return;
+                  const file = await cache.getFile();
+                  if (!file) return;
+                  if (file.type !== "image/svg+xml") return;
+                  const item = new ClipboardItem({
+                    [file.type]: file,
+                  });
+                  const [err] = await catchErrorAsync(
+                    navigator.clipboard.write([item]),
+                  );
+
+                  if (err) {
+                    toast.error(
+                      t("common.notification.copy_failed"),
+                    );
+                  } else {
+                    toast.success(
+                      t("common.notification.copy_success"),
+                    );
+                  }
+
+                  props.close();
+                }}
+              >
+                <IconFileCopy class="size-4" />
+                {t("common.action.copy_as_svg")}
+              </ContextMenuItem>
+            </Show>
           </Show>
         </Show>
         <ContextMenuItem
@@ -598,8 +605,7 @@ export const MessageContent: Component<MessageCardProps> = (
             const file = await cache.getFile();
             if (!file) return;
             openPreviewDialog(file);
-            setTimeout(() => {
-            }, 350);
+            setTimeout(() => {}, 350);
           }}
         >
           <IconPreview class="size-4" />
