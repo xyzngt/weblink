@@ -1,6 +1,7 @@
 import { ConnectionBadge } from "@/components/connection-badge";
 import { createDialog } from "@/components/dialogs/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { t } from "@/i18n";
@@ -111,36 +112,44 @@ const clientInfoDialog = () => {
         name: client()?.name,
       }),
     content: () => (
-      <div class="grid grid-cols-3 gap-2 overflow-y-auto p-1">
-        <div class="col-span-3 flex justify-between gap-2">
-          <p>{t("common.client_info_dialog.client_id")}</p>
-          <p class="text-sm">{client()?.clientId}</p>
+      <div class="grid grid-cols-3 gap-2 overflow-y-auto text-nowrap p-1">
+        <div class="col-span-3 flex items-center justify-between gap-2">
+          <Label>
+            {t("common.client_info_dialog.client_id")}
+          </Label>
+          <Input
+            readOnly
+            value={client()?.clientId}
+            class="overflow-x-auto"
+          />
         </div>
-        <div class="col-span-3 flex justify-between gap-2">
-          <p>{t("common.client_info_dialog.status")}</p>
+        <div class="col-span-3 flex items-center justify-between gap-2">
+          <Label>
+            {t("common.client_info_dialog.status")}
+          </Label>
           <ConnectionBadge client={info() ?? undefined} />
         </div>
         <Show when={info()}>
           {(info) => (
             <>
-              <div class="col-span-3 flex justify-between gap-2">
-                <p>
+              <div class="col-span-3 flex items-center justify-between gap-2">
+                <Label>
                   {t(
                     "common.client_info_dialog.created_at",
                   )}
-                </p>
-                <p>
+                </Label>
+                <p class="text-sm">
                   {new Date(
                     info()?.createdAt ?? 0,
                   ).toLocaleString()}
                 </p>
               </div>
-              <div class="col-span-3 flex justify-between gap-2">
-                <p>
+              <div class="col-span-3 flex items-center justify-between gap-2">
+                <Label>
                   {t(
                     "common.client_info_dialog.candidate_type",
                   )}
-                </p>
+                </Label>
                 <p>
                   <Badge variant="outline">
                     {stats().candidateType}

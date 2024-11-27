@@ -253,6 +253,14 @@ class SessionService {
       { signal: controller.signal },
     );
 
+    session.addEventListener("reconnect", (ev) => {
+      this.setClientInfo(
+        client.clientId,
+        "onlineStatus",
+        "reconnecting",
+      );
+    });
+
     session.addEventListener(
       "messageChannelChange",
       (ev) => {

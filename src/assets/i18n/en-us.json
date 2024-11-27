@@ -283,6 +283,7 @@
     "status": {
       "online": "Online",
       "connecting": "Connecting",
+      "reconnecting": "Reconnecting",
       "offline": "Offline",
       "leave": "Leave"
     },

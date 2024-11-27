@@ -26,7 +26,11 @@ export interface CreateClient extends Client {
 export interface ClientInfo extends TransferClient {
   statsReports?: any[];
   candidateType?: string;
-  onlineStatus: "offline" | "online" | "connecting";
+  onlineStatus:
+    | "offline"
+    | "online"
+    | "connecting"
+    | "reconnecting";
   clipboard?: SendClipboardMessage[];
   storage?: ChunkMetaData[];
   messageChannel: boolean;

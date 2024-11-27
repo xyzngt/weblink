@@ -24,6 +24,7 @@ export type PeerSessionEventMap = {
   error: Error;
   disconnect: void;
   messageChannelChange: "ready" | "closed";
+  reconnect: void;
 };
 
 export class PeerSession {
@@ -38,6 +39,7 @@ export class PeerSession {
   private channels: RTCDataChannel[] = [];
   private messageChannel: RTCDataChannel | null = null;
   private iceServers: RTCIceServer[] = [];
+  private closed: boolean = false;
   private relayOnly: boolean;
   readonly polite: boolean;
   constructor(
@@ -317,28 +319,40 @@ export class PeerSession {
     }
     let reconnectAttempts = 0;
     const attemptReconnect = async () => {
+      reconnectAttempts++;
       console.log(
         `attempt reconnect, attempt ${reconnectAttempts}`,
       );
+
       const [err] = await catchErrorAsync(this.reconnect());
       if (err) {
-        reconnectAttempts++;
         console.error(
           `reconnect attempt ${reconnectAttempts} failed, error: `,
           err,
         );
-        if (reconnectAttempts > 3) {
+        if (reconnectAttempts <= 10) {
+          window.setTimeout(
+            () => {
+              if (
+                ["connecting", "connected"].includes(
+                  this.peerConnection?.connectionState ??
+                    "",
+                )
+              ) {
+                return;
+              }
+              if (this.closed) {
+                return;
+              }
+              attemptReconnect();
+            },
+            Math.random() * (500 + reconnectAttempts * 500),
+          );
+        } else {
           console.error(
             `reconnect attempt ${reconnectAttempts} failed`,
           );
           this.disconnect();
-        } else {
-          window.setTimeout(
-            () => {
-              attemptReconnect();
-            },
-            1000 + reconnectAttempts * 1000,
-          );
         }
       }
     };
@@ -607,10 +621,14 @@ export class PeerSession {
         this.initializeConnection(),
       );
       if (err) throw err;
-      return await this.connect(true);
+      this.dispatchEvent("reconnect", undefined);
+      return await this.connect();
     }
     const pc = this.peerConnection;
+
     if (pc.connectionState === "connected") return;
+
+    this.dispatchEvent("reconnect", undefined);
 
     return new Promise<void>(async (resolve, reject) => {
       const onConnectionStateChange = () => {
@@ -674,13 +692,7 @@ export class PeerSession {
     });
   }
 
-  async connect(force = false) {
-    if (this.polite && !force) {
-      console.log(
-        `session ${this.clientId} is polite, skip connect`,
-      );
-      return;
-    }
+  async connect() {
     const pc = this.peerConnection;
     if (!pc) {
       console.warn(
@@ -692,6 +704,13 @@ export class PeerSession {
     if (pc.connectionState === "connected") {
       console.warn(
         `session ${this.clientId} already connected`,
+      );
+      return;
+    }
+
+    if (pc.connectionState === "connecting") {
+      console.warn(
+        `session ${this.clientId} already connecting, skip connect`,
       );
       return;
     }
@@ -715,8 +734,8 @@ export class PeerSession {
                 `connection established, session ${this.clientId}, connectable: ${this.connectable}`,
               );
               window.clearTimeout(timer);
-              resolve();
               connectAbortController.abort();
+              resolve();
               break;
             case "failed":
             case "closed":
@@ -784,7 +803,7 @@ export class PeerSession {
       //   { signal: connectAbortController.signal },
       // );
 
-      if (!this.makingOffer) {
+      if (!this.makingOffer && !this.polite) {
         this.makingOffer = true;
         const [err] = await catchErrorAsync(
           handleOffer(pc, this.sender),
@@ -824,6 +843,7 @@ export class PeerSession {
 
   close() {
     this.disconnect();
+    this.closed = true;
     this.dispatchEvent("close", undefined);
   }
 }

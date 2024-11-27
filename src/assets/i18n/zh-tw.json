@@ -290,6 +290,7 @@
     "status": {
       "online": "線上",
       "connecting": "連接中",
+      "reconnecting": "重新連接中",
       "offline": "離線",
       "leave": "離開"
     },
