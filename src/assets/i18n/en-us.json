@@ -330,7 +330,8 @@
       "copy_failed": "Failed to copy link",
       "reset_options_success": "Options reset successfully",
       "unknown_error": "Unknown error",
-      "processing_files": "Processing files..."
+      "processing_files": "Processing files...",
+      "new_version_available": "New version available, click to reload"
     },
     "forward_dialog": {
       "title": "Forward items",

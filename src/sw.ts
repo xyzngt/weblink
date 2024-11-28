@@ -15,21 +15,13 @@ self.__WB_DISABLE_DEV_LOGS = true;
 
 precacheAndRoute(self.__WB_MANIFEST);
 
-self.addEventListener("install", () => {
-  self.skipWaiting();
-  if (
-    "Notification" in self &&
-    Notification.permission === "granted"
-  ) {
-    self.registration.showNotification("Weblink", {
-      body: "Weblink is ready",
-    });
-  }
-});
-
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING")
     self.skipWaiting();
+});
+
+self.addEventListener("install", () => {
+  console.log("weblink install");
 });
 
 self.addEventListener("fetch", (event) => {

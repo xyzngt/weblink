@@ -15,7 +15,7 @@ const pwaOptions: Partial<VitePWAOptions> = {
     process.env.NODE_ENV === "development"
       ? "development"
       : "production",
-  registerType: "autoUpdate",
+  registerType: "prompt",
   srcDir: "src",
   filename: "sw.ts",
   injectRegister: "auto",
@@ -67,7 +67,6 @@ const pwaOptions: Partial<VitePWAOptions> = {
     },
   },
   base: "/",
-  workbox: {},
   injectManifest: { swSrc: "src/sw.ts" },
   devOptions: {
     enabled: true,
@@ -89,10 +88,6 @@ export default defineConfig({
       treeshake: true,
     },
   },
-  // optimizeDeps: {
-  //   exclude: ["@mapbox"],
-  // },
-
   plugins: [
     solidPlugin(),
     solidSvg({
@@ -119,5 +114,6 @@ export default defineConfig({
     __APP_AUTHOR_URL__: JSON.stringify(
       packageJson.author.url,
     ),
+    __APP_BUILD_TIME__: Date.now(),
   },
 });

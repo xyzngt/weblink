@@ -1,6 +1,4 @@
 /// <reference types="vite/client" />
-/// <reference types="vite-plugin-pwa/info" />
-/// <reference types="vite-plugin-pwa/solid" />
 
 interface ImportMetaEnv {
   readonly VITE_FIREBASE_API_KEY: string;
@@ -29,18 +27,14 @@ declare const __APP_LICENSE__: string;
 declare const __APP_AUTHOR_NAME__: string;
 declare const __APP_AUTHOR_EMAIL__: string;
 declare const __APP_AUTHOR_URL__: string;
+declare const __APP_BUILD_TIME__: number;
 
-declare module "virtual:pwa-register/solid" {
-  import type { Accessor, Setter } from "solid-js";
+declare module "virtual:pwa-register" {
   import type { RegisterSWOptions } from "vite-plugin-pwa/types";
 
-  export function useRegisterSW(
+  export type { RegisterSWOptions };
+
+  export function registerSW(
     options?: RegisterSWOptions,
-  ): {
-    needRefresh: [Accessor<boolean>, Setter<boolean>];
-    offlineReady: [Accessor<boolean>, Setter<boolean>];
-    updateServiceWorker: (
-      reloadPage?: boolean,
-    ) => Promise<void>;
-  };
+  ): (reloadPage?: boolean) => Promise<void>;
 }

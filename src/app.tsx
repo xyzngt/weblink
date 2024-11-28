@@ -4,6 +4,7 @@ import {
 } from "@solidjs/router";
 
 import {
+  createSignal,
   onCleanup,
   onMount,
   ParentProps,
@@ -12,7 +13,6 @@ import {
 import { Toaster } from "@/components/ui/sonner";
 import ChatProvider from "./components/chat/chat-provider";
 import Nav from "@/components/nav";
-import { ReloadPrompt } from "./components/reload-prompt";
 import {
   ColorModeProvider,
   ColorModeScript,
@@ -48,23 +48,54 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "./components/ui/tooltip";
-let wakeLock: WakeLockSentinel | null = null;
-const requestWakeLock = async () => {
-  if (!navigator.wakeLock) {
-    return;
-  }
-  if (wakeLock && wakeLock.released === false) {
-    return;
-  }
-  try {
-    wakeLock = await navigator.wakeLock.request("screen");
-    wakeLock.addEventListener("release", () => {
-      wakeLock = null;
+import { createReloadPrompt } from "./libs/hooks/reload-prompt";
+import { catchErrorAsync } from "./libs/catch";
+
+const createWakeLock = () => {
+  const [wakeLock, setWakeLock] =
+    createSignal<WakeLockSentinel | null>(null);
+
+  const requestWakeLock = async () => {
+    if (!navigator.wakeLock) {
+      return;
+    }
+    const lock = wakeLock();
+    if (lock && lock.released === false) {
+      return;
+    }
+
+    const [err, newLock] = await catchErrorAsync(
+      navigator.wakeLock.request("screen"),
+    );
+    if (err) {
+      console.error(err);
+      return;
+    }
+    setWakeLock(newLock);
+    newLock.addEventListener("release", () => {
+      setWakeLock(null);
     });
-  } catch (err) {
-    if (err instanceof Error)
-      console.error(`${err.name}, ${err.message}`);
-  }
+  };
+  const handleVisibilityChange = async () => {
+    if (document.visibilityState === "visible") {
+      await requestWakeLock();
+    }
+  };
+  onMount(async () => {
+    await requestWakeLock();
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange,
+    );
+  });
+  onCleanup(() => {
+    document.removeEventListener(
+      "visibilitychange",
+      handleVisibilityChange,
+    );
+    wakeLock()?.release();
+  });
+  return wakeLock;
 };
 
 const InnerApp = (props: ParentProps) => {
@@ -100,10 +131,10 @@ const InnerApp = (props: ParentProps) => {
     });
   };
 
-  onMount(async () => {
+  const parseSearchParams = async () => {
     let reset = false;
     if (search.id && search.id !== clientProfile.roomId) {
-      setClientProfile("roomId", search.id);
+      setClientProfile("roomId", search.id as string);
       setSearch({ id: null }, { replace: true });
       reset = true;
     }
@@ -111,13 +142,13 @@ const InnerApp = (props: ParentProps) => {
       search.pwd &&
       search.pwd !== clientProfile.password
     ) {
-      setClientProfile("password", search.pwd);
+      setClientProfile("password", search.pwd as string);
       setSearch({ pwd: null }, { replace: true });
       reset = true;
     }
     if (search.stun) {
       const stunServers = JSON.parse(
-        search.stun,
+        search.stun as string,
       ) as string[];
       setAppOptions(
         "servers",
@@ -133,7 +164,7 @@ const InnerApp = (props: ParentProps) => {
     }
     if (search.turn) {
       const turnServers = JSON.parse(
-        search.turn,
+        search.turn as string,
       ) as TurnServerOptions[];
 
       if (!appOptions.servers.turns) {
@@ -171,30 +202,18 @@ const InnerApp = (props: ParentProps) => {
     ) {
       await onJoinRoom();
     }
-  });
+  };
 
   onMount(async () => {
-    requestWakeLock();
+    parseSearchParams();
 
-    document.addEventListener(
-      "visibilitychange",
-      async () => {
-        if (document.visibilityState === "visible") {
-          await requestWakeLock();
-        }
-      },
-    );
-  });
-
-  onMount(() => {
     if (appOptions.showAboutDialog) {
       openAboutDialog();
     }
   });
 
-  onCleanup(() => {
-    wakeLock?.release();
-  });
+  createWakeLock();
+  createReloadPrompt();
 
   const {
     forwardTarget: shareTarget,
@@ -259,7 +278,6 @@ const InnerApp = (props: ParentProps) => {
         </Show>
         <JoinRoomButton />
       </div>
-      <ReloadPrompt />
 
       {props.children}
     </>

@@ -319,6 +319,15 @@ export class PeerSession {
     }
     let reconnectAttempts = 0;
     const attemptReconnect = async () => {
+      if (this.polite) {
+        return await this.initializeConnection();
+      }
+      if (this.closed) {
+        console.warn(
+          `session ${this.clientId} is closed, skip reconnect`,
+        );
+        return;
+      }
       reconnectAttempts++;
       console.log(
         `attempt reconnect, attempt ${reconnectAttempts}`,
@@ -333,17 +342,6 @@ export class PeerSession {
         if (reconnectAttempts <= 10) {
           window.setTimeout(
             () => {
-              if (
-                ["connecting", "connected"].includes(
-                  this.peerConnection?.connectionState ??
-                    "",
-                )
-              ) {
-                return;
-              }
-              if (this.closed) {
-                return;
-              }
               attemptReconnect();
             },
             Math.random() * (500 + reconnectAttempts * 500),
@@ -625,8 +623,16 @@ export class PeerSession {
       return await this.connect();
     }
     const pc = this.peerConnection;
-
-    if (pc.connectionState === "connected") return;
+    if (
+      ["connecting", "connected"].includes(
+        pc.connectionState,
+      )
+    ) {
+      console.warn(
+        `session ${this.clientId} already connected, skip reconnect`,
+      );
+      return;
+    }
 
     this.dispatchEvent("reconnect", undefined);
 
