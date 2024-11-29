@@ -29,19 +29,15 @@
       },
       "stun_servers": {
         "title": "STUN 服务器",
-        "description": "更改应用程序的 STUN 服务器"
+        "description": "更改应用程序的 STUN 服务器，用于建立点对点连接"
       },
       "turn_servers": {
         "title": "TURN 服务器",
-        "description": "更改应用程序的 TURN 服务器，如果你希望在 NAT 环境下使用此应用程序，你可能需要设置 TURN 服务器"
+        "description": "用于中继，如果你希望在 NAT 环境下使用此应用程序，你可能需要设置 TURN 服务器，并在对方客户端中设置相同的 TURN 服务器"
       },
       "share_servers_with_others": {
         "title": "分享服务器给其他人",
         "description": "在生成加入 URL 时，分享 STUN 和 TURN 服务器给其他人"
-      },
-      "relay_only": {
-        "title": "仅使用中继服务器",
-        "description": "启用后，应用程序将仅使用 TURN 服务器"
       },
       "websocket_url": {
         "title": "Websocket URL",
@@ -119,6 +115,13 @@
     },
     "advanced_settings": {
       "title": "高级设置",
+      "advanced_connection": {
+        "title": "高级连接设置",
+        "relay_only": {
+          "title": "仅使用中继服务器",
+          "description": "启用后，应用程序将仅使用 TURN 服务器"
+        }
+      },
       "advanced_sender": {
         "title": "高级文件发送设置"
       },
@@ -216,7 +219,7 @@
       "description": "在这里编辑房间信息，点击确定即可创建或加入房间。",
       "client_id": {
         "title": "客户端 ID (只读)",
-        "description": "房间的客户端 ID，代表你的身份，可以在设置中更改"
+        "description": "房间的客户端 ID，代表你的身份"
       },
       "room_id": {
         "title": "房间 ID",

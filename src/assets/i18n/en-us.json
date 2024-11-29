@@ -29,20 +29,17 @@
       },
       "stun_servers": {
         "title": "STUN Servers",
-        "description": "Change the STUN servers of the app"
+        "description": "Change the STUN servers of the app, used to establish peer-to-peer connections"
       },
       "turn_servers": {
         "title": "TURN Servers",
-        "description": "Change the TURN servers of the app, if you want to use this app in a NAT environment, you may need to set up TURN servers"
+        "description": "If you want to use this app in a NAT environment, you may need to set up TURN servers, and set the same TURN servers on the other client"
       },
       "share_servers_with_others": {
         "title": "Share Servers with Others",
         "description": "Share the STUN and TURN servers with others when generating the join URL"
       },
-      "relay_only": {
-        "title": "Relay Only",
-        "description": "When enabled, the app will only use the TURN server"
-      },
+
       "websocket_url": {
         "title": "Websocket URL",
         "description": "Change the Websocket URL of the app, this option is only available when the backend is WebSocket"
@@ -123,6 +120,13 @@
     },
     "advanced_settings": {
       "title": "Advanced Settings",
+      "advanced_connection": {
+        "title": "Advanced Connection Settings",
+        "relay_only": {
+          "title": "Relay Only",
+          "description": "When enabled, the app will only use the TURN server"
+        }
+      },
       "advanced_sender": {
         "title": "Advanced File Sender Settings"
       },
@@ -209,7 +213,7 @@
       "description": "Edit the room info here, click confirm to create or join the room.",
       "client_id": {
         "title": "Client ID (Read Only)",
-        "description": "The client ID of the room, representing your identity, which can be changed in settings"
+        "description": "The client ID of the room, representing your identity"
       },
       "room_id": {
         "title": "Room ID",

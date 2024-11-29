@@ -88,6 +88,39 @@ export const createRoomDialog = () => {
           </label>
           <label class="flex flex-col gap-2">
             <span class="input-label">
+              {t("common.join_form.password.title")}
+            </span>
+            <div class="flex gap-1">
+              <Input
+                placeholder={t(
+                  "common.join_form.password.placeholder",
+                )}
+                value={clientProfile.password ?? ""}
+                onInput={(ev) =>
+                  setClientProfile(
+                    "password",
+                    optional(ev.currentTarget.value),
+                  )
+                }
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={async () => {
+                  const password =
+                    await generateStrongPassword();
+                  setClientProfile("password", password);
+                }}
+              >
+                <IconCasino class="size-6" />
+              </Button>
+            </div>
+            <p class="muted">
+              {t("common.join_form.password.description")}
+            </p>
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="input-label">
               {t("common.join_form.name")}
             </span>
             <Input
@@ -143,39 +176,6 @@ export const createRoomDialog = () => {
                 </AvatarFallback>
               </Avatar>
             </div>
-          </label>
-          <label class="flex flex-col gap-2">
-            <span class="input-label">
-              {t("common.join_form.password.title")}
-            </span>
-            <div class="flex gap-1">
-              <Input
-                placeholder={t(
-                  "common.join_form.password.placeholder",
-                )}
-                value={clientProfile.password ?? ""}
-                onInput={(ev) =>
-                  setClientProfile(
-                    "password",
-                    optional(ev.currentTarget.value),
-                  )
-                }
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={async () => {
-                  const password =
-                    await generateStrongPassword();
-                  setClientProfile("password", password);
-                }}
-              >
-                <IconCasino class="size-6" />
-              </Button>
-            </div>
-            <p class="muted">
-              {t("common.join_form.password.description")}
-            </p>
           </label>
           <Switch
             class="flex items-center justify-between"

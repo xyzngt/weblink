@@ -707,32 +707,6 @@ export default function Settings() {
               )}
             </p>
           </div>
-
-          <div class="flex flex-col gap-2">
-            <Switch
-              class="flex items-center justify-between"
-              checked={appOptions.relayOnly}
-              disabled={
-                appOptions.servers.turns.length === 0
-              }
-              onChange={(isChecked) =>
-                setAppOptions("relayOnly", isChecked)
-              }
-            >
-              <SwitchLabel>
-                {t("setting.connection.relay_only.title")}
-              </SwitchLabel>
-              <SwitchControl>
-                <SwitchThumb />
-              </SwitchControl>
-            </Switch>
-            <p class="muted">
-              {t(
-                "setting.connection.relay_only.description",
-              )}
-            </p>
-          </div>
-
           <Show
             when={
               import.meta.env.VITE_BACKEND === "WEBSOCKET"
@@ -974,6 +948,37 @@ export default function Settings() {
               )}
             ></CollapsibleTrigger>
             <CollapsibleContent class="flex flex-col gap-2 rounded-md border p-4">
+              <h4 id="advanced-connection" class="h4">
+                {t(
+                  "setting.advanced_settings.advanced_connection.title",
+                )}
+              </h4>
+              <div class="flex flex-col gap-2">
+                <Switch
+                  class="flex items-center justify-between"
+                  checked={appOptions.relayOnly}
+                  disabled={
+                    appOptions.servers.turns.length === 0
+                  }
+                  onChange={(isChecked) =>
+                    setAppOptions("relayOnly", isChecked)
+                  }
+                >
+                  <SwitchLabel>
+                    {t(
+                      "setting.advanced_settings.advanced_connection.relay_only.title",
+                    )}
+                  </SwitchLabel>
+                  <SwitchControl>
+                    <SwitchThumb />
+                  </SwitchControl>
+                </Switch>
+                <p class="muted">
+                  {t(
+                    "setting.advanced_settings.advanced_connection.relay_only.description",
+                  )}
+                </p>
+              </div>
               <h4 id="advanced-sender" class="h4">
                 {t(
                   "setting.advanced_settings.advanced_sender.title",
@@ -1325,14 +1330,6 @@ const MediaSetting: Component = () => {
   const availableSpeakers = createMemo(() =>
     speakers().filter((speaker) => speaker.deviceId !== ""),
   );
-
-  // const availableDevices = createMemo(() => {
-  //   return [
-  //     ...availableCameras(),
-  //     ...availableMicrophones(),
-  //     ...availableSpeakers(),
-  //   ];
-  // });
 
   createEffect(() => {
     if (

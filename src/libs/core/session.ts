@@ -1,4 +1,7 @@
-import { SignalingService } from "./services/type";
+import {
+  ClientSignal,
+  SignalingService,
+} from "./services/type";
 import {
   EventHandler,
   MultiEventEmitter,
@@ -41,6 +44,7 @@ export class PeerSession {
   private iceServers: RTCIceServer[] = [];
   private closed: boolean = false;
   private relayOnly: boolean;
+  private signalCache: Array<ClientSignal> = [];
   readonly polite: boolean;
   constructor(
     sender: SignalingService,
@@ -96,7 +100,12 @@ export class PeerSession {
     );
   }
 
-  private async initializeConnection() {
+  private initializeConnection() {
+    if (this.closed) {
+      throw new Error(
+        `can not initialize connection, session ${this.clientId} is closed`,
+      );
+    }
     if (this.peerConnection) {
       if (
         this.peerConnection.connectionState === "connected"
@@ -306,6 +315,15 @@ export class PeerSession {
       { signal: this.controller.signal },
     );
 
+    let queue = Promise.resolve();
+    function enqueueTask(task: () => Promise<void>) {
+      queue = queue.then(() => task());
+    }
+
+    for (const signal of this.signalCache) {
+      enqueueTask(() => this.handleSignal(signal));
+    }
+    this.signalCache.length = 0;
     return pc;
   }
 
@@ -319,9 +337,6 @@ export class PeerSession {
     }
     let reconnectAttempts = 0;
     const attemptReconnect = async () => {
-      if (this.polite) {
-        return await this.initializeConnection();
-      }
       if (this.closed) {
         console.warn(
           `session ${this.clientId} is closed, skip reconnect`,
@@ -357,8 +372,113 @@ export class PeerSession {
     attemptReconnect();
   }
 
+  private async handleSignal(signal: ClientSignal) {
+    const pc = this.peerConnection;
+    if (!pc) {
+      console.log(
+        `peer connection is null, skip handle signal`,
+      );
+      return;
+    }
+    let err: Error | undefined;
+    if (signal.type === "offer") {
+      const offerCollision =
+        this.makingOffer || pc.signalingState !== "stable";
+      this.ignoreOffer = !this.polite && offerCollision;
+      if (this.ignoreOffer) {
+        console.warn(
+          `Offer ignored due to collision, signalingState: ${pc.signalingState}`,
+        );
+        return;
+      }
+
+      [err] = await catchErrorAsync(
+        pc.setRemoteDescription(
+          new RTCSessionDescription({
+            type: "offer",
+            sdp: signal.data.sdp,
+          }),
+        ),
+      );
+
+      if (err) {
+        console.error(`setRemoteDescription error: `, err);
+        return;
+      }
+
+      [err] = await catchErrorAsync(
+        pc.setLocalDescription(),
+      );
+
+      if (err) {
+        console.error(`setLocalDescription error: `, err);
+        return;
+      }
+
+      if (!pc.localDescription) {
+        console.warn(
+          `localDescription is null, signalingState: ${pc.signalingState}`,
+        );
+        return;
+      }
+
+      [err] = await catchErrorAsync(
+        this.sender.sendSignal({
+          type: pc.localDescription.type,
+          data: JSON.stringify({
+            sdp: pc.localDescription.sdp,
+          }),
+        }),
+      );
+
+      if (err) {
+        console.error(`sendSignal error: `, err);
+        return;
+      }
+    } else if (signal.type === "answer") {
+      if (pc.signalingState !== "have-local-offer") {
+        console.warn(
+          `answer ignored due to signalingState is ${pc.signalingState}`,
+        );
+        return;
+      }
+
+      [err] = await catchErrorAsync(
+        pc.setRemoteDescription(
+          new RTCSessionDescription({
+            type: "answer",
+            sdp: signal.data.sdp,
+          }),
+        ),
+      );
+
+      if (err) {
+        console.error(`setRemoteDescription error: `, err);
+        return;
+      }
+    } else if (signal.type === "candidate") {
+      const candidate = new RTCIceCandidate(
+        signal.data.candidate,
+      );
+      [err] = await catchErrorAsync(
+        pc.addIceCandidate(candidate),
+      );
+
+      if (err) {
+        if (!this.ignoreOffer) {
+          console.error(`addIceCandidate error: `, err);
+        }
+      }
+    }
+  }
+
   async listen() {
-    const [err] = await catchErrorAsync(
+    if (this.closed) {
+      throw new Error(
+        `session ${this.clientId} is closed, can not listen`,
+      );
+    }
+    const [err] = catchErrorSync(() =>
       this.initializeConnection(),
     );
     if (err) {
@@ -366,117 +486,19 @@ export class PeerSession {
     }
 
     this.sender.addEventListener("signal", async (ev) => {
-      const pc = this.peerConnection;
-      if (!pc) {
-        console.warn(
-          `peer connection is null, ignore signal`,
-        );
-        return;
-      }
       console.log(
         `client received signal ${ev.detail.type}`,
         ev.detail,
       );
-
-      let err: Error | undefined;
-
-      const signal = ev.detail;
-      if (signal.type === "offer") {
-        const offerCollision =
-          this.makingOffer ||
-          pc.signalingState !== "stable";
-        this.ignoreOffer = !this.polite && offerCollision;
-        if (this.ignoreOffer) {
-          console.warn(
-            `Offer ignored due to collision, signalingState: ${pc.signalingState}`,
-          );
-          return;
-        }
-
-        [err] = await catchErrorAsync(
-          pc.setRemoteDescription(
-            new RTCSessionDescription({
-              type: "offer",
-              sdp: signal.data.sdp,
-            }),
-          ),
+      const pc = this.peerConnection;
+      if (!pc) {
+        console.log(
+          `peer connection is null, cache signal`,
         );
-
-        if (err) {
-          console.error(
-            `setRemoteDescription error: `,
-            err,
-          );
-          return;
-        }
-
-        [err] = await catchErrorAsync(
-          pc.setLocalDescription(),
-        );
-
-        if (err) {
-          console.error(`setLocalDescription error: `, err);
-          return;
-        }
-
-        if (!pc.localDescription) {
-          console.warn(
-            `localDescription is null, signalingState: ${pc.signalingState}`,
-          );
-          return;
-        }
-
-        [err] = await catchErrorAsync(
-          this.sender.sendSignal({
-            type: pc.localDescription.type,
-            data: JSON.stringify({
-              sdp: pc.localDescription.sdp,
-            }),
-          }),
-        );
-
-        if (err) {
-          console.error(`sendSignal error: `, err);
-          return;
-        }
-      } else if (signal.type === "answer") {
-        if (pc.signalingState !== "have-local-offer") {
-          console.warn(
-            `answer ignored due to signalingState is ${pc.signalingState}`,
-          );
-          return;
-        }
-
-        [err] = await catchErrorAsync(
-          pc.setRemoteDescription(
-            new RTCSessionDescription({
-              type: "answer",
-              sdp: signal.data.sdp,
-            }),
-          ),
-        );
-
-        if (err) {
-          console.error(
-            `setRemoteDescription error: `,
-            err,
-          );
-          return;
-        }
-      } else if (signal.type === "candidate") {
-        const candidate = new RTCIceCandidate(
-          signal.data.candidate,
-        );
-        [err] = await catchErrorAsync(
-          pc.addIceCandidate(candidate),
-        );
-
-        if (err) {
-          if (!this.ignoreOffer) {
-            console.error(`addIceCandidate error: `, err);
-          }
-        }
+        this.signalCache.push(ev.detail);
+        return;
       }
+      await this.handleSignal(ev.detail);
     });
   }
 
@@ -569,6 +591,11 @@ export class PeerSession {
   }
 
   sendMessage(message: SessionMessage) {
+    if (this.closed) {
+      throw new Error(
+        `session ${this.clientId} is closed, can not send message`,
+      );
+    }
     if (!this.messageChannel) {
       console.error(
         `failed to send message, message channel is null`,
@@ -580,6 +607,11 @@ export class PeerSession {
   }
 
   async renegotiate() {
+    if (this.closed) {
+      throw new Error(
+        `session ${this.clientId} is closed, can not renegotiate`,
+      );
+    }
     if (!this.peerConnection) {
       console.warn(
         `renegotiate failed, peer connection is not created`,
@@ -611,11 +643,16 @@ export class PeerSession {
   }
 
   async reconnect() {
+    if (this.closed) {
+      throw new Error(
+        `session ${this.clientId} is closed, can not reconnect`,
+      );
+    }
     if (!this.peerConnection) {
       console.log(
         `peer connection ${this.targetClientId} is null, new connection`,
       );
-      const [err] = await catchErrorAsync(
+      const [err] = catchErrorSync(() =>
         this.initializeConnection(),
       );
       if (err) throw err;
@@ -699,6 +736,11 @@ export class PeerSession {
   }
 
   async connect() {
+    if (this.closed) {
+      throw new Error(
+        `session ${this.clientId} is closed, can not connect`,
+      );
+    }
     const pc = this.peerConnection;
     if (!pc) {
       console.warn(
@@ -761,54 +803,6 @@ export class PeerSession {
         },
         { signal: connectAbortController.signal },
       );
-
-      // const onIceStateChange = () => {
-      //   switch (pc.iceConnectionState) {
-      //     case "connected":
-      //       pc.removeEventListener(
-      //         "icestatechange",
-      //         onIceStateChange,
-      //       );
-      //       break;
-      //     case "closed":
-      //     case "disconnected":
-      //       reject(
-      //         new Error(
-      //           `ICE connection failed with state: ${pc.iceConnectionState}`,
-      //         ),
-      //       );
-      //       this.disconnect();
-      //       connectAbortController.abort();
-      //       break;
-      //     default:
-      //       break;
-      //   }
-      // };
-
-      // pc.addEventListener(
-      //   "icestatechange",
-      //   onIceStateChange,
-      //   { signal: connectAbortController.signal },
-      // );
-
-      // const onSignalingStateChange = () => {
-      //   if (pc.signalingState === "closed") {
-      //     this.disconnect();
-      //     connectAbortController.abort();
-      //     reject(
-      //       new Error(
-      //         `Signaling connection failed with state: ${pc.signalingState}`,
-      //       ),
-      //     );
-      //   }
-      // };
-
-      // pc.addEventListener(
-      //   "signalingstatechange",
-      //   onSignalingStateChange,
-      //   { signal: connectAbortController.signal },
-      // );
-
       if (!this.makingOffer && !this.polite) {
         this.makingOffer = true;
         const [err] = await catchErrorAsync(

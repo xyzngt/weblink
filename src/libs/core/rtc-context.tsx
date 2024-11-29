@@ -425,7 +425,10 @@ export const WebRTCProvider: Component<
   }
 
   const joinRoom = async (): Promise<void> => {
-    console.log(`join room`, clientProfile);
+    console.log(
+      `join ${clientProfile.roomId} with profile`,
+      clientProfile,
+    );
 
     let cs: ClientService;
     if (sessionService.clientService) {
