@@ -335,7 +335,8 @@
       "reset_options_success": "Options reset successfully",
       "unknown_error": "Unknown error",
       "processing_files": "Processing files...",
-      "new_version_available": "New version available, click to reload"
+      "new_version_available": "New version available, click to reload",
+      "share_failed": "Share failed, error: {{error}}"
     },
     "forward_dialog": {
       "title": "Forward items",

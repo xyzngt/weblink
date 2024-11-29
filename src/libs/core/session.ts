@@ -157,7 +157,7 @@ export class PeerSession {
       "visibilitychange",
       () => {
         if (pc.connectionState === "connected") return;
-        this.handleConnectionError();
+        this.handleDisconnection();
       },
       { signal: this.controller.signal },
     );
@@ -291,7 +291,7 @@ export class PeerSession {
           case "failed":
           case "closed":
           case "disconnected":
-            this.handleConnectionError();
+            this.handleDisconnection();
             break;
           default:
             break;
@@ -327,8 +327,23 @@ export class PeerSession {
     return pc;
   }
 
-  private async handleConnectionError() {
-    this.disconnect();
+  private async handleDisconnection() {
+    if (this.closed) {
+      console.warn(
+        `session ${this.clientId} is closed, skip handle connection error`,
+      );
+      return;
+    }
+    if (
+      ["connected", "connecting"].includes(
+        this.peerConnection?.connectionState ?? "",
+      )
+    ) {
+      console.warn(
+        `connection error, session ${this.clientId} is already connected, skip handle connection error`,
+      );
+      return;
+    }
     if (!this.connectable) {
       console.warn(
         `connection error, session ${this.clientId} is not connectable, disconnect`,
@@ -343,6 +358,7 @@ export class PeerSession {
         );
         return;
       }
+
       reconnectAttempts++;
       console.log(
         `attempt reconnect, attempt ${reconnectAttempts}`,
@@ -356,9 +372,7 @@ export class PeerSession {
         );
         if (reconnectAttempts <= 10) {
           window.setTimeout(
-            () => {
-              attemptReconnect();
-            },
+            () => attemptReconnect(),
             Math.random() * (500 + reconnectAttempts * 500),
           );
         } else {
@@ -496,7 +510,9 @@ export class PeerSession {
           `peer connection is null, cache signal`,
         );
         this.signalCache.push(ev.detail);
-        return;
+        if (ev.detail.type === "candidate") {
+          this.handleDisconnection();
+        }
       }
       await this.handleSignal(ev.detail);
     });
@@ -648,7 +664,7 @@ export class PeerSession {
         `session ${this.clientId} is closed, can not reconnect`,
       );
     }
-    if (!this.peerConnection) {
+    if (this.peerConnection === null) {
       console.log(
         `peer connection ${this.targetClientId} is null, new connection`,
       );

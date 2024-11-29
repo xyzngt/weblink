@@ -356,7 +356,8 @@
       "reset_options_success": "选项重置成功",
       "unknown_error": "未知错误",
       "processing_files": "处理文件中...",
-      "new_version_available": "新版本可用，点击重新加载"
+      "new_version_available": "新版本可用，点击重新加载",
+      "share_failed": "分享失败，错误: {{error}}"
     },
     "nav": {
       "chat": "聊天",

@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.0] - 2024-11-29
+
+### New Features
+
+- Add share file feature 添加分享文件功能
+
+### Improvements
+
+- Improve the connection stability 改善连接稳定性
+
+- Automatically try to reconnect when the connection is lost 自动尝试重新连接
+
 ## [0.7.5] - 2024-11-26
 
 ### New Features

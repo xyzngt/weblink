@@ -5,6 +5,7 @@ import {
   ComponentProps,
   createEffect,
   createMemo,
+  createResource,
   createSignal,
   Match,
   Show,
@@ -53,6 +54,7 @@ import {
   IconRestore,
   IconResume,
   IconSchedule,
+  IconShare,
 } from "@/components/icons";
 import { sessionService } from "@/libs/services/session-service";
 import { t } from "@/i18n";
@@ -70,6 +72,7 @@ import { toast } from "solid-sonner";
 import { Spinner } from "@/components/spinner";
 import { createPreviewDialog } from "@/components/preview-dialog";
 import { downloadFile } from "@/libs/utils/download-file";
+import { FileID } from "@/libs/core/type";
 
 export interface MessageCardProps
   extends ComponentProps<"li"> {
@@ -451,48 +454,26 @@ export const MessageContent: Component<MessageCardProps> = (
     text: (props: {
       message: TextMessage;
       close: () => void;
-    }) => (
-      <Show when={navigator.clipboard !== undefined}>
-        <ContextMenuItem
-          class="gap-2"
-          onSelect={async () => {
-            const [err] = await catchErrorAsync(
-              navigator.clipboard.writeText(
-                props.message.data,
-              ),
-            );
-            if (err) {
-              toast.error(
-                t("common.notification.copy_failed"),
-              );
-            } else {
-              toast.success(
-                t("common.notification.copy_success"),
-              );
-            }
-            props.close();
-          }}
-        >
-          <IconContentCopy class="size-4" />
-          {t("common.action.copy")}
-        </ContextMenuItem>
-      </Show>
-    ),
-    file: (props: {
-      message: FileTransferMessage;
-      close: () => void;
-    }) => (
-      <>
-        <Show when={navigator.clipboard !== undefined}>
+    }) => {
+      const shareableData = createMemo(() => {
+        if (!navigator.canShare) return null;
+        const shareData: ShareData = {
+          text: props.message.data,
+        };
+        return navigator.canShare(shareData)
+          ? shareData
+          : null;
+      });
+      return (
+        <>
           <ContextMenuItem
             class="gap-2"
             onSelect={async () => {
               const [err] = await catchErrorAsync(
                 navigator.clipboard.writeText(
-                  props.message.fileName,
+                  props.message.data,
                 ),
               );
-
               if (err) {
                 toast.error(
                   t("common.notification.copy_failed"),
@@ -502,36 +483,72 @@ export const MessageContent: Component<MessageCardProps> = (
                   t("common.notification.copy_success"),
                 );
               }
-
               props.close();
             }}
           >
             <IconContentCopy class="size-4" />
-            {t("common.action.copy_file_name")}
+            {t("common.action.copy")}
           </ContextMenuItem>
-
-          <Show
-            when={props.message.mimeType?.startsWith(
-              "image",
+          <Show when={shareableData()}>
+            {(shareData) => (
+              <ContextMenuItem
+                class="gap-2"
+                onSelect={async () => {
+                  props.close();
+                  const [err] = await catchErrorAsync(
+                    navigator.share(shareData()),
+                  );
+                  if (err) {
+                    console.error(err);
+                    toast.error(
+                      t(
+                        "common.notification.share_failed",
+                        {
+                          error: err.message,
+                        },
+                      ),
+                    );
+                  }
+                }}
+              >
+                <IconShare class="size-4" />
+                {t("common.action.share")}
+              </ContextMenuItem>
             )}
-          >
+          </Show>
+        </>
+      );
+    },
+    file: (props: {
+      message: FileTransferMessage;
+      close: () => void;
+    }) => {
+      const [file] = createResource(async () => {
+        if (!props.message.fid) return null;
+        return await getFileFromCache(props.message.fid);
+      });
+      const shareableData = createMemo(() => {
+        const f = file();
+        if (!f) return null;
+        if (!navigator.canShare) return null;
+        const shareData: ShareData = {
+          files: [f],
+        };
+        return navigator.canShare(shareData)
+          ? shareData
+          : null;
+      });
+
+      return (
+        <>
+          <Show when={navigator.clipboard !== undefined}>
             <ContextMenuItem
               class="gap-2"
               onSelect={async () => {
-                if (!props.message.fid) return;
-                const cache = cacheManager.getCache(
-                  props.message.fid,
-                );
-                if (!cache) return;
-                const file = await cache.getFile();
-                if (!file) return;
-                const convertedPng =
-                  await convertImageToPNG(file);
-                const item = new ClipboardItem({
-                  [convertedPng.type]: convertedPng,
-                });
                 const [err] = await catchErrorAsync(
-                  navigator.clipboard.write([item]),
+                  navigator.clipboard.writeText(
+                    props.message.fileName,
+                  ),
                 );
 
                 if (err) {
@@ -547,89 +564,148 @@ export const MessageContent: Component<MessageCardProps> = (
                 props.close();
               }}
             >
-              <IconFileCopy class="size-4" />
-              {t("common.action.copy_as_png")}
+              <IconContentCopy class="size-4" />
+              {t("common.action.copy_file_name")}
             </ContextMenuItem>
-            <Show
-              when={
-                ClipboardItem.supports("image/svg+xml") &&
-                props.message.mimeType === "image/svg+xml"
-              }
-            >
-              <ContextMenuItem
-                class="gap-2"
-                onSelect={async () => {
-                  if (!props.message.fid) return;
-                  const cache = cacheManager.getCache(
-                    props.message.fid,
-                  );
-                  if (!cache) return;
-                  const file = await cache.getFile();
-                  if (!file) return;
-                  if (file.type !== "image/svg+xml") return;
-                  const item = new ClipboardItem({
-                    [file.type]: file,
-                  });
-                  const [err] = await catchErrorAsync(
-                    navigator.clipboard.write([item]),
-                  );
-
-                  if (err) {
-                    toast.error(
-                      t("common.notification.copy_failed"),
-                    );
-                  } else {
-                    toast.success(
-                      t("common.notification.copy_success"),
-                    );
-                  }
-
-                  props.close();
-                }}
-              >
-                <IconFileCopy class="size-4" />
-                {t("common.action.copy_as_svg")}
-              </ContextMenuItem>
-            </Show>
           </Show>
-        </Show>
-        <ContextMenuItem
-          class="gap-2"
-          onSelect={async () => {
-            props.close();
-            if (!props.message.fid) return;
-            const cache = cacheManager.getCache(
-              props.message.fid,
-            );
-            if (!cache) return;
-            const file = await cache.getFile();
-            if (!file) return;
-            openPreviewDialog(file);
-            setTimeout(() => {}, 350);
-          }}
-        >
-          <IconPreview class="size-4" />
-          {t("common.action.preview")}
-        </ContextMenuItem>
-        <ContextMenuItem
-          class="gap-2"
-          onSelect={async () => {
-            if (!props.message.fid) return;
-            const cache = cacheManager.getCache(
-              props.message.fid,
-            );
-            if (!cache) return;
-            const file = await cache.getFile();
-            if (!file) return;
-            downloadFile(file);
-            props.close();
-          }}
-        >
-          <IconDownload class="size-4" />
-          {t("common.action.download")}
-        </ContextMenuItem>
-      </>
-    ),
+          <Show when={file()}>
+            {(f) => (
+              <>
+                <Show
+                  when={navigator.clipboard !== undefined}
+                >
+                  <Show
+                    when={props.message.mimeType?.startsWith(
+                      "image",
+                    )}
+                  >
+                    <ContextMenuItem
+                      class="gap-2"
+                      onSelect={async () => {
+                        props.close();
+                        const convertedPng =
+                          await convertImageToPNG(f());
+                        const item = new ClipboardItem({
+                          [convertedPng.type]: convertedPng,
+                        });
+                        const [err] = await catchErrorAsync(
+                          navigator.clipboard.write([item]),
+                        );
+
+                        if (err) {
+                          toast.error(
+                            t(
+                              "common.notification.copy_failed",
+                            ),
+                          );
+                        } else {
+                          toast.success(
+                            t(
+                              "common.notification.copy_success",
+                            ),
+                          );
+                        }
+                      }}
+                    >
+                      <IconFileCopy class="size-4" />
+                      {t("common.action.copy_as_png")}
+                    </ContextMenuItem>
+                    <Show
+                      when={
+                        ClipboardItem.supports(
+                          "image/svg+xml",
+                        ) && f().type === "image/svg+xml"
+                      }
+                    >
+                      <ContextMenuItem
+                        class="gap-2"
+                        onSelect={async () => {
+                          const item = new ClipboardItem({
+                            [f().type]: f(),
+                          });
+                          const [err] =
+                            await catchErrorAsync(
+                              navigator.clipboard.write([
+                                item,
+                              ]),
+                            );
+
+                          if (err) {
+                            toast.error(
+                              t(
+                                "common.notification.copy_failed",
+                              ),
+                            );
+                          } else {
+                            toast.success(
+                              t(
+                                "common.notification.copy_success",
+                              ),
+                            );
+                          }
+
+                          props.close();
+                        }}
+                      >
+                        <IconFileCopy class="size-4" />
+                        {t("common.action.copy_as_svg")}
+                      </ContextMenuItem>
+                    </Show>
+                  </Show>
+                </Show>
+                <ContextMenuItem
+                  class="gap-2"
+                  onSelect={() => {
+                    props.close();
+                    openPreviewDialog(f());
+                  }}
+                >
+                  <IconPreview class="size-4" />
+                  {t("common.action.preview")}
+                </ContextMenuItem>
+                <Show when={shareableData()}>
+                  {(shareData) => (
+                    <ContextMenuItem
+                      class="gap-2"
+                      onSelect={async () => {
+                        props.close();
+                        const [err] = await catchErrorAsync(
+                          navigator.share(shareData()),
+                        );
+                        if (err) {
+                          console.error(err);
+                          toast.error(
+                            t(
+                              "common.notification.share_failed",
+                              {
+                                error: err.message,
+                              },
+                            ),
+                          );
+                        }
+                      }}
+                    >
+                      <IconShare class="size-4" />
+                      {t("common.action.share")}
+                    </ContextMenuItem>
+                  )}
+                </Show>
+                <ContextMenuItem
+                  class="gap-2"
+                  onSelect={async () => {
+                    props.close();
+                    downloadFile(f());
+                  }}
+                >
+                  <IconDownload class="size-4" />
+                  {t("common.action.download")}
+                </ContextMenuItem>
+              </>
+            )}
+          </Show>
+        </>
+      );
+    },
   } as const;
 
   const Menu = (props: {
@@ -805,4 +881,10 @@ export const MessageContent: Component<MessageCardProps> = (
 export interface MessageChatProps
   extends ComponentProps<"div"> {
   target: string;
+}
+
+async function getFileFromCache(fid: FileID) {
+  const cache = cacheManager.getCache(fid);
+  if (!cache) return null;
+  return await cache.getFile();
 }

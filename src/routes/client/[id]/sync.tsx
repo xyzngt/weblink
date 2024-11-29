@@ -8,6 +8,7 @@ import {
   IconPreview,
   IconResume,
   IconSearch700,
+  IconShare,
   IconSync,
 } from "@/components/icons";
 import { createPreviewDialog } from "@/components/preview-dialog";
@@ -75,6 +76,7 @@ import { getCommonPinningStyles } from "@/components/data-table/data-table-pin-s
 import {
   createEffect,
   createMemo,
+  createResource,
   createSignal,
   For,
   Show,
@@ -87,6 +89,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "solid-sonner";
+import { catchErrorAsync } from "@/libs/catch";
 
 type ChunkStatus =
   | "not_started"
@@ -290,74 +294,122 @@ const Sync = (props: RouteSectionProps) => {
                     </Show>
                   }
                 >
-                  {(cache) => (
-                    <>
-                      <Show
-                        when={
-                          cacheManager.cacheInfo[
-                            row.original.id
-                          ]?.isComplete
-                        }
-                      >
+                  {(cache) => {
+                    const [file] = createResource(
+                      async () =>
+                        (await cache()?.getFile()) ?? null,
+                    );
+                    const shareableData = createMemo(() => {
+                      if (!navigator.canShare) return null;
+                      const f = file();
+                      if (!f) return null;
+                      const shareData: ShareData = {
+                        files: [f],
+                      };
+                      return navigator.canShare(shareData)
+                        ? shareData
+                        : null;
+                    });
+                    return (
+                      <>
+                        <Show
+                          when={
+                            cacheManager.cacheInfo[
+                              row.original.id
+                            ]?.isComplete
+                          }
+                        >
+                          <Show when={file()}>
+                            {(f) => (
+                              <>
+                                <DropdownMenuItem
+                                  class="gap-2"
+                                  onSelect={() => {
+                                    openPreview(f());
+                                  }}
+                                >
+                                  <IconPreview class="size-4" />
+                                  {t(
+                                    "common.action.preview",
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  class="gap-2"
+                                  onSelect={() => {
+                                    downloadFile(f());
+                                  }}
+                                >
+                                  <IconDownload class="size-4" />
+                                  {t(
+                                    "common.action.download",
+                                  )}
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </Show>
+                          <Show when={shareableData()}>
+                            {(shareData) => (
+                              <DropdownMenuItem
+                                class="gap-2"
+                                onSelect={async () => {
+                                  const [err] =
+                                    await catchErrorAsync(
+                                      navigator.share(
+                                        shareData(),
+                                      ),
+                                    );
+                                  if (err) {
+                                    toast.error(
+                                      t(
+                                        "common.notification.share_failed",
+                                        {
+                                          error:
+                                            err.message,
+                                        },
+                                      ),
+                                    );
+                                  }
+                                }}
+                              >
+                                <IconShare class="size-4" />
+                                {t("common.action.share")}
+                              </DropdownMenuItem>
+                            )}
+                          </Show>
+                        </Show>
                         <DropdownMenuItem
                           class="gap-2"
                           onSelect={() => {
-                            cache()
-                              .getFile()
-                              .then((file) => {
-                                file && openPreview(file);
-                              });
+                            openDeleteDialog([
+                              row.original.fileName,
+                            ]).then(({ result }) => {
+                              if (result === true) {
+                                cache().cleanup();
+                              }
+                            });
                           }}
                         >
-                          <IconPreview class="size-4" />
-                          {t("common.action.preview")}
+                          <IconDelete class="size-4" />
+                          {t("common.action.delete")}
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          class="gap-2"
-                          onSelect={async () => {
-                            const file =
-                              await cache().getFile();
-                            if (file) {
-                              downloadFile(file);
-                            }
-                          }}
-                        >
-                          <IconDownload class="size-4" />
-                          {t("common.action.download")}
-                        </DropdownMenuItem>
-                      </Show>
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={() => {
-                          openDeleteDialog([
-                            row.original.fileName,
-                          ]).then(({ result }) => {
-                            if (result === true) {
-                              cache().cleanup();
-                            }
-                          });
-                        }}
-                      >
-                        <IconDelete class="size-4" />
-                        {t("common.action.delete")}
-                      </DropdownMenuItem>
-                      <Show when={status() === "stopped"}>
-                        <DropdownMenuItem
-                          class="gap-2"
-                          onSelect={() => {
-                            requestFile(
-                              props.params.id,
-                              row.original,
-                              true,
-                            );
-                          }}
-                        >
-                          <IconResume class="size-4" />
-                          {t("common.action.resume")}
-                        </DropdownMenuItem>
-                      </Show>
-                    </>
-                  )}
+                        <Show when={status() === "stopped"}>
+                          <DropdownMenuItem
+                            class="gap-2"
+                            onSelect={() => {
+                              requestFile(
+                                props.params.id,
+                                row.original,
+                                true,
+                              );
+                            }}
+                          >
+                            <IconResume class="size-4" />
+                            {t("common.action.resume")}
+                          </DropdownMenuItem>
+                        </Show>
+                      </>
+                    );
+                  }}
                 </Show>
               </DropdownMenuGroup>
             </DropdownMenuContent>

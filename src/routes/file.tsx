@@ -70,6 +70,7 @@ import {
   IconPlaceItem,
   IconPreview,
   IconSearch700,
+  IconShare,
   IconWallpaper,
 } from "@/components/icons";
 import { t } from "@/i18n";
@@ -353,76 +354,118 @@ export default function File() {
                   {t("common.action.actions")}
                 </DropdownMenuGroupLabel>
                 <Show when={row.original.file}>
-                  {(file) => (
-                    <>
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={() => {
-                          downloadFile(file());
-                        }}
-                      >
-                        <IconDownload class="size-4" />
-                        {t("common.action.download")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={() => {
-                          openPreviewDialog(file());
-                        }}
-                      >
-                        <IconPreview class="size-4" />
-                        {t("common.action.preview")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={() => {
-                          shareCache([row.original]);
-                        }}
-                      >
-                        <IconForward class="size-4" />
-                        {t("common.action.forward")}
-                      </DropdownMenuItem>
-                      <Show
-                        when={file().type.startsWith(
-                          "image/",
-                        )}
-                      >
+                  {(file) => {
+                    const shareableData = createMemo(() => {
+                      if (!navigator.canShare) return null;
+                      const shareData: ShareData = {
+                        files: [file()],
+                      };
+                      return navigator.canShare(shareData)
+                        ? shareData
+                        : null;
+                    });
+                    return (
+                      <>
                         <DropdownMenuItem
                           class="gap-2"
                           onSelect={() => {
-                            setAppOptions({
-                              backgroundImage:
-                                row.original.id,
-                            });
+                            downloadFile(file());
                           }}
                         >
-                          <IconWallpaper class="size-4" />
-                          {t(
-                            "common.action.set_as_background",
+                          <IconDownload class="size-4" />
+                          {t("common.action.download")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={() => {
+                            openPreviewDialog(file());
+                          }}
+                        >
+                          <IconPreview class="size-4" />
+                          {t("common.action.preview")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={() => {
+                            shareCache([row.original]);
+                          }}
+                        >
+                          <IconForward class="size-4" />
+                          {t("common.action.forward")}
+                        </DropdownMenuItem>
+                        <Show when={shareableData()}>
+                          {(shareData) => (
+                            <DropdownMenuItem
+                              class="gap-2"
+                              onSelect={async () => {
+                                const [err] =
+                                  await catchErrorAsync(
+                                    navigator.share(
+                                      shareData(),
+                                    ),
+                                  );
+                                if (err) {
+                                  console.error(err);
+                                  toast.error(
+                                    t(
+                                      "common.notification.share_failed",
+                                      {
+                                        error: err.message,
+                                      },
+                                    ),
+                                  );
+                                }
+                              }}
+                            >
+                              <IconShare class="size-4" />
+                              {t("common.action.share")}
+                            </DropdownMenuItem>
                           )}
-                        </DropdownMenuItem>
-                      </Show>
-                      <Show
-                        when={
-                          !row.original.isComplete &&
-                          row.original.chunkCount ===
-                            getTotalChunkCount(row.original)
-                        }
-                      >
-                        <DropdownMenuItem
-                          class="gap-2"
-                          onSelect={() => {
-                            cacheManager.caches[
-                              row.original.id
-                            ]?.mergeFile();
-                          }}
+                        </Show>
+                        <Show
+                          when={file().type.startsWith(
+                            "image/",
+                          )}
                         >
-                          <IconMerge class="size-4" />
-                          {t("common.action.merge")}
-                        </DropdownMenuItem>
-                      </Show>
-                    </>
-                  )}
+                          <DropdownMenuItem
+                            class="gap-2"
+                            onSelect={() => {
+                              setAppOptions({
+                                backgroundImage:
+                                  row.original.id,
+                              });
+                            }}
+                          >
+                            <IconWallpaper class="size-4" />
+                            {t(
+                              "common.action.set_as_background",
+                            )}
+                          </DropdownMenuItem>
+                        </Show>
+                        <Show
+                          when={
+                            !row.original.isComplete &&
+                            row.original.chunkCount ===
+                              getTotalChunkCount(
+                                row.original,
+                              )
+                          }
+                        >
+                          <DropdownMenuItem
+                            class="gap-2"
+                            onSelect={() => {
+                              cacheManager.caches[
+                                row.original.id
+                              ]?.mergeFile();
+                            }}
+                          >
+                            <IconMerge class="size-4" />
+                            {t("common.action.merge")}
+                          </DropdownMenuItem>
+                        </Show>
+                      </>
+                    );
+                  }}
                 </Show>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
