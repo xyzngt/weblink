@@ -181,17 +181,15 @@ export const ChatHeader: Component<{
                     <DropdownMenuItem
                       class="gap-2"
                       onSelect={async () => {
-                        if (
-                          !(
-                            await openConfirmDeleteClientDialog(
-                              props.client.name,
-                            )
-                          ).cancel
-                        ) {
-                          messageStores.deleteClient(
-                            props.client.clientId,
-                          );
-                        }
+                        const result = (
+                          await openConfirmDeleteClientDialog(
+                            props.client.name,
+                          )
+                        ).result;
+                        if (!result) return;
+                        messageStores.deleteClient(
+                          props.client.clientId,
+                        );
                       }}
                     >
                       <IconDelete class="size-4" />

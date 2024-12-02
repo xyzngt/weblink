@@ -625,7 +625,9 @@ class MessageStores {
         produce((state) => state.splice(index, 1)),
       );
       this.removeMessageDB(message);
+      return true;
     }
+    return false;
   }
 
   addTransfer(transferer: FileTransferer) {

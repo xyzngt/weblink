@@ -162,18 +162,16 @@ export const UserItem: Component<UserItemProps> = (
             <ContextMenuItem
               class="gap-2"
               onSelect={async () => {
-                if (
-                  !(
-                    await openConfirmDeleteClientDialog(
-                      local.client.name,
-                    )
-                  ).cancel
-                ) {
-                  messageStores.deleteClient(
-                    local.client.clientId,
-                  );
-                }
                 close();
+                const result = (
+                  await openConfirmDeleteClientDialog(
+                    local.client.name,
+                  )
+                ).result;
+                if (!result) return;
+                messageStores.deleteClient(
+                  local.client.clientId,
+                );
               }}
             >
               <IconDelete class="size-4" />

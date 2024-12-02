@@ -82,7 +82,6 @@ import { ChatMoreMessageButton } from "./components/chat-more-message-button";
 import { MessageContent } from "./components/message";
 import { ChatHeader } from "./components/chat-header";
 
-
 export default function ClientPage(
   props: RouteSectionProps,
 ) {
@@ -175,10 +174,20 @@ export default function ClientPage(
       setMessages([lastMessage]);
       return;
     }
-    if (lastMessage.id !== currentLastMessage.id) {
-      setMessages([...messages(), lastMessage]);
-      toBottom(10, false);
+
+    if (lastMessage.id === currentLastMessage.id) return;
+
+    // if delete last message, do nothing
+    if (messages().length > 1) {
+      const secondLastMessage =
+        messages()[messages().length - 2];
+      if (secondLastMessage?.id === lastMessage.id) {
+        return;
+      }
     }
+
+    setMessages([...messages(), lastMessage]);
+    toBottom(10, false);
   });
   let toBottom: (
     delay: number | undefined,
@@ -449,22 +458,30 @@ export default function ClientPage(
                         console.log(
                           `delete message ${message.id}`,
                         );
-                        messageStores.deleteMessage(
-                          message.id,
-                        );
-                        setMessages(
-                          messages().filter(
-                            (m) => m.id !== message.id,
-                          ),
-                        );
+                        if (
+                          messageStores.deleteMessage(
+                            message.id,
+                          )
+                        ) {
+                          setMessages(
+                            messages().filter(
+                              (m) => m.id !== message.id,
+                            ),
+                          );
+                        }
                       }}
                       onLoad={() => {
-                        console.log(
-                          `message ${index()} loaded: ${message.type}`,
-                        );
                         clearTimeout(loadedTimer);
                         loadedTimer = window.setTimeout(
-                          () => setLoaded(true),
+                          () => {
+                            setLoaded(true);
+                            if (
+                              index() ===
+                              messages().length - 1
+                            ) {
+                              toBottom(100, true);
+                            }
+                          },
                           100,
                         );
                       }}
