@@ -73,6 +73,7 @@ import { Spinner } from "@/components/spinner";
 import { createPreviewDialog } from "@/components/preview-dialog";
 import { downloadFile } from "@/libs/utils/download-file";
 import { FileID } from "@/libs/core/type";
+import { canShareFile } from "@/libs/utils/can-share";
 
 export interface MessageCardProps
   extends ComponentProps<"li"> {
@@ -530,13 +531,11 @@ export const MessageContent: Component<MessageCardProps> = (
       const shareableData = createMemo(() => {
         const f = file();
         if (!f) return null;
-        if (!navigator.canShare) return null;
+        if (!canShareFile(f)) return null;
         const shareData: ShareData = {
           files: [f],
         };
-        return navigator.canShare(shareData)
-          ? shareData
-          : null;
+        return shareData;
       });
 
       return (
@@ -674,14 +673,6 @@ export const MessageContent: Component<MessageCardProps> = (
                         );
                         if (err) {
                           console.error(err);
-                          toast.error(
-                            t(
-                              "common.notification.share_failed",
-                              {
-                                error: err.message,
-                              },
-                            ),
-                          );
                         }
                       }}
                     >
@@ -750,7 +741,7 @@ export const MessageContent: Component<MessageCardProps> = (
         <li
           class={cn(
             `flex select-none flex-col gap-1 rounded-md p-2 shadow
-            backdrop-blur`,
+            backdrop-blur sm:select-text`,
             clientProfile.clientId === props.message.client
               ? "self-end bg-lime-200/80 dark:bg-indigo-900/80"
               : "self-start border border-border bg-background/80",
@@ -760,7 +751,7 @@ export const MessageContent: Component<MessageCardProps> = (
           {...other}
         >
           <PreviewDialogComponent />
-          <article class="w-full select-text whitespace-pre-wrap break-all text-sm">
+          <article class="w-full whitespace-pre-wrap break-all text-sm">
             <Switch>
               <Match
                 when={

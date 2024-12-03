@@ -91,6 +91,7 @@ import {
 } from "@/components/ui/tooltip";
 import { toast } from "solid-sonner";
 import { catchErrorAsync } from "@/libs/catch";
+import { canShareFile } from "@/libs/utils/can-share";
 
 type ChunkStatus =
   | "not_started"
@@ -300,15 +301,13 @@ const Sync = (props: RouteSectionProps) => {
                         (await cache()?.getFile()) ?? null,
                     );
                     const shareableData = createMemo(() => {
-                      if (!navigator.canShare) return null;
                       const f = file();
                       if (!f) return null;
+                      if (!canShareFile(f)) return null;
                       const shareData: ShareData = {
                         files: [f],
                       };
-                      return navigator.canShare(shareData)
-                        ? shareData
-                        : null;
+                      return shareData;
                     });
                     return (
                       <>
@@ -359,15 +358,7 @@ const Sync = (props: RouteSectionProps) => {
                                       ),
                                     );
                                   if (err) {
-                                    toast.error(
-                                      t(
-                                        "common.notification.share_failed",
-                                        {
-                                          error:
-                                            err.message,
-                                        },
-                                      ),
-                                    );
+                                    console.error(err);
                                   }
                                 }}
                               >

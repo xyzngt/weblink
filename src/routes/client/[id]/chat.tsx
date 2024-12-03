@@ -4,7 +4,6 @@ import {
 } from "@solidjs/router";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import {
-  Component,
   createEffect,
   createMemo,
   createSignal,
@@ -14,20 +13,12 @@ import {
   Show,
   untrack,
 } from "solid-js";
-
-import { Button } from "@/components/ui/button";
 import {
   createScrollEnd,
   keepBottom,
 } from "@/libs/hooks/keep-bottom";
 import { cn } from "@/libs/cn";
 import DropArea from "@/components/drop-area";
-import { A } from "@solidjs/router";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
 import { FloatingButton } from "@/components/floating-button";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
@@ -36,47 +27,20 @@ import {
   messageStores,
   StoreMessage,
 } from "@/libs/core/messge";
-import { getInitials } from "@/libs/utils/name";
 import { ChatBar } from "@/routes/client/[id]/components/chat-bar";
 import { sessionService } from "@/libs/services/session-service";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuGroupLabel,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   IconArrowDownward,
-  IconAssignment,
-  IconChevronLeft,
   IconClose,
-  IconConnectWithoutContract,
-  IconDataInfoAlert,
-  IconDelete,
-  IconFolderMatch,
-  IconMenu,
   IconPlaceItem,
 } from "@/components/icons";
-import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
-import { ConnectionBadge } from "@/components/connection-badge";
 import { toast } from "solid-sonner";
 import { PeerSession } from "@/libs/core/session";
 import { v4 } from "uuid";
-import { appOptions, setAppOptions } from "@/options";
-import { createClipboardHistoryDialog } from "@/components/box/clipboard-history";
-import clientInfoDialog from "./components/chat-client-info";
+import { appOptions } from "@/options";
 import { handleDropItems } from "@/libs/utils/process-file";
 import { ClientInfo, Client } from "@/libs/core/type";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { catchErrorAsync } from "@/libs/catch";
 import { ChatMoreMessageButton } from "./components/chat-more-message-button";
 import { MessageContent } from "./components/message";
@@ -86,7 +50,7 @@ export default function ClientPage(
   props: RouteSectionProps,
 ) {
   const navigate = useNavigate();
-  const { sendText, sendFile } = useWebRTC();
+  const { sendFile } = useWebRTC();
   const client = createMemo<Client | null>(
     () =>
       messageStores.clients.find(

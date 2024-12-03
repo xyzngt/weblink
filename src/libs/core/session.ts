@@ -46,6 +46,7 @@ export class PeerSession {
   private relayOnly: boolean;
   private signalCache: Array<ClientSignal> = [];
   readonly polite: boolean;
+  private reconnectTimeout: number | null = null;
   constructor(
     sender: SignalingService,
     {
@@ -328,6 +329,10 @@ export class PeerSession {
   }
 
   private async handleDisconnection() {
+    if (this.reconnectTimeout) {
+      window.clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
     if (this.closed) {
       console.warn(
         `session ${this.clientId} is closed, skip handle connection error`,
@@ -371,7 +376,7 @@ export class PeerSession {
           err,
         );
         if (reconnectAttempts <= 10) {
-          window.setTimeout(
+          this.reconnectTimeout = window.setTimeout(
             () => attemptReconnect(),
             Math.random() * (500 + reconnectAttempts * 500),
           );
@@ -854,6 +859,10 @@ export class PeerSession {
       this.peerConnection.close();
       this.peerConnection = null;
       this.dispatchEvent("disconnect", undefined);
+    }
+    if (this.reconnectTimeout) {
+      window.clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
     }
   }
 

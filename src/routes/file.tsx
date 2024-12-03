@@ -102,6 +102,7 @@ import { Badge } from "@/components/ui/badge";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { toast } from "solid-sonner";
 import { catchErrorAsync } from "@/libs/catch";
+import { canShareFile } from "@/libs/utils/can-share";
 
 const columnHelper = createColumnHelper<FileMetaData>();
 
@@ -356,13 +357,12 @@ export default function File() {
                 <Show when={row.original.file}>
                   {(file) => {
                     const shareableData = createMemo(() => {
-                      if (!navigator.canShare) return null;
+                      if (!canShareFile(file()))
+                        return null;
                       const shareData: ShareData = {
                         files: [file()],
                       };
-                      return navigator.canShare(shareData)
-                        ? shareData
-                        : null;
+                      return shareData;
                     });
                     return (
                       <>
@@ -406,14 +406,6 @@ export default function File() {
                                   );
                                 if (err) {
                                   console.error(err);
-                                  toast.error(
-                                    t(
-                                      "common.notification.share_failed",
-                                      {
-                                        error: err.message,
-                                      },
-                                    ),
-                                  );
                                 }
                               }}
                             >

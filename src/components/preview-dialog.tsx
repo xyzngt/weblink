@@ -15,6 +15,7 @@ import { IconDownload, IconShare } from "./icons";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
 import { toast } from "solid-sonner";
 import { catchErrorAsync } from "@/libs/catch";
+import { canShareFile } from "@/libs/utils/can-share";
 
 export type PreviewDialogProps = {
   src: File | Blob;
@@ -88,11 +89,11 @@ export const createPreviewDialog = () => {
   const shareableData = createMemo(() => {
     const f = src();
     if (!f) return null;
-    if (!navigator.canShare) return null;
+    if (!canShareFile(f)) return null;
     const shareData: ShareData = {
       files: [f],
     };
-    return navigator.canShare(shareData) ? shareData : null;
+    return shareData;
   });
   const { open, Component, close } = createDialog({
     title: () => t("common.preview_dialog.title"),
@@ -128,12 +129,7 @@ export const createPreviewDialog = () => {
               const [err] = await catchErrorAsync(
                 navigator.share(shareData()),
               );
-              if (err)
-                toast.error(
-                  t("common.notification.share_failed", {
-                    error: err.message,
-                  }),
-                );
+              if (err) console.error(err);
             }}
           >
             <IconShare class="mr-1 size-4" />
