@@ -702,12 +702,16 @@ export default function File() {
 
       <div
         class="container relative z-[10] flex min-h-[calc(100%-3rem)]
-          flex-col gap-4 bg-background/80 px-0 pb-20 pt-4"
+          flex-col gap-4 bg-background/80 px-0 pb-20 pt-4
+          sm:max-w-[calc(100%-var(--desktop-header-width))]"
       >
         <div class="pointer-events-none absolute inset-0 z-[-1] backdrop-blur" />
         <h2 class="h2 px-2">{t("cache.title")}</h2>
         <StorageStatus class="px-2" />
-        <div class="sticky top-12 z-10 flex gap-2 p-2 backdrop-blur">
+        <div
+          class="sticky top-[var(--mobile-header-height)] z-10 flex gap-2 p-2
+            backdrop-blur sm:top-0"
+        >
           <Show
             when={Object.keys(rowSelection()).length !== 0}
           >
@@ -924,10 +928,10 @@ export default function File() {
         >
           <div
             data-sync-scroll="file-table"
-            class="h-full w-full flex-1 overflow-x-auto scrollbar-none"
+            class="h-full w-full overflow-x-auto scrollbar-none"
           >
             <Table
-              class="h-full w-full text-nowrap"
+              class="w-full text-nowrap"
               ref={setTableBody}
             >
               <TableBody>
@@ -998,8 +1002,9 @@ export default function File() {
           </div>
           <div
             data-sync-scroll="file-table"
-            class="sticky top-24 z-10 overflow-x-auto bg-background/50
-              backdrop-blur scrollbar-thin"
+            class="sticky top-[calc(var(--mobile-header-height)+3rem)] z-10
+              h-auto overflow-x-auto bg-background/50 backdrop-blur
+              scrollbar-thin sm:top-12"
           >
             <Table
               style={{

@@ -256,7 +256,7 @@ export default function ClientPage(
             <ChatHeader
               info={clientInfo()}
               client={client()}
-              class="sticky top-12 z-10 flex items-center justify-between gap-1
+              class="sticky top-[var(--mobile-header-height)] md:top-0 z-10 flex items-center justify-between gap-1
                 border-b border-border bg-background/80 backdrop-blur"
             />
             <DropArea

@@ -71,7 +71,6 @@ export const ChatHeader: Component<{
       <div class={props.class}>
         <div class="flex w-full items-center gap-2">
           <Button
-            class="sm:hidden"
             as={A}
             href="/"
             size="icon"

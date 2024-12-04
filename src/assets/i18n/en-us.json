@@ -166,10 +166,23 @@
       "redirect": "Redirect after connection"
     },
     "index": {
-      "description": "Scan the QR code or share the link to connect to this room, right-click to copy the link",
-      "guide_title": "Create or connect to a room",
-      "guide_description": "You can create a new room or connect to an existing room by clicking the button on the top right corner",
-      "copy_success": "Link copied"
+      "edit_profile": "Edit Profile",
+      "join_room": "Join Room",
+      "share_room": "Share Room",
+      "leave_room": "Leave Room",
+      "before_join": {
+        "title": "Create or connect to a room",
+        "description": "Please click the button to create a new room or connect to an existing room"
+      },
+      "connecting": {
+        "title": "Connecting...",
+        "description": "Please wait for the connection to be established"
+      },
+      "after_join": {
+        "title": "Joined Room {{room}}",
+        "description": "Share the room profile to invite others to join the room",
+        "tip": "tip: Tap the avatar to share the room profile in mobile devices"
+      }
     },
     "message_editor": {
       "placeholder": "Ctrl + Enter or Shift + Enter to send the message",
@@ -292,7 +305,7 @@
       "leave": "Leave"
     },
     "scan_qrcode_dialog": {
-      "title": "Scan QR Code",
+      "title": "Share Room Profile",
       "description": "Scan QR Code to connect to this room",
       "tip": "Right-click or long press to copy the link",
       "invite": "Invite you to join the room {{room}}"

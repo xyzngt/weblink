@@ -165,10 +165,23 @@
       "redirect": "連接後自動跳轉"
     },
     "index": {
-      "description": "掃描二維碼或分享連結以連接到此房間，右鍵點擊複製連結",
-      "guide_title": "創建或連接到房間",
-      "guide_description": "你可以通過點擊右上角按鈕，創建一個新房間或連接到一個現有房間",
-      "copy_success": "連結已複製"
+      "edit_profile": "編輯資料",
+      "join_room": "加入房間",
+      "share_room": "分享房間",
+      "leave_room": "離開房間",
+      "before_join": {
+        "title": "創建或連接到房間",
+        "description": "請點擊按鈕，創建一個新房間或連接到一個現有房間"
+      },
+      "connecting": {
+        "title": "連接中...",
+        "description": "請等待連接建立"
+      },
+      "after_join": {
+        "title": "已加入房間 {{room}}",
+        "description": "分享房間資料以邀請其他人加入房間",
+        "tip": "提示：在移動設備上點擊頭像以分享房間資料"
+      }
     },
     "message_editor": {
       "placeholder": "Ctrl + Enter 或 Shift + Enter 發送訊息",
@@ -204,7 +217,7 @@
   },
   "common": {
     "scan_qrcode_dialog": {
-      "title": "掃描二維碼",
+      "title": "分享房間資訊",
       "description": "掃描二維碼以連接到此房間",
       "tip": "右鍵或長按複製連結",
       "invite": "邀請你加入房間 {{room}}"

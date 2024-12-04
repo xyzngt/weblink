@@ -2,7 +2,6 @@ import {
   RouteSectionProps,
   useSearchParams,
 } from "@solidjs/router";
-
 import {
   createSignal,
   onCleanup,
@@ -17,6 +16,7 @@ import {
   ColorModeProvider,
   ColorModeScript,
   createLocalStorageManager,
+  useColorMode,
 } from "@kobalte/core";
 import {
   clientProfile,
@@ -26,12 +26,10 @@ import { useWebRTC } from "./libs/core/rtc-context";
 import {
   JoinRoomButton,
   createRoomDialog,
+  joinUrl,
 } from "./components/join-dialog";
 import { toast } from "solid-sonner";
 import { sessionService } from "./libs/services/session-service";
-import { Button } from "./components/ui/button";
-import { IconQRCode } from "./components/icons";
-import { t } from "./i18n";
 import createAboutDialog from "./components/about-dialog";
 import {
   appOptions,
@@ -43,13 +41,27 @@ import { MetaProvider, Style } from "@solidjs/meta";
 import { produce } from "solid-js/store";
 import { createQRCodeDialog } from "./components/create-qrcode-dialog";
 import { createForwardDialog } from "./components/forward-dialog";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "./components/ui/tooltip";
 import { createReloadPrompt } from "./libs/hooks/reload-prompt";
 import { catchErrorAsync } from "./libs/catch";
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "./components/ui/avatar";
+import { getInitials } from "./libs/utils/name";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "./components/ui/hover-card";
+import { QRCode } from "./components/qrcode";
+import { Button } from "./components/ui/button";
+import { t } from "./i18n";
+import {
+  IconHome,
+  IconPermContactCalendar,
+} from "./components/icons";
+import { createIsMobile } from "./libs/hooks/create-mobile";
 
 const createWakeLock = () => {
   const [wakeLock, setWakeLock] =
@@ -240,46 +252,99 @@ const InnerApp = (props: ParentProps) => {
       });
     });
   }
-
+  const { roomStatus } = useWebRTC();
+  const isMobile = createIsMobile();
   return (
     <>
       <RoomDialogComponent />
       <QRCodeDialogComponent />
       <AboutDialogComponent />
       <ForwardDialogComponent />
-      <div
-        class="sticky top-0 z-50 flex h-12 w-full flex-wrap items-center
-          gap-4 border-b border-border bg-background/80 px-2
-          backdrop-blur"
-      >
-        <h2 class="hidden font-mono text-xl font-bold sm:block">
-          Weblink
-        </h2>
-        <Nav />
-        <div class="ml-auto"></div>
-        <Show
-          when={
-            sessionService.clientServiceStatus() ===
-            "connected"
-          }
+      <div class="flex h-full min-h-full w-full flex-col md:flex-row">
+        <div
+          class="sticky top-0 z-50 h-[var(--mobile-header-height)]
+            w-[var(--desktop-header-width)] flex-shrink-0 border-b
+            border-border bg-background/80 backdrop-blur md:border-b-0
+            md:border-r"
         >
-          <Tooltip>
-            <TooltipTrigger
-              as={Button}
-              onClick={openQRCodeDialog}
-              size="icon"
+          <div
+            class="sticky top-0 flex h-full max-h-[100vh] items-center gap-2
+              px-2 py-0 md:flex-col md:px-0 md:py-2"
+          >
+            <Nav class="items-center gap-2 p-2 md:flex-col md:gap-4" />
+            <div class="flex-1"></div>
+            <HoverCard
+              gutter={6}
+              placement={isMobile() ? "bottom" : "right-end"}
             >
-              <IconQRCode class="size-6" />
-            </TooltipTrigger>
-            <TooltipContent>
-              {t("common.nav.share_link")}
-            </TooltipContent>
-          </Tooltip>
-        </Show>
-        <JoinRoomButton />
+              <HoverCardTrigger
+                as={Avatar}
+                class="size-8 hover:cursor-pointer md:mt-auto md:size-10"
+                onTouchStart={() => {
+                  if (isMobile()) {
+                    openQRCodeDialog();
+                  }
+                }}
+              >
+                <AvatarImage
+                  src={clientProfile.avatar ?? undefined}
+                />
+                <AvatarFallback>
+                  {getInitials(clientProfile.name)}
+                </AvatarFallback>
+              </HoverCardTrigger>
+              <HoverCardContent class="flex flex-col gap-2">
+                <div class="flex gap-4">
+                  <Avatar class="size-12">
+                    <AvatarImage
+                      src={
+                        clientProfile.avatar ?? undefined
+                      }
+                    />
+                    <AvatarFallback>
+                      {getInitials(clientProfile.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div class="flex flex-col gap-2">
+                    <p class="text-sm font-medium">
+                      {clientProfile.name}
+                    </p>
+                    <Show when={roomStatus.roomId}>
+                      {(room) => (
+                        <p class="flex items-center gap-1 text-xs text-muted-foreground">
+                          <IconHome class="size-4" />{" "}
+                          {room()}
+                        </p>
+                      )}
+                    </Show>
+                    <Show when={roomStatus.profile}>
+                      {(profile) => (
+                        <p class="flex items-center gap-1 text-xs text-muted-foreground">
+                          <IconPermContactCalendar class="size-4" />
+                          {new Date(
+                            profile().createdAt,
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                    </Show>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    openQRCodeDialog();
+                  }}
+                >
+                  {t("common.nav.share_link")}
+                </Button>
+              </HoverCardContent>
+            </HoverCard>
+            <JoinRoomButton class="md:hidden" />
+          </div>
+        </div>
+        {props.children}
       </div>
-
-      {props.children}
     </>
   );
 };
@@ -301,13 +366,13 @@ export default function App(props: RouteSectionProps) {
         <ColorModeScript
           storageType={storageManager.type}
         />
+        <Toaster />
+        <ColorModeProvider storageManager={storageManager}>
+          <ChatProvider>
+            <InnerApp> {props.children}</InnerApp>
+          </ChatProvider>
+        </ColorModeProvider>
       </MetaProvider>
-      <Toaster />
-      <ColorModeProvider storageManager={storageManager}>
-        <ChatProvider>
-          <InnerApp> {props.children}</InnerApp>
-        </ChatProvider>
-      </ColorModeProvider>
     </>
   );
 }

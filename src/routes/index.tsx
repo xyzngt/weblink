@@ -116,7 +116,6 @@ export default function Home(props: RouteSectionProps) {
     <Resizable
       sizes={size()}
       onSizesChange={(sizes) => setSize(sizes)}
-      class="size-auto min-h-[calc(100%-3rem)] w-full"
     >
       <Show
         when={
@@ -126,7 +125,8 @@ export default function Home(props: RouteSectionProps) {
       >
         <ResizablePanel
           class={cn(
-            "data-[collapsed]:transition-all data-[collapsed]:ease-in-out",
+            `bg-background/80 backdrop-blur
+            data-[collapsed]:transition-all data-[collapsed]:ease-in-out`,
           )}
           collapsible
           initialSize={0.2}
@@ -144,9 +144,8 @@ export default function Home(props: RouteSectionProps) {
             });
             return (
               <div
-                class="h-full w-full overflow-x-hidden bg-background/80
-                  backdrop-blur md:sticky md:top-[calc(3rem)]
-                  md:h-[calc(100vh_-_3rem)] md:overflow-y-auto"
+                class="top-0 w-full overflow-x-hidden md:sticky md:max-h-[100vh]
+                  md:overflow-y-auto"
               >
                 <ul
                   class={cn(
@@ -171,7 +170,7 @@ export default function Home(props: RouteSectionProps) {
                               "disconnected"
                             }
                           >
-                            <p class="muted sm:hidden">
+                            <p class="muted md:hidden">
                               {t(
                                 "client.index.guide_description",
                               )}

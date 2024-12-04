@@ -192,12 +192,7 @@ export const UserItem: Component<UserItemProps> = (
                 sm:px-1"
               href={`/client/${local.client.clientId}/chat`}
             >
-              <Avatar
-                class={cn(
-                  "self-center",
-                  local.collapsed ? "size-12" : "size-10",
-                )}
-              >
+              <Avatar class="self-center size-10">
                 <AvatarImage
                   src={local.client.avatar ?? undefined}
                 />

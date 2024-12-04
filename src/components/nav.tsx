@@ -1,6 +1,10 @@
 import { cn } from "@/libs/cn";
 import { A, useLocation } from "@solidjs/router";
-import { ComponentProps, splitProps } from "solid-js";
+import {
+  ComponentProps,
+  createMemo,
+  splitProps,
+} from "solid-js";
 import {
   IconFolder,
   IconForum,
@@ -13,6 +17,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "./ui/tooltip";
+import { createIsMobile } from "@/libs/hooks/create-mobile";
 
 export const linkClasses = cn(
   "text-foreground/60 hover:text-foreground/80 aria-[current]:text-foreground transition-colors font-semibold",
@@ -25,9 +30,13 @@ export default function Nav(props: ComponentProps<"nav">) {
       ? "border-sky-600"
       : "border-transparent hover:border-sky-600";
   const [local, other] = splitProps(props, ["class"]);
+  const isMobile = createIsMobile();
+  const placement = createMemo(() =>
+    isMobile() ? "bottom" : "right",
+  );
   return (
     <nav class={cn("flex gap-2", local.class)} {...other}>
-      <Tooltip>
+      <Tooltip placement={placement()}>
         <TooltipTrigger
           as={A}
           href="/"
@@ -40,7 +49,7 @@ export default function Nav(props: ComponentProps<"nav">) {
           {t("common.nav.chat")}
         </TooltipContent>
       </Tooltip>
-      <Tooltip>
+      <Tooltip placement={placement()}>
         <TooltipTrigger
           as={A}
           href="/video"
@@ -53,7 +62,7 @@ export default function Nav(props: ComponentProps<"nav">) {
           {t("common.nav.video_conference")}
         </TooltipContent>
       </Tooltip>
-      <Tooltip>
+      <Tooltip placement={placement()}>
         <TooltipTrigger
           as={A}
           href="/file"
@@ -66,7 +75,7 @@ export default function Nav(props: ComponentProps<"nav">) {
           {t("common.nav.file_cache")}
         </TooltipContent>
       </Tooltip>
-      <Tooltip>
+      <Tooltip placement={placement()}>
         <TooltipTrigger
           as={A}
           href="/setting"

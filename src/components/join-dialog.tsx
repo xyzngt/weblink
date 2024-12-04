@@ -12,8 +12,10 @@ import {
   Component,
   ComponentProps,
   createMemo,
+  createSignal,
   onMount,
   Show,
+  splitProps,
 } from "solid-js";
 import {
   Avatar,
@@ -235,12 +237,19 @@ export const joinUrl = createMemo(() => {
   return url.toString();
 });
 
+// const createRoomStatus = () => {
+//   const { joinRoom, roomStatus, leaveRoom } = useWebRTC();
+//   const [joinStatus, setJoinStatus] = createSignal<
+//     "connecting" | "connected" | "disconnected"
+//   >("disconnected");
+// };
+
 export function JoinRoomButton(
   props: ComponentProps<"button">,
 ) {
   const { joinRoom, roomStatus, leaveRoom } = useWebRTC();
   const { open, Component } = createRoomDialog();
-
+  const [local, other] = splitProps(props, ["class"]);
   return (
     <>
       <Component />
@@ -253,6 +262,7 @@ export function JoinRoomButton(
           <Tooltip>
             <TooltipTrigger
               as={Button}
+              class={local.class}
               disabled={
                 sessionService.clientServiceStatus() !==
                 "connected"
@@ -270,7 +280,7 @@ export function JoinRoomButton(
               >
                 <Spinner
                   size="md"
-                  class="bg-black dark:bg-white"
+                  class="size-6 bg-black dark:bg-white"
                 />
               </Show>
             </TooltipTrigger>
@@ -283,7 +293,9 @@ export function JoinRoomButton(
         <Tooltip>
           <TooltipTrigger
             as={Button}
+            class={local.class}
             size="icon"
+            variant="outline"
             disabled={
               sessionService.clientServiceStatus() !==
               "disconnected"

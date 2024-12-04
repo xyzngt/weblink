@@ -94,7 +94,7 @@ export default function Video() {
   };
 
   return (
-    <div class="flex flex-col gap-2">
+    <div class="flex flex-col gap-2 w-full">
       <Callout variant="warning">
         <CalloutContent>
           The video chat feature is still under development

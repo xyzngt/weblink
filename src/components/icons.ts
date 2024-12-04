@@ -64,6 +64,10 @@ import IconAdd from "@material-symbols/svg-400/outlined/add.svg?component-solid"
 import IconAddCircle from "@material-symbols/svg-400/outlined/add_circle.svg?component-solid";
 import IconMerge from "@material-symbols/svg-400/outlined/merge.svg?component-solid";
 import IconFolderMatch from "@material-symbols/svg-400/outlined/folder_match.svg?component-solid";
+import IconHome from "@material-symbols/svg-400/outlined/home.svg?component-solid";
+import IconPermContactCalendar from "@material-symbols/svg-400/outlined/perm_contact_calendar.svg?component-solid";
+import IconEdit from "@material-symbols/svg-400/outlined/edit.svg?component-solid";
+import IconEditSquare from "@material-symbols/svg-400/outlined/edit_square.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -131,4 +135,8 @@ export {
   IconAddCircle,
   IconMerge,
   IconFolderMatch,
+  IconHome,
+  IconPermContactCalendar,
+  IconEdit,
+  IconEditSquare,
 };

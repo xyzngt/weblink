@@ -165,10 +165,23 @@
       "redirect": "连接后自动跳转"
     },
     "index": {
-      "description": "扫描二维码或分享链接以连接到此房间，右键点击复制链接",
-      "guide_title": "创建或连接到房间",
-      "guide_description": "你可以通过点击右上角按钮，创建一个新房间或连接到一个现有房间",
-      "copy_success": "链接已复制"
+      "edit_profile": "编辑资料",
+      "join_room": "加入房间",
+      "share_room": "分享房间",
+      "leave_room": "离开房间",
+      "before_join": {
+        "title": "创建或连接到房间",
+        "description": "请点击按钮，创建一个新房间或连接到一个现有房间"
+      },
+      "connecting": {
+        "title": "连接中...",
+        "description": "请等待连接建立"
+      },
+      "after_join": {
+        "title": "已加入房间 {{room}}",
+        "description": "分享房间资料以邀请其他人加入房间",
+        "tip": "提示：在移动设备上点击头像以分享房间资料"
+      }
     },
     "message_editor": {
       "placeholder": "Ctrl + Enter 或 Shift + Enter 发送消息",
@@ -204,7 +217,7 @@
   },
   "common": {
     "scan_qrcode_dialog": {
-      "title": "扫描二维码",
+      "title": "分享房间信息",
       "description": "扫描二维码以连接到此房间",
       "tip": "右键或长按复制链接",
       "invite": "邀请你加入房间 {{room}}"
