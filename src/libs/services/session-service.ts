@@ -10,12 +10,19 @@ import {
   ClientService,
   TransferClient,
 } from "../core/services/type";
-import { Accessor, createSignal, Setter } from "solid-js";
+import {
+  Accessor,
+  createEffect,
+  createSignal,
+  Setter,
+} from "solid-js";
 import {
   SendClipboardMessage,
   StorageMessage,
 } from "../core/messge";
 import { v4 } from "uuid";
+import { getIceServers } from "../core/store";
+import { appOptions } from "@/options";
 
 class SessionService {
   readonly sessions: Record<ClientID, PeerSession>;
@@ -40,6 +47,8 @@ class SessionService {
     "connecting" | "connected" | "disconnected"
   >;
 
+  iceServers: Promise<RTCIceServer[]>;
+
   constructor() {
     const [sessions, setSessions] = createStore<
       Record<ClientID, PeerSession>
@@ -57,6 +66,12 @@ class SessionService {
       >("disconnected");
     this.clientServiceStatus = clientServiceStatus;
     this.setClientServiceStatus = setClientServiceStatus;
+
+    this.iceServers = getIceServers();
+  }
+
+  updateIceServers() {
+    this.iceServers = getIceServers();
   }
 
   setClipboard(message: SendClipboardMessage) {
@@ -88,11 +103,9 @@ class SessionService {
       this.destoryService();
     }
     this.service = cs;
+
     cs.addEventListener("status-change", (ev) => {
       this.setClientServiceStatus(ev.detail);
-
-      if (ev.detail === "disconnected") {
-      }
     });
   }
 
@@ -129,7 +142,7 @@ class SessionService {
     });
   }
 
-  addClient(client: TransferClient) {
+  async addClient(client: TransferClient) {
     if (!this.service) {
       console.warn(
         `can not add client, client service not found`,
@@ -163,7 +176,13 @@ class SessionService {
         `can not add client, can not create sender`,
       );
     }
-    const session = new PeerSession(sender, { polite });
+    const session = new PeerSession(sender, {
+      polite,
+      iceServers: await this.iceServers,
+      relayOnly:
+        appOptions.servers.turns.length > 0 &&
+        appOptions.relayOnly,
+    });
 
     this.setClientInfo(client.clientId, {
       ...client,
@@ -206,6 +225,7 @@ class SessionService {
           "offline",
         );
         controller.abort();
+        this.destorySession(session.clientId);
       },
       { signal: controller.signal },
     );
@@ -218,7 +238,6 @@ class SessionService {
           "onlineStatus",
           "offline",
         );
-        session.listen();
       },
       { signal: controller.signal },
     );
@@ -234,6 +253,14 @@ class SessionService {
       { signal: controller.signal },
     );
 
+    session.addEventListener("reconnect", (ev) => {
+      this.setClientInfo(
+        client.clientId,
+        "onlineStatus",
+        "reconnecting",
+      );
+    });
+
     session.addEventListener(
       "messageChannelChange",
       (ev) => {
@@ -246,10 +273,6 @@ class SessionService {
         }
       },
     );
-
-    controller.signal.addEventListener("abort", () => {
-      this.destorySession(session.clientId);
-    });
 
     return session;
   }
@@ -266,4 +289,14 @@ class SessionService {
   }
 }
 
-export const sessionService = new SessionService();
+let sessionService: SessionService;
+
+createEffect(() => {
+  if (sessionService && appOptions.servers.turns) {
+    sessionService.updateIceServers();
+  }
+});
+
+sessionService = new SessionService();
+
+export { sessionService };

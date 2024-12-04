@@ -11,10 +11,6 @@
         "title": "Language",
         "description": "Change the language of the app"
       },
-      "share_servers_with_others": {
-        "title": "Share Servers with Others",
-        "description": "Share the STUN and TURN servers with others when generating the join URL"
-      },
       "background_image": {
         "title": "Background Image",
         "description": "Change the background image of the app, also can be selected in the file cache",
@@ -33,13 +29,17 @@
       },
       "stun_servers": {
         "title": "STUN Servers",
-        "description": "Change the STUN servers of the app"
+        "description": "Change the STUN servers of the app, used to establish peer-to-peer connections"
       },
       "turn_servers": {
         "title": "TURN Servers",
-        "description": "Change the TURN servers of the app, if you want to use this app in a NAT environment, you may need to set up TURN servers",
-        "check_availability": "Check Availability"
+        "description": "If you want to use this app in a NAT environment, you may need to set up TURN servers, and set the same TURN servers on the other client"
       },
+      "share_servers_with_others": {
+        "title": "Share Servers with Others",
+        "description": "Share the STUN and TURN servers with others when generating the join URL"
+      },
+
       "websocket_url": {
         "title": "Websocket URL",
         "description": "Change the Websocket URL of the app, this option is only available when the backend is WebSocket"
@@ -120,6 +120,13 @@
     },
     "advanced_settings": {
       "title": "Advanced Settings",
+      "advanced_connection": {
+        "title": "Advanced Connection Settings",
+        "relay_only": {
+          "title": "Relay Only",
+          "description": "When enabled, the app will only use the TURN server"
+        }
+      },
       "advanced_sender": {
         "title": "Advanced File Sender Settings"
       },
@@ -159,10 +166,24 @@
       "redirect": "Redirect after connection"
     },
     "index": {
-      "description": "Scan the QR code or share the link to connect to this room, right-click to copy the link",
-      "guide_title": "Create or connect to a room",
-      "guide_description": "You can create a new room or connect to an existing room by clicking the button on the top right corner",
-      "copy_success": "Link copied"
+      "edit_profile": "Edit Profile",
+      "join_room": "Join Room",
+      "share_room": "Share Room",
+      "leave_room": "Leave Room",
+      "mobile_tip": "Tip: Please tap on the avatar to share room profiles on mobile device",
+      "before_join": {
+        "title": "Create or connect to a room",
+        "description": "Please click the button to create a new room or connect to an existing room"
+      },
+      "connecting": {
+        "title": "Connecting...",
+        "description": "Please wait for the connection to be established"
+      },
+      "after_join": {
+        "title": "Joined Room {{room}}",
+        "description": "Share the room profile to invite others to join the room",
+        "tip": "tip: Tap the avatar to share the room profile on mobile device"
+      }
     },
     "message_editor": {
       "placeholder": "Ctrl + Enter or Shift + Enter to send the message",
@@ -206,7 +227,7 @@
       "description": "Edit the room info here, click confirm to create or join the room.",
       "client_id": {
         "title": "Client ID (Read Only)",
-        "description": "The client ID of the room, representing your identity, which can be changed in settings"
+        "description": "The client ID of the room, representing your identity"
       },
       "room_id": {
         "title": "Room ID",
@@ -216,7 +237,7 @@
       "avatar_url": "Avatar URL",
       "password": {
         "title": "Room Password",
-        "description": "Optional, the password of the room, used to encrypt the signaling messages sent between clients, you can click the button to generate a strong password"
+        "description": "Optional, the password of the room, used to encrypt the signaling messages sent between clients, preventing others from joining, you can click the button to generate a strong password"
       },
       "auto_join": "Auto Join Next Time"
     },
@@ -255,6 +276,7 @@
       "client_id": "Client ID",
       "created_at": "Created At",
       "stats_reports": "Stats Reports",
+      "candidate_type": "Candidate Type",
       "leave": "Leave"
     },
     "confirm_delete_client_dialog": {
@@ -279,11 +301,12 @@
     "status": {
       "online": "Online",
       "connecting": "Connecting",
+      "reconnecting": "Reconnecting",
       "offline": "Offline",
       "leave": "Leave"
     },
     "scan_qrcode_dialog": {
-      "title": "Scan QR Code",
+      "title": "Share Room Profile",
       "description": "Scan QR Code to connect to this room",
       "tip": "Right-click or long press to copy the link",
       "invite": "Invite you to join the room {{room}}"
@@ -315,15 +338,19 @@
       "forward": "Forward",
       "request_download": "Request Download",
       "resume": "Resume",
-      "add_folder": "Add Folder"
+      "add_folder": "Add Folder",
+      "check_availability": "Check Availability",
+      "reload": "Reload"
     },
     "notification": {
       "copy_success": "Copy success",
       "link_copy_success": "Link copied",
-      "copy_failed": "Failed to copy link",
+      "link_copy_failed": "Failed to copy link",
       "reset_options_success": "Options reset successfully",
       "unknown_error": "Unknown error",
-      "processing_files": "Processing files..."
+      "processing_files": "Processing files...",
+      "new_version_available": "New version available, click to reload",
+      "share_failed": "Share failed, error: {{error}}"
     },
     "forward_dialog": {
       "title": "Forward items",

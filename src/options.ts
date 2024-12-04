@@ -3,8 +3,8 @@ import { createStore } from "solid-js/store";
 import { ClientID, FileID } from "./libs/core/type";
 import { createEffect, createSignal } from "solid-js";
 import { cacheManager } from "./libs/services/cache-serivce";
-
-export type Locale = "en" | "zh";
+import languages from "@/assets/i18n/languages.json";
+export type Locale = string;
 
 export type TurnServerOptions = {
   url: string;
@@ -51,6 +51,7 @@ export type AppOption = {
   servers: ConnectionOptions;
   shareServersWithOthers: boolean;
   websocketUrl?: string;
+  relayOnly: boolean;
 
   // Appearance
   locale: Locale;
@@ -68,15 +69,30 @@ export const defaultWebsocketUrl =
   import.meta.env.VITE_WEBSOCKET_URL ??
   window.env.VITE_WEBSOCKET_URL;
 
+export const localeOptionsMap = languages as Record<
+  Locale,
+  string
+>;
+
+export function localFromLanguage(
+  language: string,
+): Locale {
+  return (
+    Object.keys(localeOptionsMap).find((locale) =>
+      locale.toLowerCase().includes(language.toLowerCase()),
+    ) ?? "en-us"
+  );
+}
+
 export const getDefaultAppOptions = () => {
   return {
     channelsNumber: 1,
-    chunkSize: 1024 * 1024,
-    blockSize: 64 * 1024,
+    chunkSize: 512 * 1024,
+    blockSize: 32 * 1024,
     ordered: false,
     enableClipboard: navigator.clipboard !== undefined,
     automaticCacheDeletion: false,
-    bufferedAmountLowThreshold: 64 * 1024,
+    bufferedAmountLowThreshold: 32 * 1024,
     maxMomeryCacheSlices: 12,
     videoMaxBitrate: 128 * 1024 * 1024,
     audioMaxBitrate: 512 * 1024,
@@ -84,15 +100,15 @@ export const getDefaultAppOptions = () => {
       stuns: ["stun:stun.l.google.com:19302"],
       turns: [],
     },
-    compressionLevel: 0,
-    locale: navigator.language.startsWith("zh")
-      ? "zh"
-      : "en",
+    relayOnly: false,
+    compressionLevel: 6,
+    locale: localFromLanguage(navigator.language),
     showAboutDialog: true,
-    shareServersWithOthers: false,
+    shareServersWithOthers: true,
     backgroundImageOpacity: 0.5,
     automaticDownload: false,
     websocketUrl: defaultWebsocketUrl,
+    // todo: add dialog to prompt user the file size
     maxFileSize: 1024 * 1024 * 1024, // 1GB
   } satisfies AppOption;
 };
@@ -123,4 +139,10 @@ createEffect(async () => {
   if (!file) return;
   const url = URL.createObjectURL(file);
   setBackgroundImage(url);
+});
+
+createEffect(() => {
+  document
+    .querySelector("html")
+    ?.setAttribute("lang", appOptions.locale);
 });

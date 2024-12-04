@@ -11,10 +11,6 @@
         "title": "语言",
         "description": "更改应用程序的语言"
       },
-      "share_servers_with_others": {
-        "title": "分享服务器给其他人",
-        "description": "在生成加入 URL 时，分享 STUN 和 TURN 服务器给其他人"
-      },
       "background_image": {
         "title": "背景图片",
         "description": "更改应用程序的背景图片，也可以在文件缓存中选择",
@@ -33,12 +29,15 @@
       },
       "stun_servers": {
         "title": "STUN 服务器",
-        "description": "更改应用程序的 STUN 服务器"
+        "description": "更改应用程序的 STUN 服务器，用于建立点对点连接"
       },
       "turn_servers": {
         "title": "TURN 服务器",
-        "description": "更改应用程序的 TURN 服务器，如果你希望在 NAT 环境下使用此应用程序，你可能需要设置 TURN 服务器",
-        "check_availability": "检查可用性"
+        "description": "用于中继，如果你希望在 NAT 环境下使用此应用程序，你可能需要设置 TURN 服务器，并在对方客户端中设置相同的 TURN 服务器"
+      },
+      "share_servers_with_others": {
+        "title": "分享服务器给其他人",
+        "description": "在生成加入 URL 时，分享 STUN 和 TURN 服务器给其他人"
       },
       "websocket_url": {
         "title": "Websocket URL",
@@ -116,6 +115,13 @@
     },
     "advanced_settings": {
       "title": "高级设置",
+      "advanced_connection": {
+        "title": "高级连接设置",
+        "relay_only": {
+          "title": "仅使用中继服务器",
+          "description": "启用后，应用程序将仅使用 TURN 服务器"
+        }
+      },
       "advanced_sender": {
         "title": "高级文件发送设置"
       },
@@ -159,10 +165,24 @@
       "redirect": "连接后自动跳转"
     },
     "index": {
-      "description": "扫描二维码或分享链接以连接到此房间，右键点击复制链接",
-      "guide_title": "创建或连接到房间",
-      "guide_description": "你可以通过点击右上角按钮，创建一个新房间或连接到一个现有房间",
-      "copy_success": "链接已复制"
+      "edit_profile": "编辑资料",
+      "join_room": "加入房间",
+      "share_room": "分享房间",
+      "leave_room": "离开房间",
+      "mobile_tip": "提示：请点击右上角按钮创建或加入房间，点击头像分享房间",
+      "before_join": {
+        "title": "创建或连接到房间",
+        "description": "请点击按钮，创建一个新房间或连接到一个现有房间"
+      },
+      "connecting": {
+        "title": "连接中...",
+        "description": "请等待连接建立"
+      },
+      "after_join": {
+        "title": "已加入房间 {{room}}",
+        "description": "分享房间资料以邀请其他人加入房间",
+        "tip": "提示：在移动设备上点击头像以分享房间资料"
+      }
     },
     "message_editor": {
       "placeholder": "Ctrl + Enter 或 Shift + Enter 发送消息",
@@ -198,7 +218,7 @@
   },
   "common": {
     "scan_qrcode_dialog": {
-      "title": "扫描二维码",
+      "title": "分享房间信息",
       "description": "扫描二维码以连接到此房间",
       "tip": "右键或长按复制链接",
       "invite": "邀请你加入房间 {{room}}"
@@ -213,7 +233,7 @@
       "description": "在这里编辑房间信息，点击确定即可创建或加入房间。",
       "client_id": {
         "title": "客户端 ID (只读)",
-        "description": "房间的客户端 ID，代表你的身份，可以在设置中更改"
+        "description": "房间的客户端 ID，代表你的身份"
       },
       "room_id": {
         "title": "房间 ID",
@@ -223,7 +243,7 @@
       "avatar_url": "头像 URL",
       "password": {
         "title": "房间密码",
-        "description": "可选，房间的密码，用于加密客户端之间的信令消息，你可以点击按钮生成一个强密码"
+        "description": "可选，房间的密码，用于加密客户端之间的信令消息，防止其他人加入，你可以点击按钮生成一个强密码"
       },
       "auto_join": "下次自动加入"
     },
@@ -276,6 +296,7 @@
       "client_id": "客户端 ID",
       "created_at": "创建时间",
       "stats_reports": "统计报告",
+      "candidate_type": "候选类型",
       "leave": "离开"
     },
     "confirm_delete_client_dialog": {
@@ -286,6 +307,7 @@
     "status": {
       "online": "在线",
       "connecting": "连接中",
+      "reconnecting": "重新连接中",
       "offline": "离线",
       "leave": "离开"
     },
@@ -317,7 +339,9 @@
       "forward": "转发",
       "request_download": "请求下载",
       "resume": "恢复",
-      "add_folder": "添加文件夹"
+      "add_folder": "添加文件夹",
+      "check_availability": "检查可用性",
+      "reload": "重新加载"
     },
     "clipboard_history": {
       "title": "剪贴板历史"
@@ -342,10 +366,12 @@
     "notification": {
       "copy_success": "复制成功",
       "link_copy_success": "链接复制成功",
-      "copy_failed": "复制失败",
+      "link_copy_failed": "链接复制失败",
       "reset_options_success": "选项重置成功",
       "unknown_error": "未知错误",
-      "processing_files": "处理文件中..."
+      "processing_files": "处理文件中...",
+      "new_version_available": "新版本可用，点击重新加载",
+      "share_failed": "分享失败，错误: {{error}}"
     },
     "nav": {
       "chat": "聊天",

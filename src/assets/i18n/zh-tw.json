@@ -1,0 +1,389 @@
+{
+  "setting": {
+    "title": "設定",
+    "appearance": {
+      "title": "外觀",
+      "theme": {
+        "title": "主題",
+        "description": "更改應用程式的主題"
+      },
+      "language": {
+        "title": "語言",
+        "description": "更改應用程式的語言"
+      },
+      "background_image": {
+        "title": "背景圖片",
+        "description": "更改應用程式的背景圖片，也可以在檔案快取中選擇",
+        "click_to_select": "點擊選擇"
+      },
+      "background_image_opacity": {
+        "title": "背景圖片透明度",
+        "description": "更改背景圖片的透明度"
+      }
+    },
+    "connection": {
+      "title": "連接",
+      "auto_join": {
+        "title": "自動加入",
+        "description": "應用程式啟動時自動加入房間"
+      },
+      "stun_servers": {
+        "title": "STUN 伺服器",
+        "description": "更改應用程式的 STUN 伺服器，用于建立點對點連接"
+      },
+      "turn_servers": {
+        "title": "TURN 伺服器",
+        "description": "如果你希望在 NAT 環境下使用此應用程式，你可能需要設定 TURN 伺服器，並在對方客戶端中設定相同的 TURN 伺服器"
+      },
+      "share_servers_with_others": {
+        "title": "分享伺服器給他人",
+        "description": "在生成加入 URL 時，分享 STUN 和 TURN 伺服器給他人"
+      },
+      "websocket_url": {
+        "title": "WebSocket URL",
+        "description": "更改應用程式的 WebSocket URL，此選項僅在後端為 WebSocket 時可用"
+      }
+    },
+    "sender": {
+      "title": "檔案傳送設定",
+      "enable_clipboard": {
+        "title": "啟用剪貼簿",
+        "description": "啟用傳送端的剪貼簿傳送功能，啟用後，可以通過對聊天視窗按 Ctrl + V 傳送剪貼簿內容，移動端可以通過貼上到訊息輸入框傳送",
+        "unsupported": "剪貼簿功能不受支援，請在安全的上下文中使用"
+      },
+      "num_channels": {
+        "title": "通道數",
+        "description": "更改傳送端的通道數，適當調整可能可以提高傳輸速度"
+      },
+      "chunk_size": {
+        "title": "區塊大小",
+        "description": "每個傳輸區塊的大小"
+      },
+      "block_size": {
+        "title": "塊大小",
+        "description": "每次傳送的塊大小"
+      },
+      "max_buffer_amount": {
+        "title": "最大緩衝區大小",
+        "description": "更改傳送端的最大緩衝區大小"
+      },
+      "ordered": {
+        "title": "有序",
+        "description": "當啟用時，傳送端將按順序傳送塊"
+      },
+      "compression_level": {
+        "title": "壓縮級別",
+        "description": "更改傳送端的壓縮級別，0 表示無壓縮，9 表示最大壓縮，對於已壓縮的檔案，啟用此選項可能會降低傳輸速度",
+        "no_compression": "0 (無壓縮)"
+      },
+      "automatic_cache_deletion": {
+        "title": "自動刪除快取",
+        "description": "傳送完成後自動刪除快取"
+      }
+    },
+    "receiver": {
+      "title": "檔案接收設定",
+      "max_cached_chunks": {
+        "title": "最大快取塊數",
+        "description": "更改接收端的最大快取塊數"
+      },
+      "automatic_download": {
+        "title": "自動下載",
+        "description": "接收完成後自動下載"
+      }
+    },
+    "media": {
+      "title": "媒體設定",
+      "description": "更改應用程式的媒體設定",
+      "camera": {
+        "title": "攝影機",
+        "description": "更改應用程式的攝影機"
+      },
+      "microphone": {
+        "title": "麥克風",
+        "description": "更改應用程式的麥克風"
+      },
+      "speaker": {
+        "title": "揚聲器",
+        "description": "更改應用程式的揚聲器"
+      },
+      "request_permission": {
+        "title": "請求媒體權限",
+        "description": "請求媒體權限以使用媒體設定，如果請求權限後無法選擇媒體裝置，請嘗試重新整理頁面",
+        "fallback_description": "請允許瀏覽器使用攝影機和麥克風"
+      }
+    },
+    "advanced_settings": {
+      "title": "進階設定",
+      "advanced_connection": {
+        "title": "進階連接設定",
+        "relay_only": {
+          "title": "僅使用中繼伺服器",
+          "description": "啟用後，應用程式將僅使用 TURN 伺服器"
+        }
+      },
+      "advanced_sender": {
+        "title": "進階檔案傳送設定"
+      },
+      "advanced_receiver": {
+        "title": "進階檔案接收設定"
+      },
+      "stream": {
+        "title": "視訊通話設定",
+        "video_max_bitrate": {
+          "title": "視訊最大位元速率",
+          "description": "更改應用程式的視訊最大位元速率"
+        },
+        "audio_max_bitrate": {
+          "title": "音訊最大位元速率",
+          "description": "更改應用程式的音訊最大位元速率"
+        }
+      }
+    },
+    "about": {
+      "title": "關於",
+      "reset_options": "重置選項"
+    }
+  },
+  "cache": {
+    "title": "檔案快取",
+    "usage": "已用 {{value}}, 總共 {{max}}, 剩餘 {{remaining}}",
+    "search_input": "搜尋快取檔案..."
+  },
+  "404": {
+    "title": "404 未找到",
+    "description": "頁面未找到，路徑為 {{path}}",
+    "home": "返回首頁"
+  },
+  "client": {
+    "menu": {
+      "connect": "連接",
+      "connection_status": "連接狀態",
+      "delete_client": "刪除客戶端",
+      "clipboard": "剪貼簿",
+      "options": "選項",
+      "redirect": "連接後自動跳轉"
+    },
+    "index": {
+      "edit_profile": "編輯資料",
+      "join_room": "加入房間",
+      "share_room": "分享房間",
+      "leave_room": "離開房間",
+      "mobile_tip": "提示：請點擊右上角按鈕創建或加入房間，點擊頭像分享房間",
+      "before_join": {
+        "title": "創建或連接到房間",
+        "description": "請點擊按鈕，創建一個新房間或連接到一個現有房間"
+      },
+      "connecting": {
+        "title": "連接中...",
+        "description": "請等待連接建立"
+      },
+      "after_join": {
+        "title": "已加入房間 {{room}}",
+        "description": "分享房間資料以邀請其他人加入房間",
+        "tip": "提示：在移動設備上點擊頭像以分享房間資料"
+      }
+    },
+    "message_editor": {
+      "placeholder": "Ctrl + Enter 或 Shift + Enter 發送訊息",
+      "mobile_placeholder": "發送訊息",
+      "paste_tip": "剪貼簿貼上已啟用"
+    },
+    "sync": {
+      "title": "檔案同步",
+      "menu": {
+        "refresh": "重新整理",
+        "chat": "聊天"
+      }
+    },
+    "message_error": "發生錯誤"
+  },
+  "video": {
+    "title": "視訊通話",
+    "device": {
+      "screen": "螢幕",
+      "camera": "攝影機"
+    },
+    "no_stream": "沒有串流",
+    "no_support": "不支援",
+    "no_support_description": "請在安全的上下文中使用此功能"
+  },
+  "browser_unsupported": {
+    "title": "抱歉，您的瀏覽器不受支援",
+    "reasons": {
+      "browser_version_too_low": "您的瀏覽器版本過低",
+      "browser_does_not_support_webrtc": "您的瀏覽器不支援 WebRTC"
+    },
+    "description": "請使用現代瀏覽器，如 Chrome、Firefox、Safari、Edge 或 Opera。或者在您的瀏覽器中啟用實驗性的 WebRTC 功能"
+  },
+  "common": {
+    "scan_qrcode_dialog": {
+      "title": "分享房間資訊",
+      "description": "掃描二維碼以連接到此房間",
+      "tip": "右鍵或長按複製連結",
+      "invite": "邀請你加入房間 {{room}}"
+    },
+    "theme_toggle": {
+      "light": "淺色模式",
+      "dark": "深色模式",
+      "system": "跟隨系統"
+    },
+    "join_form": {
+      "title": "編輯房間資訊",
+      "description": "在這裡編輯房間資訊，點擊確定即可創建或加入房間。",
+      "client_id": {
+        "title": "客戶端 ID (唯讀)",
+        "description": "房間的客戶端 ID，代表你的身份"
+      },
+      "room_id": {
+        "title": "房間 ID",
+        "description": "房間的 ID"
+      },
+      "name": "名稱",
+      "avatar_url": "頭像 URL",
+      "password": {
+        "title": "房間密碼",
+        "description": "可選，房間的密碼，用於加密客戶端之間的信令訊息，防止其他人加入，你可以點擊按鈕生成一個強密碼"
+      },
+      "auto_join": "下次自動加入"
+    },
+    "confirm_delete_files_dialog": {
+      "title": "確認刪除",
+      "description": "確認刪除以下 {{count}} 個檔案？"
+    },
+    "preview_dialog": {
+      "title": "預覽",
+      "unsupported_file_type": "不支援的檔案類型"
+    },
+    "send_item_preview_dialog": {
+      "title": "傳送檔案",
+      "description": "確認傳送檔案 {{fileName}} 給 {{name}}？",
+      "unsupported_file_type": "不支援的檔案類型"
+    },
+    "reset_options_dialog": {
+      "title": "重置選項",
+      "description": "重置後將無法恢復，請謹慎操作",
+      "content": "確認重置選項？"
+    },
+    "file_table": {
+      "columns": {
+        "name": "名稱",
+        "size": "大小",
+        "last_modified": "最後修改",
+        "status": "狀態",
+        "created_at": "創建時間",
+        "mime_type": "MIME 類型",
+        "progress": "進度"
+      },
+      "status": {
+        "not_started": "未開始",
+        "stopped": "已停止",
+        "transferring": "傳輸中",
+        "merging": "合併中",
+        "completed": "已完成",
+        "incompleted": "未完成"
+      },
+      "filter": {
+        "clear_filters": "清空過濾器",
+        "selected": "已選"
+      },
+      "toggle_columns": "切換欄位",
+      "no_data": "沒有資料"
+    },
+    "client_info_dialog": {
+      "title": "客戶端 {{name}} 資訊",
+      "status": "狀態",
+      "client_id": "客戶端 ID",
+      "created_at": "創建時間",
+      "stats_reports": "統計報告",
+      "candidate_type": "候選類型",
+      "leave": "離開"
+    },
+    "confirm_delete_client_dialog": {
+      "title": "刪除客戶端",
+      "description": "刪除後將無法恢復，請謹慎操作",
+      "content": "確認刪除和客戶端 {{name}} 的所有聊天記錄？"
+    },
+    "status": {
+      "online": "線上",
+      "connecting": "連接中",
+      "reconnecting": "重新連接中",
+      "offline": "離線",
+      "leave": "離開"
+    },
+    "action": {
+      "copy": "複製",
+      "copy_link": "複製連結",
+      "copy_file_name": "複製檔案名",
+      "copy_as_png": "複製為 PNG",
+      "copy_as_svg": "複製為 SVG",
+      "paste": "貼上",
+      "delete": "刪除",
+      "download": "下載",
+      "cancel": "取消",
+      "confirm": "確定",
+      "actions": "操作",
+      "close": "關閉",
+      "change": "更改",
+      "open": "打開",
+      "preview": "預覽",
+      "send": "傳送",
+      "view": "查看",
+      "reset": "重置",
+      "asc": "升序",
+      "desc": "降序",
+      "hide": "隱藏",
+      "set_as_background": "設為背景",
+      "test": "測試",
+      "share": "分享",
+      "forward": "轉發",
+      "request_download": "請求下載",
+      "resume": "恢復",
+      "add_folder": "添加資料夾",
+      "check_availability": "檢查可用性",
+      "reload": "重新加載"
+    },
+    "clipboard_history": {
+      "title": "剪貼簿歷史"
+    },
+    "forward_dialog": {
+      "title": "轉發項目",
+      "placeholder": "查找客戶端以轉發...",
+      "no_results_found": "沒有找到結果"
+    },
+    "about_dialog": {
+      "title": "關於 Weblink",
+      "description1": "Weblink 是一款基於 WebRTC 的 P2P 聊天和檔案傳輸工具，它可以幫助你快速、安全地傳輸檔案。",
+      "description2": "提供檔案同步、進度顯示、斷點續傳、資料夾傳輸、剪貼簿傳輸、檔案快取、視訊通話等多種功能。",
+      "description3": "此專案是純 Web 應用，無需安裝。功能較多實現比較複雜，如果遇到不穩定的情況，請嘗試重新整理頁面，資訊不會丟失。",
+      "disclaimer": "免責聲明：此應用使用 P2P 技術，所有資料儲存在使用者客戶端（瀏覽器）中，伺服器不儲存任何使用者資料，只負責轉發信令。使用者應自行承擔使用風險，開發者不對任何資料丟失或隱私洩露負責。",
+      "star_repo": "如果您喜歡這個專案，歡迎在 GitHub 上給我一個 ⭐！",
+      "version": "版本",
+      "author": "作者",
+      "license": "許可證",
+      "github": "GitHub 儲存庫"
+    },
+    "notification": {
+      "copy_success": "複製成功",
+      "link_copy_success": "連結複製成功",
+      "link_copy_failed": "連結複製失敗",
+      "reset_options_success": "選項重置成功",
+      "unknown_error": "未知錯誤",
+      "processing_files": "處理檔案中...",
+      "new_version_available": "新版本可用，點擊重新加載",
+      "share_failed": "分享失敗，錯誤: {{error}}"
+    },
+    "nav": {
+      "chat": "聊天",
+      "file_cache": "檔案快取",
+      "video_conference": "視訊會議",
+      "settings": "設定",
+      "join_room": "加入房間",
+      "leave_room": "離開房間",
+      "share_link": "分享連結"
+    },
+    "timeago": {
+      "just_now": "剛剛"
+    }
+  }
+}

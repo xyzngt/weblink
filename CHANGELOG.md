@@ -2,11 +2,31 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.7.2] - 2024-11-20
+## [0.9.0] - 2024-12-04
+
+### Improvements
+
+- Improve the UI of the client page 优化客户端页面 UI
+
+## [0.8.0] - 2024-11-29
+
+### New Features
+
+- Add share file feature 添加分享文件功能
+
+### Improvements
+
+- Improve the connection stability 改善连接稳定性
+
+- Automatically try to reconnect when the connection is lost 自动尝试重新连接
+
+## [0.7.5] - 2024-11-26
 
 ### New Features
 
 - Add progress display in file list 在文件列表中添加进度显示
+
+- Add double click to preview file in file table, and request file when status is not_started or stopped in sync page 在文件表中添加双击预览文件功能，当状态为 not_started 或 stopped 时在同步页面请求文件
 
 ### Improvements
 
@@ -15,6 +35,14 @@ All notable changes to this project will be documented in this file.
 - Improve the file table status display 优化文件表的状态显示
 
 - Improve the file processing function, now can abort the file processing 优化文件处理功能，现在可以中止文件处理
+
+- Improve the chat interface for loading more message on scroll 优化消息滚动加载的聊天界面
+
+### Bug Fixes
+
+- Fix the bug that check ice server availability works incorrectly 修复了检查 ICE 服务器可用性不正确的问题
+
+- Fix the bug that the file transfer status is displayed incorrectly when starting 修复了文件传输状态在开始时显示不正确的问题
 
 ## [0.6.5] - 2024-11-14
 

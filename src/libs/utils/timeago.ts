@@ -3,18 +3,16 @@ import {
   DateInit,
 } from "@solid-primitives/date";
 import { Accessor } from "solid-js";
-import {
-  formatRelative,
-  formatDistance,
-} from "date-fns";
-import { enUS, zhCN } from "date-fns/locale";
+import { formatRelative, formatDistance } from "date-fns";
+import { enUS, zhCN, zhTW } from "date-fns/locale";
 import { appOptions } from "@/options";
 import { t } from "@/i18n";
 type MaybeAccessor<T> = T | Accessor<T>;
 
 const locale = {
-  en: enUS,
-  zh: zhCN,
+  "en-us": enUS,
+  "zh-cn": zhCN,
+  "zh-tw": zhTW,
 };
 
 export const createTimeAgo = (
@@ -29,12 +27,18 @@ export const createTimeAgo = (
         1000 * 60 * 60 // 1 hour
       ) {
         return formatDistance(target, now, {
-          locale: locale[appOptions.locale] ?? enUS,
+          locale:
+            locale[
+              appOptions.locale as keyof typeof locale
+            ] ?? enUS,
           addSuffix: true,
         });
       } else {
         return formatRelative(target, now, {
-          locale: locale[appOptions.locale] ?? enUS,
+          locale:
+            locale[
+              appOptions.locale as keyof typeof locale
+            ] ?? enUS,
         });
       }
     },

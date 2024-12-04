@@ -51,6 +51,8 @@ export type Unsubscribe = () => void;
 
 export type SignalingServiceEventMap = {
   signal: ClientSignal;
+  connect: void;
+  close: void;
 };
 
 export interface SignalingService {

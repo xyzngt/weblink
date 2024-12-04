@@ -12,8 +12,10 @@ import {
   Component,
   ComponentProps,
   createMemo,
+  createSignal,
   onMount,
   Show,
+  splitProps,
 } from "solid-js";
 import {
   Avatar,
@@ -38,6 +40,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "./ui/tooltip";
+import { Spinner } from "./spinner";
 
 export const createRoomDialog = () => {
   const { open, close, submit, Component } = createDialog({
@@ -84,6 +87,39 @@ export const createRoomDialog = () => {
                 )
               }
             />
+          </label>
+          <label class="flex flex-col gap-2">
+            <span class="input-label">
+              {t("common.join_form.password.title")}
+            </span>
+            <div class="flex gap-1">
+              <Input
+                placeholder={t(
+                  "common.join_form.password.placeholder",
+                )}
+                value={clientProfile.password ?? ""}
+                onInput={(ev) =>
+                  setClientProfile(
+                    "password",
+                    optional(ev.currentTarget.value),
+                  )
+                }
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={async () => {
+                  const password =
+                    await generateStrongPassword();
+                  setClientProfile("password", password);
+                }}
+              >
+                <IconCasino class="size-6" />
+              </Button>
+            </div>
+            <p class="muted">
+              {t("common.join_form.password.description")}
+            </p>
           </label>
           <label class="flex flex-col gap-2">
             <span class="input-label">
@@ -143,39 +179,6 @@ export const createRoomDialog = () => {
               </Avatar>
             </div>
           </label>
-          <label class="flex flex-col gap-2">
-            <span class="input-label">
-              {t("common.join_form.password.title")}
-            </span>
-            <div class="flex gap-1">
-              <Input
-                placeholder={t(
-                  "common.join_form.password.placeholder",
-                )}
-                value={clientProfile.password ?? ""}
-                onInput={(ev) =>
-                  setClientProfile(
-                    "password",
-                    optional(ev.currentTarget.value),
-                  )
-                }
-              />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={async () => {
-                  const password =
-                    await generateStrongPassword();
-                  setClientProfile("password", password);
-                }}
-              >
-                <IconCasino class="size-6" />
-              </Button>
-            </div>
-            <p class="muted">
-              {t("common.join_form.password.description")}
-            </p>
-          </label>
           <Switch
             class="flex items-center justify-between"
             checked={clientProfile.autoJoin}
@@ -234,12 +237,19 @@ export const joinUrl = createMemo(() => {
   return url.toString();
 });
 
+// const createRoomStatus = () => {
+//   const { joinRoom, roomStatus, leaveRoom } = useWebRTC();
+//   const [joinStatus, setJoinStatus] = createSignal<
+//     "connecting" | "connected" | "disconnected"
+//   >("disconnected");
+// };
+
 export function JoinRoomButton(
   props: ComponentProps<"button">,
 ) {
   const { joinRoom, roomStatus, leaveRoom } = useWebRTC();
   const { open, Component } = createRoomDialog();
-
+  const [local, other] = splitProps(props, ["class"]);
   return (
     <>
       <Component />
@@ -252,6 +262,7 @@ export function JoinRoomButton(
           <Tooltip>
             <TooltipTrigger
               as={Button}
+              class={local.class}
               disabled={
                 sessionService.clientServiceStatus() !==
                 "connected"
@@ -260,7 +271,18 @@ export function JoinRoomButton(
               variant="destructive"
               size="icon"
             >
-              <IconLogout class="size-6" />
+              <Show
+                when={
+                  sessionService.clientServiceStatus() ===
+                  "connecting"
+                }
+                fallback={<IconLogout class="size-6" />}
+              >
+                <Spinner
+                  size="md"
+                  class="size-6 bg-black dark:bg-white"
+                />
+              </Show>
             </TooltipTrigger>
             <TooltipContent>
               {t("common.nav.leave_room")}
@@ -271,7 +293,9 @@ export function JoinRoomButton(
         <Tooltip>
           <TooltipTrigger
             as={Button}
+            class={local.class}
             size="icon"
+            variant="outline"
             disabled={
               sessionService.clientServiceStatus() !==
               "disconnected"

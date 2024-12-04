@@ -1,8 +1,8 @@
 # Weblink
 
-## Introduction
-
 **English Introduction** | [**中文介绍**](README_CN.md)
+
+## Introduction
 
 Weblink is a pure web-based file transfer and chat application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase and WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
 
@@ -135,16 +135,34 @@ VITE_WEBSOCKET_URL=your-websocket-url
 
 ## Notes
 
-### Configuring TURN Server (Non-LAN Connections)
+### STUN and TURN Server Configuration
 
-If you are using P2P connections outside a local area network (in a NAT environment), you may need to configure a TURN server to ensure connections are established. In the settings page, you can configure the TURN server with the following format:
+If you are using P2P connections outside a local area network (in a NAT environment), you may need to configure a TURN server to ensure connections are established. In the settings page, you can configure the TURN server with the following format, support coturn and Cloudflare TURN server, and separate multiple configurations with newline characters:
 
 **TURN Configuration Format:**
 
 ```plaintext
+# use coturn with account and password
 turn:turn1.example.com:3478|user1|pass1|longterm
+# use coturn with timestamp
 turns:turn2.example.com:5349|user2|pass2|hmac
+# use cloudflare turn server
+name|TURN_TOKEN_ID|API_TOKEN|cloudflare
 ```
+
+Here are some methods to get public STUN and TURN servers:
+
+#### Public STUN Server
+
+This application defaults to using Google's STUN server. If you cannot connect, please configure your own STUN server. You can refer to [https://gist.github.com/mondain/b0ec1cf5f60ae726202e](https://gist.github.com/mondain/b0ec1cf5f60ae726202e) for a list of public STUN servers. Then add the stun server in format `stun:xxxx:xxxx` to the STUN server list in the settings page such as `stun:stun.l.google.com:19302`.
+
+#### Cloudflare Calls TURN Server
+
+You can use the TURN server provided by Cloudflare Calls, please visit [https://developers.cloudflare.com/calls/turn](https://developers.cloudflare.com/calls/turn). Then add the TURN server in format `name|TURN_TOKEN_ID|API_TOKEN|cloudflare` to the TURN server list in the settings page.
+
+#### Self-Hosted STUN/TURN Server
+
+You can refer to [https://github.com/coturn/coturn](https://github.com/coturn/coturn) to set up your own TURN server.
 
 ### Use in LAN
 

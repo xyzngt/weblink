@@ -46,8 +46,6 @@ import { toast } from "solid-sonner";
 import { ChunkMetaData, FileMetaData } from "../cache";
 import { catchErrorAsync } from "../catch";
 
-
-
 function getClientService(
   options: ClientServiceInitOptions,
 ): ClientService {
@@ -120,28 +118,6 @@ export interface WebRTCProviderProps extends ParentProps {
 export const WebRTCProvider: Component<
   WebRTCProviderProps
 > = (props) => {
-  // createEffect(() => {
-  //   const info: Record<string, ClientInfo> = {};
-  //   messageStores.clients.forEach((client) => {
-  //     info[client.clientId] = {
-  //       ...client,
-  //       onlineStatus: "offline",
-  //     };
-  //   });
-
-  //   setClientSessionInfo(info);
-
-  //   if (!clientService()) {
-  //     setClientSessionInfo(
-  //       produce((state) =>
-  //         Object.values(state).forEach(
-  //           (info) => (info.onlineStatus = "offline"),
-  //         ),
-  //       ),
-  //     );
-  //   }
-  // });
-
   let clipboardCacheData: SendClipboardMessage[] = [];
 
   onMount(() => {
@@ -370,15 +346,18 @@ export const WebRTCProvider: Component<
               );
 
             messageStores.addTransfer(transferer);
-            transferer.addEventListener("ready", async () => {
-              const [error] = await catchErrorAsync(
-                transferer.sendFile(),
-              );
-              if (error) {
-                console.error(error);
-                toast.error(error.message);
-              }
-            });
+            transferer.addEventListener(
+              "ready",
+              async () => {
+                const [error] = await catchErrorAsync(
+                  transferer.sendFile(),
+                );
+                if (error) {
+                  console.error(error);
+                  toast.error(error.message);
+                }
+              },
+            );
             await transferer.initialize();
 
             for (
@@ -446,7 +425,10 @@ export const WebRTCProvider: Component<
   }
 
   const joinRoom = async (): Promise<void> => {
-    console.log(`join room`, clientProfile);
+    console.log(
+      `join ${clientProfile.roomId} with profile`,
+      clientProfile,
+    );
 
     let cs: ClientService;
     if (sessionService.clientService) {
@@ -476,57 +458,11 @@ export const WebRTCProvider: Component<
       console.log(`new client join in `, targetClient);
 
       const session =
-        sessionService.addClient(targetClient);
+        await sessionService.addClient(targetClient);
       if (!session) {
         console.error(`no client service setted`);
         return;
       }
-      // const updateStats = async (pc: RTCPeerConnection) => {
-      //   const reports: any[] = [];
-      //   const stats = await pc.getStats();
-
-      //   let candidateType: string | undefined;
-      //   stats.forEach((report) => {
-      //     reports.push(report);
-      //     if (report.type === "transport") {
-      //       let activeCandidatePair = stats.get(
-      //         report.selectedCandidatePairId,
-      //       ) as RTCIceCandidatePairStats;
-      //       if (!activeCandidatePair) return;
-      //       let remoteCandidate = stats.get(
-      //         activeCandidatePair.remoteCandidateId,
-      //       );
-      //       let localCandidate = stats.get(
-      //         activeCandidatePair.localCandidateId,
-      //       );
-      //       if (
-      //         localCandidate?.candidateType ||
-      //         remoteCandidate?.candidateType
-      //       ) {
-      //         candidateType =
-      //           localCandidate?.candidateType ??
-      //           remoteCandidate?.candidateType;
-      //       }
-      //     }
-      //   });
-      //   if (clientSessionInfo[targetClient.clientId]) {
-      //     setClientSessionInfo(
-      //       targetClient.clientId,
-      //       "statsReports",
-      //       reports,
-      //     );
-      //     setClientSessionInfo(
-      //       targetClient.clientId,
-      //       "candidateType",
-      //       candidateType,
-      //     );
-      //   }
-      // };
-
-      // setClientSessionInfo(targetClient.clientId, {
-      //   ...targetClient,
-      //   onlineStatus: "offline",
-      // } satisfies ClientInfo);
 
       const localStream = props.localStream;
 

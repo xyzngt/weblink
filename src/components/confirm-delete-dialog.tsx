@@ -4,7 +4,7 @@ import { createDialog } from "./dialogs/dialog";
 import { t } from "@/i18n";
 import { Button } from "./ui/button";
 
-export const createComfirmDeleteDialog = () => {
+export const createComfirmDeleteItemsDialog = () => {
   const [names, setNames] = createSignal<string[]>([]);
   const {
     open: openDeleteDialog,
@@ -29,12 +29,7 @@ export const createComfirmDeleteDialog = () => {
     ),
 
     cancel: (
-      <Button
-        onClick={() => {
-          close();
-          setNames([]);
-        }}
-      >
+      <Button onClick={() => close()}>
         {t("common.action.cancel")}
       </Button>
     ),
@@ -50,10 +45,7 @@ export const createComfirmDeleteDialog = () => {
 
   const open = async (names: string[]) => {
     setNames(names);
-    return openDeleteDialog().then((result) => {
-      setNames([]);
-      return result;
-    });
+    return await openDeleteDialog();
   };
 
   return { open, Component };

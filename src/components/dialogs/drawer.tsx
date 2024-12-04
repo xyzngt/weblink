@@ -17,6 +17,7 @@ import { cn } from "@/libs/cn";
 const BaseDrawer: Component<BaseModalProps> = (props) => {
   return (
     <Drawer
+      noOutsidePointerEvents={false}
       open={props.isOpen}
       closeOnOutsidePointerStrategy="pointerdown"
       onOpenChange={() => props.onClose()}

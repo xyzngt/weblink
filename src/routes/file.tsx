@@ -70,6 +70,7 @@ import {
   IconPlaceItem,
   IconPreview,
   IconSearch700,
+  IconShare,
   IconWallpaper,
 } from "@/components/icons";
 import { t } from "@/i18n";
@@ -96,11 +97,12 @@ import {
   handleSelectFolder,
 } from "@/libs/utils/process-file";
 import DropArea from "@/components/drop-area";
-import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { createComfirmDeleteItemsDialog } from "@/components/confirm-delete-dialog";
 import { Badge } from "@/components/ui/badge";
 import { DataTableFacetedFilter } from "@/components/data-table/data-table-faceted-filter";
 import { toast } from "solid-sonner";
 import { catchErrorAsync } from "@/libs/catch";
+import { canShareFile } from "@/libs/utils/can-share";
 
 const columnHelper = createColumnHelper<FileMetaData>();
 
@@ -241,31 +243,6 @@ export default function File() {
           : true;
       },
       cell: ({ row }) => {
-        return (
-          <p class="max-w-xs overflow-hidden text-ellipsis">
-            <Badge variant="outline">
-              {getStatus(row.original).label}
-            </Badge>
-          </p>
-        );
-      },
-    }),
-    columnHelper.display({
-      id: "progress",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("common.file_table.columns.progress")}
-        />
-      ),
-      sortingFn: (rowA, rowB) => {
-        return (
-          (rowA.original.chunkCount ?? 0) -
-          (rowB.original.chunkCount ?? 0)
-        );
-      },
-      sortUndefined: "last",
-      cell: ({ row }) => {
         const progress = createMemo(() => {
           if (!row.original.chunkCount) return 0;
           const totalChunkCount = getTotalChunkCount(
@@ -277,14 +254,19 @@ export default function File() {
           );
         });
         return (
-          <Show
-            when={!row.original.isComplete}
-            fallback={<div class="min-w-12"></div>}
+          <p
+            class="flex max-w-xs items-center gap-1 overflow-hidden
+              text-ellipsis text-xs"
           >
-            <span class="font-mono">
-              {`${progress().toFixed(2)}%`}
-            </span>
-          </Show>
+            <Badge variant="outline">
+              {getStatus(row.original).label}
+            </Badge>
+            <Show when={!row.original.isComplete}>
+              <span class="font-mono">
+                {`${progress().toFixed(2)}%`}
+              </span>
+            </Show>
+          </p>
         );
       },
     }),
@@ -373,76 +355,109 @@ export default function File() {
                   {t("common.action.actions")}
                 </DropdownMenuGroupLabel>
                 <Show when={row.original.file}>
-                  {(file) => (
-                    <>
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={() => {
-                          downloadFile(file());
-                        }}
-                      >
-                        <IconDownload class="size-4" />
-                        {t("common.action.download")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={() => {
-                          openPreviewDialog(file());
-                        }}
-                      >
-                        <IconPreview class="size-4" />
-                        {t("common.action.preview")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={() => {
-                          shareCache([row.original]);
-                        }}
-                      >
-                        <IconForward class="size-4" />
-                        {t("common.action.forward")}
-                      </DropdownMenuItem>
-                      <Show
-                        when={file().type.startsWith(
-                          "image/",
-                        )}
-                      >
+                  {(file) => {
+                    const shareableData = createMemo(() => {
+                      if (!canShareFile(file()))
+                        return null;
+                      const shareData: ShareData = {
+                        files: [file()],
+                      };
+                      return shareData;
+                    });
+                    return (
+                      <>
                         <DropdownMenuItem
                           class="gap-2"
                           onSelect={() => {
-                            setAppOptions({
-                              backgroundImage:
-                                row.original.id,
-                            });
+                            downloadFile(file());
                           }}
                         >
-                          <IconWallpaper class="size-4" />
-                          {t(
-                            "common.action.set_as_background",
+                          <IconDownload class="size-4" />
+                          {t("common.action.download")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={() => {
+                            openPreviewDialog(file());
+                          }}
+                        >
+                          <IconPreview class="size-4" />
+                          {t("common.action.preview")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          class="gap-2"
+                          onSelect={() => {
+                            shareCache([row.original]);
+                          }}
+                        >
+                          <IconForward class="size-4" />
+                          {t("common.action.forward")}
+                        </DropdownMenuItem>
+                        <Show when={shareableData()}>
+                          {(shareData) => (
+                            <DropdownMenuItem
+                              class="gap-2"
+                              onSelect={async () => {
+                                const [err] =
+                                  await catchErrorAsync(
+                                    navigator.share(
+                                      shareData(),
+                                    ),
+                                  );
+                                if (err) {
+                                  console.error(err);
+                                }
+                              }}
+                            >
+                              <IconShare class="size-4" />
+                              {t("common.action.share")}
+                            </DropdownMenuItem>
                           )}
-                        </DropdownMenuItem>
-                      </Show>
-                      <Show
-                        when={
-                          !row.original.isComplete &&
-                          row.original.chunkCount ===
-                            getTotalChunkCount(row.original)
-                        }
-                      >
-                        <DropdownMenuItem
-                          class="gap-2"
-                          onSelect={() => {
-                            cacheManager.caches[
-                              row.original.id
-                            ]?.mergeFile();
-                          }}
+                        </Show>
+                        <Show
+                          when={file().type.startsWith(
+                            "image/",
+                          )}
                         >
-                          <IconMerge class="size-4" />
-                          {t("common.action.merge")}
-                        </DropdownMenuItem>
-                      </Show>
-                    </>
-                  )}
+                          <DropdownMenuItem
+                            class="gap-2"
+                            onSelect={() => {
+                              setAppOptions({
+                                backgroundImage:
+                                  row.original.id,
+                              });
+                            }}
+                          >
+                            <IconWallpaper class="size-4" />
+                            {t(
+                              "common.action.set_as_background",
+                            )}
+                          </DropdownMenuItem>
+                        </Show>
+                        <Show
+                          when={
+                            !row.original.isComplete &&
+                            row.original.chunkCount ===
+                              getTotalChunkCount(
+                                row.original,
+                              )
+                          }
+                        >
+                          <DropdownMenuItem
+                            class="gap-2"
+                            onSelect={() => {
+                              cacheManager.caches[
+                                row.original.id
+                              ]?.mergeFile();
+                            }}
+                          >
+                            <IconMerge class="size-4" />
+                            {t("common.action.merge")}
+                          </DropdownMenuItem>
+                        </Show>
+                      </>
+                    );
+                  }}
                 </Show>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -567,7 +582,7 @@ export default function File() {
   const {
     open: openDeleteDialog,
     Component: DeleteDialogComponent,
-  } = createComfirmDeleteDialog();
+  } = createComfirmDeleteItemsDialog();
   return (
     <>
       <DeleteDialogComponent />
@@ -595,7 +610,9 @@ export default function File() {
                   const abortController =
                     new AbortController();
                   const toastId = toast.loading(
-                    t("common.notification.processing_files"),
+                    t(
+                      "common.notification.processing_files",
+                    ),
                     {
                       duration: Infinity,
                       action: {
@@ -611,7 +628,7 @@ export default function File() {
                     await catchErrorAsync(
                       handleSelectFolder(
                         ev.currentTarget.files,
-                        abortController,
+                        abortController.signal,
                       ),
                     );
 
@@ -619,6 +636,11 @@ export default function File() {
 
                   if (error) {
                     console.warn(error);
+                    if (
+                      error.message !== "User cancelled"
+                    ) {
+                      toast.error(error.message);
+                    }
                     return;
                   }
 
@@ -677,17 +699,19 @@ export default function File() {
           </label>
         )}
       </PortableContextMenu>
+
       <div
-        class="container pointer-events-none fixed inset-0 z-[-1]
-          backdrop-blur"
-      />
-      <div
-        class="container z-[10] flex min-h-[calc(100%-3rem)] flex-col gap-4
-          bg-background/80 px-0 py-4"
+        class="container relative z-[10] flex min-h-[calc(100%-3rem)]
+          flex-col gap-4 bg-background/80 px-0 pb-20 pt-4
+          sm:max-w-[calc(100%-var(--desktop-header-width))]"
       >
+        <div class="pointer-events-none absolute inset-0 z-[-1] backdrop-blur" />
         <h2 class="h2 px-2">{t("cache.title")}</h2>
         <StorageStatus class="px-2" />
-        <div class="sticky top-12 z-10 flex gap-2 p-2 backdrop-blur">
+        <div
+          class="sticky top-[var(--mobile-header-height)] z-10 flex gap-2 p-2
+            backdrop-blur sm:top-0"
+        >
           <Show
             when={Object.keys(rowSelection()).length !== 0}
           >
@@ -875,12 +899,15 @@ export default function File() {
             const [error, files] = await catchErrorAsync(
               handleDropItems(
                 ev.dataTransfer.items,
-                abortController,
+                abortController.signal,
               ),
             );
             toast.dismiss(toastId);
             if (error) {
               console.warn(error);
+              if (error.message !== "User cancelled") {
+                toast.error(error.message);
+              }
               return;
             }
 
@@ -901,10 +928,10 @@ export default function File() {
         >
           <div
             data-sync-scroll="file-table"
-            class="h-full w-full flex-1 overflow-x-auto scrollbar-none"
+            class="h-full w-full overflow-x-auto scrollbar-none"
           >
             <Table
-              class="h-full w-full text-nowrap"
+              class="w-full text-nowrap"
               ref={setTableBody}
             >
               <TableBody>
@@ -922,7 +949,15 @@ export default function File() {
                   }
                 >
                   {(row, rowIndex) => (
-                    <TableRow>
+                    <TableRow
+                      onDblClick={() => {
+                        if (row.original.file) {
+                          openPreviewDialog(
+                            row.original.file,
+                          );
+                        }
+                      }}
+                    >
                       <For each={row.getVisibleCells()}>
                         {(cell, index) => (
                           <TableCell
@@ -967,8 +1002,9 @@ export default function File() {
           </div>
           <div
             data-sync-scroll="file-table"
-            class="sticky top-24 z-10 overflow-x-auto bg-background/50
-              backdrop-blur scrollbar-thin"
+            class="sticky top-[calc(var(--mobile-header-height)+3rem)] z-10
+              h-auto overflow-x-auto bg-background/50 backdrop-blur
+              scrollbar-thin sm:top-12"
           >
             <Table
               style={{

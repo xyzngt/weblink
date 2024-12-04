@@ -21,6 +21,8 @@ import {
 } from "@/libs/core/messge";
 import { PortableContextMenu } from "@/components/portable-contextmenu";
 import {
+  ContextMenuGroup,
+  ContextMenuGroupLabel,
   ContextMenuItem,
   ContextMenuSeparator,
 } from "@/components/ui/context-menu";
@@ -38,7 +40,7 @@ import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete
 import { t } from "@/i18n";
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { getInitials } from "@/libs/utils/name";
-import { ConnectionBadge } from "./connection-badge";
+import { ConnectionBadge } from "../../components/connection-badge";
 
 export interface UserItemProps
   extends ComponentProps<"li"> {
@@ -140,7 +142,11 @@ export const UserItem: Component<UserItemProps> = (
       <ConfirmDeleteClientDialog />
       <PortableContextMenu
         menu={(close) => (
-          <>
+          <ContextMenuGroup>
+            <ContextMenuGroupLabel>
+              {local.client.name}
+            </ContextMenuGroupLabel>
+            <ContextMenuSeparator />
             <ContextMenuItem
               as={A}
               href={`/client/${local.client.clientId}/sync`}
@@ -152,28 +158,26 @@ export const UserItem: Component<UserItemProps> = (
               <IconFolderMatch class="size-4" />
               {t("client.sync.title")}
             </ContextMenuItem>
-            <ContextMenuSeparator />
+
             <ContextMenuItem
               class="gap-2"
               onSelect={async () => {
-                if (
-                  !(
-                    await openConfirmDeleteClientDialog(
-                      local.client.name,
-                    )
-                  ).cancel
-                ) {
-                  messageStores.deleteClient(
-                    local.client.clientId,
-                  );
-                }
                 close();
+                const result = (
+                  await openConfirmDeleteClientDialog(
+                    local.client.name,
+                  )
+                ).result;
+                if (!result) return;
+                messageStores.deleteClient(
+                  local.client.clientId,
+                );
               }}
             >
               <IconDelete class="size-4" />
               {t("common.action.delete")}
             </ContextMenuItem>
-          </>
+          </ContextMenuGroup>
         )}
       >
         {(p) => (
@@ -188,12 +192,7 @@ export const UserItem: Component<UserItemProps> = (
                 sm:px-1"
               href={`/client/${local.client.clientId}/chat`}
             >
-              <Avatar
-                class={cn(
-                  "self-center",
-                  local.collapsed ? "size-12" : "size-10",
-                )}
-              >
+              <Avatar class="self-center size-10">
                 <AvatarImage
                   src={local.client.avatar ?? undefined}
                 />

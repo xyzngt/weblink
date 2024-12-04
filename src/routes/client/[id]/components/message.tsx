@@ -5,6 +5,8 @@ import {
   ComponentProps,
   createEffect,
   createMemo,
+  createResource,
+  createSignal,
   Match,
   Show,
   splitProps,
@@ -48,9 +50,11 @@ import {
   IconFileCopy,
   IconFileUpload,
   IconInsertDriveFile,
+  IconPreview,
   IconRestore,
   IconResume,
   IconSchedule,
+  IconShare,
 } from "@/components/icons";
 import { sessionService } from "@/libs/services/session-service";
 import { t } from "@/i18n";
@@ -65,11 +69,17 @@ import {
 } from "@/components/ui/tooltip";
 import { catchErrorAsync } from "@/libs/catch";
 import { toast } from "solid-sonner";
+import { Spinner } from "@/components/spinner";
+import { createPreviewDialog } from "@/components/preview-dialog";
+import { downloadFile } from "@/libs/utils/download-file";
+import { FileID } from "@/libs/core/type";
+import { canShareFile } from "@/libs/utils/can-share";
 
 export interface MessageCardProps
   extends ComponentProps<"li"> {
   message: StoreMessage;
   onLoad?: () => void;
+  onDelete?: () => void;
 }
 
 export interface FileMessageCardProps {
@@ -120,8 +130,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
   });
 
   const shouldShowResumeButton = createMemo(() => {
-    if (targetClientInfo()?.onlineStatus !== "online")
-      return false;
+    if (!targetClientInfo()?.messageChannel) return false;
     if (props.message.status !== "received") return false;
     if (!props.message.transferStatus) return false;
     if (isSender()) {
@@ -132,18 +141,17 @@ const FileMessageCard: Component<FileMessageCardProps> = (
         ["complete", "transfering"].includes(
           props.message.transferStatus,
         )
-      ) {
+      )
         return false;
-      } else return true;
     } else {
       if (
         ["complete", "transfering", "merging"].includes(
           localStatus(),
         )
-      ) {
+      )
         return false;
-      } else return true;
     }
+    return true;
   });
 
   createEffect(() => {
@@ -210,7 +218,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
             >
               {(file) => {
                 const url = URL.createObjectURL(file());
-
+                const [isLong, setIsLong] =
+                  createSignal(false);
                 return (
                   <Switch
                     fallback={
@@ -237,10 +246,15 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         id="image"
                         href={url}
                         target="_blank"
+                        class={cn(
+                          `flex h-full max-h-64 items-center justify-center
+                          overflow-hidden rounded-sm hover:cursor-pointer`,
+                          isLong()
+                            ? "aspect-square"
+                            : "aspect-video",
+                        )}
                       >
                         <img
-                          class="flex max-h-48 rounded-sm bg-muted hover:cursor-pointer
-                            lg:max-h-72 xl:max-h-96"
                           src={url}
                           alt={cache().fileName}
                           onload={(ev) => {
@@ -254,6 +268,14 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                             parent.dataset.download =
                               cache().fileName;
 
+                            const diff =
+                              ev.currentTarget
+                                .naturalWidth -
+                              ev.currentTarget
+                                .naturalHeight;
+                            if (diff <= 0) {
+                              setIsLong(true);
+                            }
                             props.onLoad?.();
                           }}
                         />
@@ -268,8 +290,9 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         type="video"
                         name={props.message.fileName}
                       />
+
                       <video
-                        class="max-h-60 lg:max-h-72 xl:max-h-96"
+                        class="aspect-video h-full max-h-72 object-contain"
                         controls
                         src={url}
                         onCanPlay={() => props.onLoad?.()}
@@ -285,7 +308,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         name={props.message.fileName}
                       />
                       <audio
-                        class="max-h-60 lg:max-h-72 xl:max-h-96"
+                        class=""
                         controls
                         src={url}
                         onCanPlay={() => props.onLoad?.()}
@@ -296,6 +319,14 @@ const FileMessageCard: Component<FileMessageCardProps> = (
               }}
             </Show>
 
+            <Show
+              when={props.message.transferStatus === "init"}
+            >
+              <Spinner
+                size="sm"
+                class="bg-black dark:bg-white"
+              />
+            </Show>
             <Show when={transferProgress()}>
               {(progress) => {
                 const speed = createTransferSpeed(
@@ -334,9 +365,15 @@ const FileMessageCard: Component<FileMessageCardProps> = (
             </Show>
 
             <Show when={localStatus() === "merging"}>
-              <p class="font-mono text-sm text-muted-foreground">
-                {t("common.file_table.status.merging")}
-              </p>
+              <div class="flex items-center gap-1">
+                <Spinner
+                  size="sm"
+                  class="bg-black dark:bg-white"
+                />
+                <p class="font-mono text-sm text-muted-foreground">
+                  {t("common.file_table.status.merging")}
+                </p>
+              </div>
             </Show>
 
             <div class="flex items-center justify-end gap-1">
@@ -403,86 +440,41 @@ export const MessageContent: Component<MessageCardProps> = (
   const session = createMemo(
     () => sessionService.sessions[local.message.target],
   );
+  const {
+    open: openPreviewDialog,
+    Component: PreviewDialogComponent,
+  } = createPreviewDialog();
+
+  const shouldShowRestoreButton = createMemo(() => {
+    if (!targetClientInfo()?.messageChannel) return false;
+    if (props.message.status !== "error") return false;
+    return true;
+  });
+
   const contentOptions = {
     text: (props: {
       message: TextMessage;
       close: () => void;
-    }) => (
-      <ContextMenuItem
-        class="gap-2"
-        onSelect={async () => {
-          const [err] = await catchErrorAsync(
-            navigator.clipboard.writeText(
-              props.message.data,
-            ),
-          );
-          if (err) {
-            toast.error(
-              t("common.notification.copy_failed"),
-            );
-          } else {
-            toast.success(
-              t("common.notification.copy_success"),
-            );
-          }
-          props.close();
-        }}
-      >
-        <IconContentCopy class="size-4" />
-        {t("common.action.copy")}
-      </ContextMenuItem>
-    ),
-    file: (props: {
-      message: FileTransferMessage;
-      close: () => void;
-    }) => (
-      <>
-        <ContextMenuItem
-          class="gap-2"
-          onSelect={async () => {
-            const [err] = await catchErrorAsync(
-              navigator.clipboard.writeText(
-                props.message.fileName,
-              ),
-            );
-
-            if (err) {
-              toast.error(
-                t("common.notification.copy_failed"),
-              );
-            } else {
-              toast.success(
-                t("common.notification.copy_success"),
-              );
-            }
-
-            props.close();
-          }}
-        >
-          <IconContentCopy class="size-4" />
-          {t("common.action.copy_file_name")}
-        </ContextMenuItem>
-        <Show
-          when={props.message.mimeType?.startsWith("image")}
-        >
+    }) => {
+      const shareableData = createMemo(() => {
+        if (!navigator.canShare) return null;
+        const shareData: ShareData = {
+          text: props.message.data,
+        };
+        return navigator.canShare(shareData)
+          ? shareData
+          : null;
+      });
+      return (
+        <>
           <ContextMenuItem
             class="gap-2"
             onSelect={async () => {
-              if (!props.message.fid) return;
-              const cache = cacheManager.getCache(
-                props.message.fid,
-              );
-              if (!cache) return;
-              const file = await cache.getFile();
-              if (!file) return;
-              const blob = await convertImageToPNG(file);
-              const item = new ClipboardItem({
-                [blob.type]: blob,
-              });
               const [err] = await catchErrorAsync(
-                navigator.clipboard.write([item]),
+                navigator.clipboard.writeText(
+                  props.message.data,
+                ),
               );
-
               if (err) {
                 toast.error(
                   t("common.notification.copy_failed"),
@@ -492,35 +484,70 @@ export const MessageContent: Component<MessageCardProps> = (
                   t("common.notification.copy_success"),
                 );
               }
-
               props.close();
             }}
           >
-            <IconFileCopy class="size-4" />
-            {t("common.action.copy_as_png")}
+            <IconContentCopy class="size-4" />
+            {t("common.action.copy")}
           </ContextMenuItem>
-          <Show
-            when={
-              ClipboardItem.supports("image/svg+xml") &&
-              props.message.mimeType === "image/svg+xml"
-            }
-          >
+          <Show when={shareableData()}>
+            {(shareData) => (
+              <ContextMenuItem
+                class="gap-2"
+                onSelect={async () => {
+                  props.close();
+                  const [err] = await catchErrorAsync(
+                    navigator.share(shareData()),
+                  );
+                  if (err) {
+                    console.error(err);
+                    toast.error(
+                      t(
+                        "common.notification.share_failed",
+                        {
+                          error: err.message,
+                        },
+                      ),
+                    );
+                  }
+                }}
+              >
+                <IconShare class="size-4" />
+                {t("common.action.share")}
+              </ContextMenuItem>
+            )}
+          </Show>
+        </>
+      );
+    },
+    file: (props: {
+      message: FileTransferMessage;
+      close: () => void;
+    }) => {
+      const [file] = createResource(async () => {
+        if (!props.message.fid) return null;
+        return await getFileFromCache(props.message.fid);
+      });
+      const shareableData = createMemo(() => {
+        const f = file();
+        if (!f) return null;
+        if (!canShareFile(f)) return null;
+        const shareData: ShareData = {
+          files: [f],
+        };
+        return shareData;
+      });
+
+      return (
+        <>
+          <Show when={navigator.clipboard !== undefined}>
             <ContextMenuItem
               class="gap-2"
               onSelect={async () => {
-                if (!props.message.fid) return;
-                const cache = cacheManager.getCache(
-                  props.message.fid,
-                );
-                if (!cache) return;
-                const file = await cache.getFile();
-                if (!file) return;
-                if (file.type !== "image/svg+xml") return;
-                const item = new ClipboardItem({
-                  [file.type]: file,
-                });
                 const [err] = await catchErrorAsync(
-                  navigator.clipboard.write([item]),
+                  navigator.clipboard.writeText(
+                    props.message.fileName,
+                  ),
                 );
 
                 if (err) {
@@ -536,18 +563,146 @@ export const MessageContent: Component<MessageCardProps> = (
                 props.close();
               }}
             >
-              <IconFileCopy class="size-4" />
-              {t("common.action.copy_as_svg")}
+              <IconContentCopy class="size-4" />
+              {t("common.action.copy_file_name")}
             </ContextMenuItem>
           </Show>
-        </Show>
-      </>
-    ),
+          <Show when={file()}>
+            {(f) => (
+              <>
+                <Show
+                  when={navigator.clipboard !== undefined}
+                >
+                  <Show
+                    when={props.message.mimeType?.startsWith(
+                      "image",
+                    )}
+                  >
+                    <ContextMenuItem
+                      class="gap-2"
+                      onSelect={async () => {
+                        props.close();
+                        const convertedPng =
+                          await convertImageToPNG(f());
+                        const item = new ClipboardItem({
+                          [convertedPng.type]: convertedPng,
+                        });
+                        const [err] = await catchErrorAsync(
+                          navigator.clipboard.write([item]),
+                        );
+
+                        if (err) {
+                          toast.error(
+                            t(
+                              "common.notification.copy_failed",
+                            ),
+                          );
+                        } else {
+                          toast.success(
+                            t(
+                              "common.notification.copy_success",
+                            ),
+                          );
+                        }
+                      }}
+                    >
+                      <IconFileCopy class="size-4" />
+                      {t("common.action.copy_as_png")}
+                    </ContextMenuItem>
+                    <Show
+                      when={
+                        ClipboardItem.supports(
+                          "image/svg+xml",
+                        ) && f().type === "image/svg+xml"
+                      }
+                    >
+                      <ContextMenuItem
+                        class="gap-2"
+                        onSelect={async () => {
+                          const item = new ClipboardItem({
+                            [f().type]: f(),
+                          });
+                          const [err] =
+                            await catchErrorAsync(
+                              navigator.clipboard.write([
+                                item,
+                              ]),
+                            );
+
+                          if (err) {
+                            toast.error(
+                              t(
+                                "common.notification.copy_failed",
+                              ),
+                            );
+                          } else {
+                            toast.success(
+                              t(
+                                "common.notification.copy_success",
+                              ),
+                            );
+                          }
+
+                          props.close();
+                        }}
+                      >
+                        <IconFileCopy class="size-4" />
+                        {t("common.action.copy_as_svg")}
+                      </ContextMenuItem>
+                    </Show>
+                  </Show>
+                </Show>
+                <ContextMenuItem
+                  class="gap-2"
+                  onSelect={() => {
+                    props.close();
+                    openPreviewDialog(f());
+                  }}
+                >
+                  <IconPreview class="size-4" />
+                  {t("common.action.preview")}
+                </ContextMenuItem>
+                <Show when={shareableData()}>
+                  {(shareData) => (
+                    <ContextMenuItem
+                      class="gap-2"
+                      onSelect={async () => {
+                        props.close();
+                        const [err] = await catchErrorAsync(
+                          navigator.share(shareData()),
+                        );
+                        if (err) {
+                          console.error(err);
+                        }
+                      }}
+                    >
+                      <IconShare class="size-4" />
+                      {t("common.action.share")}
+                    </ContextMenuItem>
+                  )}
+                </Show>
+                <ContextMenuItem
+                  class="gap-2"
+                  onSelect={async () => {
+                    props.close();
+                    downloadFile(f());
+                  }}
+                >
+                  <IconDownload class="size-4" />
+                  {t("common.action.download")}
+                </ContextMenuItem>
+              </>
+            )}
+          </Show>
+        </>
+      );
+    },
   } as const;
 
   const Menu = (props: {
     message: StoreMessage;
     close: () => void;
+    onDelete?: () => void;
   }) => {
     return (
       <>
@@ -556,17 +711,18 @@ export const MessageContent: Component<MessageCardProps> = (
           message={props.message as any}
           close={props.close}
         />
-
-        <ContextMenuItem
-          class="gap-2"
-          onSelect={() => {
-            messageStores.deleteMessage(props.message.id);
-            props.close();
-          }}
-        >
-          <IconDelete class="size-4" />
-          {t("common.action.delete")}
-        </ContextMenuItem>
+        <Show when={props.onDelete !== undefined}>
+          <ContextMenuItem
+            class="gap-2"
+            onSelect={() => {
+              props.onDelete?.();
+              props.close();
+            }}
+          >
+            <IconDelete class="size-4" />
+            {t("common.action.delete")}
+          </ContextMenuItem>
+        </Show>
       </>
     );
   };
@@ -574,14 +730,18 @@ export const MessageContent: Component<MessageCardProps> = (
   return (
     <PortableContextMenu
       menu={(close) => (
-        <Menu message={props.message} close={close} />
+        <Menu
+          message={props.message}
+          close={close}
+          onDelete={props.onDelete}
+        />
       )}
     >
       {(p) => (
         <li
           class={cn(
             `flex select-none flex-col gap-1 rounded-md p-2 shadow
-            backdrop-blur`,
+            backdrop-blur sm:select-text`,
             clientProfile.clientId === props.message.client
               ? "self-end bg-lime-200/80 dark:bg-indigo-900/80"
               : "self-start border border-border bg-background/80",
@@ -590,7 +750,8 @@ export const MessageContent: Component<MessageCardProps> = (
           {...p}
           {...other}
         >
-          <article class="w-fit select-text whitespace-pre-wrap break-all text-sm">
+          <PreviewDialogComponent />
+          <article class="w-full whitespace-pre-wrap break-all text-sm">
             <Switch>
               <Match
                 when={
@@ -630,58 +791,51 @@ export const MessageContent: Component<MessageCardProps> = (
                 </Tooltip>
               )}
             </Show>
-            <Show when={props.message.status === "error"}>
-              <Show
-                when={
-                  targetClientInfo()?.onlineStatus ===
-                  "online"
-                }
+            <Show when={shouldShowRestoreButton()}>
+              <Button
+                size="icon"
+                variant="outline"
+                onClick={() => {
+                  let sessionMessage:
+                    | SessionMessage
+                    | undefined;
+
+                  if (props.message.type === "text") {
+                    sessionMessage = {
+                      id: props.message.id,
+                      type: "send-text",
+                      client: props.message.client,
+                      target: props.message.target,
+                      data: props.message.data,
+                      createdAt: props.message.createdAt,
+                    } satisfies SendTextMessage;
+                  } else if (
+                    props.message.type === "file"
+                  ) {
+                    if (!props.message.fid) return;
+                    sessionMessage = {
+                      id: props.message.id,
+                      type: "send-file",
+                      client: props.message.client,
+                      target: props.message.target,
+                      fid: props.message.fid,
+                      fileName: props.message.fileName,
+                      mimeType: props.message.mimeType,
+                      chunkSize: props.message.chunkSize,
+                      createdAt: props.message.createdAt,
+                      fileSize: props.message.fileSize,
+                    } satisfies SendFileMessage;
+                  }
+                  if (!sessionMessage) return;
+
+                  messageStores.setReceiveMessage(
+                    sessionMessage,
+                  );
+                  session().sendMessage(sessionMessage);
+                }}
               >
-                <Button
-                  size="icon"
-                  variant="outline"
-                  onClick={() => {
-                    let sessionMessage:
-                      | SessionMessage
-                      | undefined;
-
-                    if (props.message.type === "text") {
-                      sessionMessage = {
-                        id: props.message.id,
-                        type: "send-text",
-                        client: props.message.client,
-                        target: props.message.target,
-                        data: props.message.data,
-                        createdAt: props.message.createdAt,
-                      } satisfies SendTextMessage;
-                    } else if (
-                      props.message.type === "file"
-                    ) {
-                      if (!props.message.fid) return;
-                      sessionMessage = {
-                        id: props.message.id,
-                        type: "send-file",
-                        client: props.message.client,
-                        target: props.message.target,
-                        fid: props.message.fid,
-                        fileName: props.message.fileName,
-                        mimeType: props.message.mimeType,
-                        chunkSize: props.message.chunkSize,
-                        createdAt: props.message.createdAt,
-                        fileSize: props.message.fileSize,
-                      } satisfies SendFileMessage;
-                    }
-                    if (!sessionMessage) return;
-
-                    messageStores.setReceiveMessage(
-                      sessionMessage,
-                    );
-                    session().sendMessage(sessionMessage);
-                  }}
-                >
-                  <IconRestore class="size-6" />
-                </Button>
-              </Show>
+                <IconRestore class="size-6" />
+              </Button>
             </Show>
           </div>
           <div
@@ -718,4 +872,10 @@ export const MessageContent: Component<MessageCardProps> = (
 export interface MessageChatProps
   extends ComponentProps<"div"> {
   target: string;
+}
+
+async function getFileFromCache(fid: FileID) {
+  const cache = cacheManager.getCache(fid);
+  if (!cache) return null;
+  return await cache.getFile();
 }

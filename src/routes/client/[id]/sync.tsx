@@ -8,6 +8,7 @@ import {
   IconPreview,
   IconResume,
   IconSearch700,
+  IconShare,
   IconSync,
 } from "@/components/icons";
 import { createPreviewDialog } from "@/components/preview-dialog";
@@ -52,7 +53,7 @@ import { transferManager } from "@/libs/services/transfer-service";
 import { downloadFile } from "@/libs/utils/download-file";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
 import { getInitials } from "@/libs/utils/name";
-import { ConnectionBadge } from "@/routes/components/connection-badge";
+import { ConnectionBadge } from "@/components/connection-badge";
 import { makePersisted } from "@solid-primitives/storage";
 import { A, RouteSectionProps } from "@solidjs/router";
 import {
@@ -75,18 +76,22 @@ import { getCommonPinningStyles } from "@/components/data-table/data-table-pin-s
 import {
   createEffect,
   createMemo,
+  createResource,
   createSignal,
   For,
   Show,
 } from "solid-js";
 import { v4 } from "uuid";
-import { createComfirmDeleteDialog } from "@/components/confirm-delete-dialog";
+import { createComfirmDeleteItemsDialog } from "@/components/confirm-delete-dialog";
 import { FileTransferer } from "@/libs/core/file-transferer";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { toast } from "solid-sonner";
+import { catchErrorAsync } from "@/libs/catch";
+import { canShareFile } from "@/libs/utils/can-share";
 
 type ChunkStatus =
   | "not_started"
@@ -159,47 +164,34 @@ const Sync = (props: RouteSectionProps) => {
       },
       cell: ({ row }) => {
         const status = statuses()[row.index];
-        return (
-          <Badge variant="outline">
-            {t(`common.file_table.status.${status()}`)}
-          </Badge>
-        );
-      },
-    }),
-    columnHelper.display({
-      id: "progress",
-      header: ({ column }) => (
-        <DataTableColumnHeader
-          column={column}
-          title={t("common.file_table.columns.progress")}
-        />
-      ),
-      cell: ({ row }) => {
-        const cacheInfo = createMemo<
-          FileMetaData | undefined
-        >(() => cacheManager.cacheInfo[row.original.id]);
-        const status = statuses()[row.index];
         const progress = createMemo(() => {
-          const info = cacheInfo();
+          const info =
+            cacheManager.cacheInfo[row.original.id];
           if (!info?.chunkCount) return 0;
           return (
             (info?.chunkCount / getTotalChunkCount(info)) *
             100
           );
         });
-
         return (
-          <Show
-            when={status() === "transferring"}
-            fallback={<div class="min-w-12"></div>}
-          >
-            <span class="font-mono">
-              {`${progress().toFixed(2)}%`}
-            </span>
-          </Show>
+          <div class="flex items-center gap-1 text-xs">
+            <Badge variant="outline">
+              {t(`common.file_table.status.${status()}`)}
+            </Badge>
+            <Show
+              when={["transferring", "stopped"].includes(
+                status(),
+              )}
+            >
+              <span class="font-mono">
+                {`${progress().toFixed(2)}%`}
+              </span>
+            </Show>
+          </div>
         );
       },
     }),
+
     columnHelper.accessor("fileSize", {
       header: ({ column }) => (
         <DataTableColumnHeader
@@ -278,7 +270,9 @@ const Sync = (props: RouteSectionProps) => {
                 <Show
                   when={localCache()}
                   fallback={
-                    <>
+                    <Show
+                      when={clientInfo()?.messageChannel}
+                    >
                       <DropdownMenuItem
                         class="gap-2"
                         onSelect={() => {
@@ -298,77 +292,115 @@ const Sync = (props: RouteSectionProps) => {
                           "common.action.request_download",
                         )}
                       </DropdownMenuItem>
-                    </>
+                    </Show>
                   }
                 >
-                  {(cache) => (
-                    <>
-                      <Show
-                        when={
-                          cacheManager.cacheInfo[
-                            row.original.id
-                          ]?.isComplete
-                        }
-                      >
+                  {(cache) => {
+                    const [file] = createResource(
+                      async () =>
+                        (await cache()?.getFile()) ?? null,
+                    );
+                    const shareableData = createMemo(() => {
+                      const f = file();
+                      if (!f) return null;
+                      if (!canShareFile(f)) return null;
+                      const shareData: ShareData = {
+                        files: [f],
+                      };
+                      return shareData;
+                    });
+                    return (
+                      <>
+                        <Show
+                          when={
+                            cacheManager.cacheInfo[
+                              row.original.id
+                            ]?.isComplete
+                          }
+                        >
+                          <Show when={file()}>
+                            {(f) => (
+                              <>
+                                <DropdownMenuItem
+                                  class="gap-2"
+                                  onSelect={() => {
+                                    openPreview(f());
+                                  }}
+                                >
+                                  <IconPreview class="size-4" />
+                                  {t(
+                                    "common.action.preview",
+                                  )}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  class="gap-2"
+                                  onSelect={() => {
+                                    downloadFile(f());
+                                  }}
+                                >
+                                  <IconDownload class="size-4" />
+                                  {t(
+                                    "common.action.download",
+                                  )}
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </Show>
+                          <Show when={shareableData()}>
+                            {(shareData) => (
+                              <DropdownMenuItem
+                                class="gap-2"
+                                onSelect={async () => {
+                                  const [err] =
+                                    await catchErrorAsync(
+                                      navigator.share(
+                                        shareData(),
+                                      ),
+                                    );
+                                  if (err) {
+                                    console.error(err);
+                                  }
+                                }}
+                              >
+                                <IconShare class="size-4" />
+                                {t("common.action.share")}
+                              </DropdownMenuItem>
+                            )}
+                          </Show>
+                        </Show>
                         <DropdownMenuItem
                           class="gap-2"
                           onSelect={() => {
-                            cache()
-                              .getFile()
-                              .then((file) => {
-                                file && openPreview(file);
-                              });
+                            openDeleteDialog([
+                              row.original.fileName,
+                            ]).then(({ result }) => {
+                              if (result === true) {
+                                cache().cleanup();
+                              }
+                            });
                           }}
                         >
-                          <IconPreview class="size-4" />
-                          {t("common.action.preview")}
+                          <IconDelete class="size-4" />
+                          {t("common.action.delete")}
                         </DropdownMenuItem>
-                        <DropdownMenuItem
-                          class="gap-2"
-                          onSelect={async () => {
-                            const file =
-                              await cache().getFile();
-                            if (file) {
-                              downloadFile(file);
-                            }
-                          }}
-                        >
-                          <IconDownload class="size-4" />
-                          {t("common.action.download")}
-                        </DropdownMenuItem>
-                      </Show>
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={() => {
-                          openDeleteDialog([
-                            row.original.fileName,
-                          ]).then(({ result }) => {
-                            if (result === true) {
-                              cache().cleanup();
-                            }
-                          });
-                        }}
-                      >
-                        <IconDelete class="size-4" />
-                        {t("common.action.delete")}
-                      </DropdownMenuItem>
-                      <Show when={status() === "stopped"}>
-                        <DropdownMenuItem
-                          class="gap-2"
-                          onSelect={() => {
-                            requestFile(
-                              props.params.id,
-                              row.original,
-                              true,
-                            );
-                          }}
-                        >
-                          <IconResume class="size-4" />
-                          {t("common.action.resume")}
-                        </DropdownMenuItem>
-                      </Show>
-                    </>
-                  )}
+                        <Show when={status() === "stopped"}>
+                          <DropdownMenuItem
+                            class="gap-2"
+                            onSelect={() => {
+                              requestFile(
+                                props.params.id,
+                                row.original,
+                                true,
+                              );
+                            }}
+                          >
+                            <IconResume class="size-4" />
+                            {t("common.action.resume")}
+                          </DropdownMenuItem>
+                        </Show>
+                      </>
+                    );
+                  }}
                 </Show>
               </DropdownMenuGroup>
             </DropdownMenuContent>
@@ -382,7 +414,7 @@ const Sync = (props: RouteSectionProps) => {
   const {
     open: openDeleteDialog,
     Component: DeleteDialog,
-  } = createComfirmDeleteDialog();
+  } = createComfirmDeleteItemsDialog();
 
   const [storage, setStorage] = createSignal<
     ChunkCacheInfo[]
@@ -705,7 +737,32 @@ const Sync = (props: RouteSectionProps) => {
                 }
               >
                 {(row) => (
-                  <TableRow>
+                  <TableRow
+                    onDblClick={() => {
+                      const status = statuses()[row.index];
+                      if (status() === "completed") {
+                        const file =
+                          cacheManager.cacheInfo[
+                            row.original.id
+                          ]?.file;
+                        if (file) {
+                          openPreview(file);
+                        }
+                      } else if (
+                        ["not_started", "stopped"].includes(
+                          status(),
+                        )
+                      ) {
+                        const resume =
+                          status() === "stopped";
+                        requestFile(
+                          props.params.id,
+                          row.original,
+                          resume,
+                        );
+                      }
+                    }}
+                  >
                     <For each={row.getVisibleCells()}>
                       {(cell) => (
                         <TableCell

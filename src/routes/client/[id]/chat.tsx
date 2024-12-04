@@ -4,7 +4,6 @@ import {
 } from "@solidjs/router";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import {
-  Component,
   createEffect,
   createMemo,
   createSignal,
@@ -12,269 +11,46 @@ import {
   onCleanup,
   onMount,
   Show,
+  untrack,
 } from "solid-js";
-
-import {
-  Button,
-} from "@/components/ui/button";
 import {
   createScrollEnd,
   keepBottom,
 } from "@/libs/hooks/keep-bottom";
 import { cn } from "@/libs/cn";
 import DropArea from "@/components/drop-area";
-import { A } from "@solidjs/router";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
-
 import { FloatingButton } from "@/components/floating-button";
 import { createElementSize } from "@solid-primitives/resize-observer";
-
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import {
   SendClipboardMessage,
   messageStores,
   StoreMessage,
 } from "@/libs/core/messge";
-import { getInitials } from "@/libs/utils/name";
-import { MessageContent } from "@/routes/client/[id]/components/message";
 import { ChatBar } from "@/routes/client/[id]/components/chat-bar";
 import { sessionService } from "@/libs/services/session-service";
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuGroupLabel,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   IconArrowDownward,
-  IconAssignment,
-  IconChevronLeft,
   IconClose,
-  IconConnectWithoutContract,
-  IconDataInfoAlert,
-  IconDelete,
-  IconFolderMatch,
-  IconMenu,
   IconPlaceItem,
-  IconStorage,
 } from "@/components/icons";
-import { createComfirmDeleteClientDialog } from "@/components/box/confirm-delete-dialog";
 import { t } from "@/i18n";
-import { ConnectionBadge } from "@/routes/components/connection-badge";
 import { toast } from "solid-sonner";
 import { PeerSession } from "@/libs/core/session";
 import { v4 } from "uuid";
-import { appOptions, setAppOptions } from "@/options";
-import { createClipboardHistoryDialog } from "@/components/box/clipboard-history";
-import clientInfoDialog from "./components/chat-client-info";
+import { appOptions } from "@/options";
 import { handleDropItems } from "@/libs/utils/process-file";
 import { ClientInfo, Client } from "@/libs/core/type";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { catchErrorAsync } from "@/libs/catch";
-
-const ChatHeader: Component<{
-  info?: ClientInfo;
-  client: Client;
-  class?: string;
-}> = (props) => {
-  const {
-    open: openClipboardHistoryDialog,
-    Component: ClipboardHistoryDialogComponent,
-  } = createClipboardHistoryDialog();
-  const {
-    open: openConfirmDeleteClientDialog,
-    Component: ConfirmDeleteClientDialogComponent,
-  } = createComfirmDeleteClientDialog();
-  const {
-    open: openClientInfoDialog,
-    Component: ClientInfoDialogComponent,
-  } = clientInfoDialog();
-
-  return (
-    <>
-      <ClipboardHistoryDialogComponent />
-      <ConfirmDeleteClientDialogComponent />
-      <ClientInfoDialogComponent />
-      <div class={props.class}>
-        <div class="flex w-full items-center gap-2">
-          <Button
-            class="sm:hidden"
-            as={A}
-            href="/"
-            size="icon"
-            variant="ghost"
-          >
-            <IconChevronLeft class="size-8" />
-          </Button>
-
-          <Avatar>
-            <AvatarImage
-              src={props.client.avatar ?? undefined}
-            />
-            <AvatarFallback>
-              {getInitials(props.client.name)}
-            </AvatarFallback>
-          </Avatar>
-          <h4 class={cn("h4")}>{props.client.name}</h4>
-          <ConnectionBadge client={props.info} />
-          <div class="ml-auto" />
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                as={A}
-                href="../sync"
-                variant="ghost"
-                size="icon"
-              >
-                <IconFolderMatch class="size-6" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {t("client.sync.title")}
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger>
-              <DropdownMenu>
-                <DropdownMenuTrigger
-                  as={Button}
-                  size="icon"
-                  variant="ghost"
-                >
-                  <IconMenu class="size-6" />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent class="min-w-48">
-                  <DropdownMenuGroup>
-                    <DropdownMenuGroupLabel>
-                      {t("client.menu.options")}
-                    </DropdownMenuGroupLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      class="gap-2"
-                      onSelect={() => {
-                        openClientInfoDialog(
-                          props.client.clientId,
-                        );
-                      }}
-                    >
-                      <IconDataInfoAlert class="size-4" />
-                      {t("client.menu.connection_status")}
-                    </DropdownMenuItem>
-                    <Show
-                      when={
-                        props.info?.onlineStatus ===
-                        "offline"
-                      }
-                    >
-                      <DropdownMenuItem
-                        class="gap-2"
-                        onSelect={async () => {
-                          const session =
-                            sessionService.sessions[
-                              props.client.clientId
-                            ];
-                          if (session) {
-                            try {
-                              await session.listen();
-                              if (!session.polite)
-                                await session.connect();
-                            } catch (error) {
-                              console.error(error);
-                              if (error instanceof Error) {
-                                toast.error(error.message);
-                              }
-                            }
-                          }
-                        }}
-                      >
-                        <IconConnectWithoutContract class="size-4" />
-                        {t("client.menu.connect")}
-                      </DropdownMenuItem>
-                    </Show>
-                    <Show when={props.info?.clipboard}>
-                      {(clipboard) => (
-                        <DropdownMenuItem
-                          class="gap-2"
-                          onSelect={() => {
-                            openClipboardHistoryDialog(
-                              clipboard,
-                            );
-                          }}
-                        >
-                          <IconAssignment class="size-4" />
-                          {t("client.menu.clipboard")}
-                        </DropdownMenuItem>
-                      )}
-                    </Show>
-
-                    <DropdownMenuItem
-                      class="gap-2"
-                      onSelect={async () => {
-                        if (
-                          !(
-                            await openConfirmDeleteClientDialog(props.client.name)
-                          ).cancel
-                        ) {
-                          messageStores.deleteClient(
-                            props.client.clientId,
-                          );
-                        }
-                      }}
-                    >
-                      <IconDelete class="size-4" />
-                      {t("client.menu.delete_client")}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuGroup>
-                      <DropdownMenuCheckboxItem
-                        class="gap-2"
-                        checked={
-                          appOptions.redirectToClient ===
-                          props.client.clientId
-                        }
-                        onChange={(checked) => {
-                          setAppOptions(
-                            "redirectToClient",
-                            checked
-                              ? props.client.clientId
-                              : undefined,
-                          );
-                        }}
-                      >
-                        {t("client.menu.redirect")}
-                      </DropdownMenuCheckboxItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TooltipTrigger>
-            <TooltipContent>
-              {t("client.menu.options")}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </div>
-    </>
-  );
-};
+import { ChatMoreMessageButton } from "./components/chat-more-message-button";
+import { MessageContent } from "./components/message";
+import { ChatHeader } from "./components/chat-header";
 
 export default function ClientPage(
   props: RouteSectionProps,
 ) {
   const navigate = useNavigate();
-  const { sendText, sendFile } = useWebRTC();
+  const { sendFile } = useWebRTC();
   const client = createMemo<Client | null>(
     () =>
       messageStores.clients.find(
@@ -306,7 +82,11 @@ export default function ClientPage(
     }
   });
 
-  const messages = createMemo<StoreMessage[]>(
+  const [messages, setMessages] = createSignal<
+    StoreMessage[]
+  >([]);
+
+  const allMessages = createMemo<StoreMessage[]>(
     () =>
       messageStores.messages.filter(
         (message) =>
@@ -314,33 +94,94 @@ export default function ClientPage(
           message.target === props.params.id,
       ) ?? [],
   );
+
+  const getMoreMessages = (count: number) => {
+    const msgs: StoreMessage[] = [];
+    const currentMessages = untrack(messages);
+    const totalMessages = untrack(allMessages);
+
+    const tailIndex =
+      totalMessages.length - currentMessages.length - 1;
+    if (tailIndex < 0) {
+      console.warn("no more messages");
+      return;
+    }
+    for (let i = tailIndex; i >= 0; i--) {
+      if (msgs.length >= count) break;
+      const message = totalMessages[i];
+      msgs.push(message);
+    }
+    setMessages([...msgs.reverse(), ...currentMessages]);
+  };
+
+  // load messages after message store is ready
+  createEffect(() => {
+    if (props.location.pathname) {
+      setMessages([]);
+    }
+
+    if (messageStores.status() === "ready") {
+      getMoreMessages(10);
+    }
+  });
+
+  // always keep the last message in the message list
+  createEffect(() => {
+    if (allMessages().length === 0) return;
+
+    const lastMessage =
+      allMessages()[allMessages().length - 1];
+    if (!lastMessage) return;
+    const currentLastMessage =
+      messages()[messages().length - 1];
+    if (!currentLastMessage) {
+      setMessages([lastMessage]);
+      return;
+    }
+
+    if (lastMessage.id === currentLastMessage.id) return;
+
+    // if delete last message, do nothing
+    if (messages().length > 1) {
+      const secondLastMessage =
+        messages()[messages().length - 2];
+      if (secondLastMessage?.id === lastMessage.id) {
+        return;
+      }
+    }
+
+    setMessages([...messages(), lastMessage]);
+    toBottom(10, false);
+  });
   let toBottom: (
     delay: number | undefined,
     instant: boolean,
   ) => void;
   onMount(() => {
     toBottom = keepBottom(document, enable);
-
-    toBottom(50, true);
-
     createEffect(() => {
       if (props.location.pathname !== "/") {
-        toBottom(50, true);
+        toBottom(0, true);
+        toBottom(100, true);
       }
     });
-    createEffect(() => {
-      if (messages().length) {
-        toBottom(10, false);
-      }
-    });
+
     createEffect(() => {
       if (
         clientInfo()?.onlineStatus === "online" &&
         enable()
       ) {
-        toBottom(10, true);
+        toBottom(100, true);
       }
     });
+  });
+
+  const [loaded, setLoaded] = createSignal(false);
+
+  createEffect(() => {
+    if (loaded()) {
+      toBottom(0, true);
+    }
   });
 
   const [bottomElem, setBottomElem] =
@@ -392,7 +233,7 @@ export default function ClientPage(
     <div class="flex h-full w-full flex-col">
       <Show when={client()}>
         {(client) => (
-          <div class={cn("flex flex-1 flex-col [&>*]:p-1")}>
+          <div class={cn("flex flex-1 flex-col [&>*]:p-2")}>
             <FloatingButton
               onClick={async () => {
                 toBottom?.(0, false);
@@ -415,7 +256,7 @@ export default function ClientPage(
             <ChatHeader
               info={clientInfo()}
               client={client()}
-              class="sticky top-12 z-10 flex items-center justify-between gap-1
+              class="sticky top-[var(--mobile-header-height)] md:top-0 z-10 flex items-center justify-between gap-1
                 border-b border-border bg-background/80 backdrop-blur"
             />
             <DropArea
@@ -479,12 +320,15 @@ export default function ClientPage(
                   await catchErrorAsync(
                     handleDropItems(
                       ev.dataTransfer.items,
-                      abortController,
+                      abortController.signal,
                     ),
                   );
                 toast.dismiss(toastId);
                 if (error) {
                   console.warn(error);
+                  if (error.message !== "User cancelled") {
+                    toast.error(error.message);
+                  }
                   return;
                 }
 
@@ -516,21 +360,12 @@ export default function ClientPage(
                         order: 8,
                         isButton: true,
                         tagName: "a",
-
-                        // SVG with outline
                         html: {
                           isCustomSVG: true,
                           inner:
                             '<path d="M20.5 14.3 17.1 18V10h-2.2v7.9l-3.4-3.6L10 16l6 6.1 6-6.1ZM23 23H9v2h14Z" id="pswp__icn-download"/>',
                           outlineID: "pswp__icn-download",
                         },
-
-                        // Or provide full svg:
-                        // html: '<svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true" class="pswp__icn"><path d="M20.5 14.3 17.1 18V10h-2.2v7.9l-3.4-3.6L10 16l6 6.1 6-6.1ZM23 23H9v2h14Z" /></svg>',
-
-                        // Or provide any other markup:
-                        // html: '<i class="fa-solid fa-download"></i>'
-
                         onInit: (el, pswp) => {
                           const e = el as HTMLAnchorElement;
 
@@ -556,22 +391,62 @@ export default function ClientPage(
                   });
                 }}
               >
+                <Show
+                  when={
+                    messages().length !==
+                    allMessages().length
+                  }
+                >
+                  <div class="flex justify-center">
+                    <ChatMoreMessageButton
+                      onIntersect={() => {
+                        const prevScrollHeight =
+                          document.documentElement
+                            .scrollHeight;
+
+                        getMoreMessages(5);
+
+                        document.documentElement.scrollTop +=
+                          document.documentElement
+                            .scrollHeight -
+                          prevScrollHeight;
+                      }}
+                    />
+                  </div>
+                </Show>
                 <For each={messages()}>
                   {(message, index) => (
                     <MessageContent
                       message={message}
-                      onLoad={() => {
-                        if (message.type === "file") {
-                          console.log(
-                            `${message.fileName} loaded`,
+                      onDelete={() => {
+                        console.log(
+                          `delete message ${message.id}`,
+                        );
+                        if (
+                          messageStores.deleteMessage(
+                            message.id,
+                          )
+                        ) {
+                          setMessages(
+                            messages().filter(
+                              (m) => m.id !== message.id,
+                            ),
                           );
                         }
+                      }}
+                      onLoad={() => {
                         clearTimeout(loadedTimer);
                         loadedTimer = window.setTimeout(
                           () => {
-                            toBottom(250, false);
+                            setLoaded(true);
+                            if (
+                              index() ===
+                              messages().length - 1
+                            ) {
+                              toBottom(100, true);
+                            }
                           },
-                          250,
+                          100,
                         );
                       }}
                       class={cn(

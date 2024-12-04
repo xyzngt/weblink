@@ -5,13 +5,17 @@ import {
   createSignal,
   Match,
   onMount,
+  Show,
   Switch,
 } from "solid-js";
 import { Textarea } from "./ui/textarea";
 import { Button } from "./ui/button";
 import { downloadFile } from "@/libs/utils/download-file";
-import { IconDownload } from "./icons";
+import { IconDownload, IconShare } from "./icons";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
+import { toast } from "solid-sonner";
+import { catchErrorAsync } from "@/libs/catch";
+import { canShareFile } from "@/libs/utils/can-share";
 
 export type PreviewDialogProps = {
   src: File | Blob;
@@ -23,6 +27,7 @@ const PreviewContent = (props: { src: File | null }) => {
     if (!file) return null;
     return URL.createObjectURL(file);
   });
+
   return (
     <div class="flex aspect-video h-full w-full items-center justify-center">
       <Switch
@@ -81,8 +86,16 @@ const PreviewContent = (props: { src: File | null }) => {
 
 export const createPreviewDialog = () => {
   const [src, setSrc] = createSignal<File | null>(null);
-
-  const { open, Component } = createDialog({
+  const shareableData = createMemo(() => {
+    const f = src();
+    if (!f) return null;
+    if (!canShareFile(f)) return null;
+    const shareData: ShareData = {
+      files: [f],
+    };
+    return shareData;
+  });
+  const { open, Component, close } = createDialog({
     title: () => t("common.preview_dialog.title"),
     description: () => (
       <p class="flex items-center justify-between gap-2">
@@ -92,19 +105,44 @@ export const createPreviewDialog = () => {
     ),
     content: () => <PreviewContent src={src()} />,
     confirm: (
-      <Button
-        disabled={!src()}
-        onClick={() => downloadFile(src()!)}
-      >
-        <IconDownload class="mr-1 size-4" />
-        {t("common.action.download")}
-      </Button>
+      <Show when={src()}>
+        {(f) => (
+          <Button
+            onClick={() => {
+              close();
+              downloadFile(f());
+            }}
+          >
+            <IconDownload class="mr-1 size-4" />
+            {t("common.action.download")}
+          </Button>
+        )}
+      </Show>
+    ),
+    cancel: (
+      <Show when={shareableData()}>
+        {(shareData) => (
+          <Button
+            variant="outline"
+            onClick={async () => {
+              close();
+              const [err] = await catchErrorAsync(
+                navigator.share(shareData()),
+              );
+              if (err) console.error(err);
+            }}
+          >
+            <IconShare class="mr-1 size-4" />
+            {t("common.action.share")}
+          </Button>
+        )}
+      </Show>
     ),
   });
 
-  const handleOpen = (src: File) => {
+  const handleOpen = async (src: File) => {
     setSrc(src);
-    open();
+    return await open();
   };
 
   return {

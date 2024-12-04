@@ -1,11 +1,22 @@
-export async function checkTurnServerAvailability(
-  turnConfig: RTCIceServer,
-  timeout = 5000,
+type CheckIceServerAvailabilityOptions = {
+  iceTransportPolicy: "relay" | "all";
+  candidateType?: "relay" | "host" | "srflx";
+  timeout: number;
+};
+
+export async function checkIceServerAvailability(
+  iceServer: RTCIceServer,
+  {
+    iceTransportPolicy = "relay",
+    candidateType,
+    timeout = 5000,
+  }: Partial<CheckIceServerAvailabilityOptions>,
 ): Promise<boolean> {
   return new Promise((resolve, reject) => {
+    console.log("check ice server:", iceServer);
     const configuration: RTCConfiguration = {
-      iceServers: [turnConfig],
-      iceTransportPolicy: "relay", // force to use TURN server only
+      iceServers: [iceServer],
+      iceTransportPolicy,
     };
 
     const pc = new RTCPeerConnection(configuration);
@@ -13,14 +24,21 @@ export async function checkTurnServerAvailability(
     let isTurnAvailable = false;
     let isCompleted = false; // prevent multiple calls to resolve or reject
 
+    const triggerCompleted = () => {
+      if (isCompleted) return;
+      isCompleted = true;
+      clearTimeout(timer);
+      pc.close();
+      if (!isTurnAvailable) {
+        reject(new Error("check turn server timeout"));
+      } else {
+        resolve(true);
+      }
+    };
+
     // set timeout handler
     const timer = setTimeout(() => {
-      if (!isCompleted) {
-        isCompleted = true;
-        console.warn("check turn server timeout");
-        pc.close();
-        reject(new Error("check turn server timeout"));
-      }
+      triggerCompleted();
     }, timeout);
 
     pc.onicecandidate = (event) => {
@@ -30,44 +48,22 @@ export async function checkTurnServerAvailability(
           event.candidate.candidate,
         );
         if (
-          event.candidate.type === "relay" ||
-          event.candidate.candidate.includes("relay")
+          candidateType &&
+          event.candidate.type !== candidateType &&
+          !event.candidate.candidate.includes(candidateType)
         ) {
-          if (!isCompleted) {
-            isCompleted = true;
-            isTurnAvailable = true;
-            clearTimeout(timer);
-            resolve(true); // TURN server available
-            pc.close();
-          }
+          return;
         }
-      } else {
-        // ICE candidate collection completed
-        if (!isCompleted) {
-          isCompleted = true;
-          clearTimeout(timer);
-          if (isTurnAvailable) {
-            resolve(true);
-          } else {
-            console.warn("no relay candidate collected");
-            reject(
-              new Error("no relay candidate collected"),
-            );
-          }
-          pc.close();
-        }
+        isTurnAvailable = true;
       }
+      // ICE candidate collection completed
+      triggerCompleted();
     };
 
-    // listen to ice candidate error event
+    // Modify the error handler to not reject immediately
     pc.onicecandidateerror = (event) => {
       console.error("ice candidate error:", event);
-      if (!isCompleted) {
-        isCompleted = true;
-        clearTimeout(timer);
-        reject(new Error("ice candidate error"));
-        pc.close();
-      }
+      // Do not reject immediately, allow ICE gathering to continue
     };
 
     pc.createDataChannel("test"); // create data channel, trigger ICE collection

@@ -1,8 +1,8 @@
 # Weblink
 
-## 简介
-
 [**English Introduction**](README.md) | **中文介绍**
+
+## 简介
 
 Weblink 是一款基于 WebRTC 的纯网页文件传输和聊天应用，无需下载或安装，直接在浏览器中即可使用。它采用了无服务器的 P2P 架构，支持多种后端，包括 Firebase 和 WebSocket，实现高效的点对点连接。此外，Weblink 通过端到端加密，保障信令消息的隐私和安全。
 
@@ -29,7 +29,6 @@ Weblink 目前支持以下功能：
 | ✅ 文字聊天   | 可发送文字进行聊天                                              |
 
 更多信息请查看 [CHANGELOG](CHANGELOG.md) 了解最新更新。
-
 
 ## 使用方法
 
@@ -133,16 +132,34 @@ VITE_WEBSOCKET_URL=your-websocket-url
 
 ## 注意事项
 
-### 配置 TURN 服务器（非局域网连接）
+### STUN 和 TURN 服务器配置
 
-如果你在非局域网（NAT 环境）下使用 P2P 连接，可能需要配置 TURN 服务器以确保能够建立连接。在设置页面中，你可以根据以下格式配置 TURN 服务器：
+如果你在非局域网（NAT 环境）下使用 P2P 连接，可能需要配置 TURN 服务器以确保能够建立连接。在设置页面中，你可以根据以下格式配置 TURN 服务器，支持 coturn 和 Cloudflare 提供的 TURN 服务，配置项之间用换行符分隔：
 
 **TURN 配置格式**：
 
 ```plaintext
+# coturn 使用账号密码进行验证
 turn:turn1.example.com:3478|user1|pass1|longterm
+# coturn 使用时间戳进行验证
 turns:turn2.example.com:5349|user2|pass2|hmac
+# 使用 Cloudflare 提供的 TURN 服务器
+name|TURN_TOKEN_ID|API_TOKEN|cloudflare
 ```
+
+以下为一些公共 STUN 和 TURN 服务器的获取方法：
+
+#### 公共 STUN 服务器
+
+此应用默认使用 Google 的 STUN 服务器，如果无法连接，请自行配置 STUN 服务器。可以参考 [https://gist.github.com/mondain/b0ec1cf5f60ae726202e](https://gist.github.com/mondain/b0ec1cf5f60ae726202e) 获取公共 STUN 服务器列表。然后在设置页面中添加 STUN 服务器，格式为 `stun:xxxx:xxxx`。例如： `stun:stun.l.google.com:19302`。
+
+#### Cloudflare Calls TURN 服务器
+
+可以使用 Cloudflare Calls 提供的 TURN 服务器，请访问 [https://developers.cloudflare.com/calls/turn](https://developers.cloudflare.com/calls/turn)。然后在设置页面中添加 TURN 服务器，格式为 `name|TURN_TOKEN_ID|API_TOKEN|cloudflare`。
+
+#### 自建 TURN 服务器
+
+可以参考 [https://github.com/coturn/coturn](https://github.com/coturn/coturn) 自建 TURN 服务器。
 
 ### 局域网内使用
 

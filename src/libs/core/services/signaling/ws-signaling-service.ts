@@ -36,8 +36,30 @@ export class WebSocketSignalingService
     this._targetClientId = targetClientId;
     this.password = password;
 
-    // Handle incoming messages
-    this.socket.addEventListener("message", this.onMessage);
+    this.setSocket(socket);
+  }
+
+  private setSocket(socket: WebSocket) {
+    socket.addEventListener("message", this.onMessage);
+    const handleOpen = () => {
+      this.messageQueue.forEach((signal) => {
+        this.sendSignal(signal);
+      });
+      this.messageQueue.length = 0;
+      this.dispatchEvent("connect", undefined);
+    };
+    if (socket.readyState === WebSocket.OPEN) {
+      handleOpen();
+    } else {
+      socket.addEventListener("open", handleOpen, {
+        once: true,
+      });
+    }
+    socket.addEventListener("close", () => {
+      this.dispatchEvent("close", undefined);
+    });
+
+    this.socket = socket;
   }
 
   addEventListener<
@@ -75,28 +97,12 @@ export class WebSocketSignalingService
     return this.eventEmitter.dispatchEvent(event, data);
   }
 
-  setSocket(socket: WebSocket) {
+  resetSocket(socket: WebSocket) {
     this.socket.removeEventListener(
       "message",
       this.onMessage,
     );
-    this.socket = socket;
-    this.socket.addEventListener("message", this.onMessage);
-
-    const sendQueue = () => {
-      this.messageQueue.forEach((signal) => {
-        this.sendSignal(signal);
-      });
-      this.messageQueue.length = 0;
-    };
-
-    if (this.socket.readyState === WebSocket.OPEN) {
-      sendQueue;
-    } else {
-      this.socket.addEventListener("open", sendQueue, {
-        once: true,
-      });
-    }
+    this.setSocket(socket);
   }
 
   get clientId(): string {

@@ -1,8 +1,12 @@
-import * as i18n from "@solid-primitives/i18n";
 import {
-  createMemo,
+  flatten,
+  resolveTemplate,
+  translator,
+} from "@solid-primitives/i18n";
+import {
+  createEffect,
   createResource,
-  createSignal,
+  onMount,
 } from "solid-js";
 import {
   Select,
@@ -14,41 +18,50 @@ import {
 import {
   appOptions,
   Locale,
+  localeOptionsMap,
+  localFromLanguage,
   setAppOptions,
 } from "./options";
-import en from "/public/i18n/en.json?raw";
 
-const localeOptions: Locale[] = ["en", "zh"];
+import en from "@/assets/i18n/en-us.json";
 
-const localeOptionsMap: Record<Locale, string> = {
-  en: "English",
-  zh: "简体中文",
-};
-
-async function fetchDictionary(locale: Locale) {
-  const res = await fetch(`/i18n/${locale}.json`);
-  const data = await res.json();
-  return i18n.flatten(data);
+async function importDictionary(locale: Locale) {
+  const localeKey = locale.toLowerCase();
+  if (!localeOptionsMap[localeKey]) {
+    console.warn(`Locale ${locale} not found`);
+    return flatten(en);
+  }
+  if (localeKey === "en-us") return flatten(en);
+  const data = await import(
+    `./assets/i18n/${localeKey}.json`
+  );
+  return flatten(data.default);
 }
 
 const [dict] = createResource(
   () => appOptions.locale,
-  fetchDictionary,
+  importDictionary,
 );
 
-const translate = i18n.translator(
-  dict,
-  i18n.resolveTemplate,
-);
+const translate = translator(dict, resolveTemplate);
 
-const fallback = i18n.translator(
-  () => i18n.flatten(JSON.parse(en)),
-  i18n.resolveTemplate,
+const fallback = translator(
+  () => flatten(en),
+  resolveTemplate,
 );
 
 const t = (path: string, ...args: any[]): string =>
   // @ts-ignore
   translate(path, ...args) ?? fallback(path, ...args);
+
+onMount(() => {
+  if (!localeOptionsMap[appOptions.locale]) {
+    setAppOptions(
+      "locale",
+      localFromLanguage(navigator.language),
+    );
+  }
+});
 
 const LocaleSelector = () => {
   return (
@@ -57,7 +70,7 @@ const LocaleSelector = () => {
       onChange={(value) => {
         if (value) setAppOptions("locale", value as Locale);
       }}
-      options={localeOptions}
+      options={Object.keys(localeOptionsMap)}
       itemComponent={(props) => (
         <SelectItem item={props.item}>
           {localeOptionsMap[props.item.rawValue]}
