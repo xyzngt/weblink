@@ -170,6 +170,7 @@
       "join_room": "Join Room",
       "share_room": "Share Room",
       "leave_room": "Leave Room",
+      "mobile_tip": "Tip: Please tap on the avatar to share room profiles on mobile device",
       "before_join": {
         "title": "Create or connect to a room",
         "description": "Please click the button to create a new room or connect to an existing room"
@@ -181,7 +182,7 @@
       "after_join": {
         "title": "Joined Room {{room}}",
         "description": "Share the room profile to invite others to join the room",
-        "tip": "tip: Tap the avatar to share the room profile in mobile devices"
+        "tip": "tip: Tap the avatar to share the room profile on mobile device"
       }
     },
     "message_editor": {
@@ -344,7 +345,7 @@
     "notification": {
       "copy_success": "Copy success",
       "link_copy_success": "Link copied",
-      "copy_failed": "Failed to copy link",
+      "link_copy_failed": "Failed to copy link",
       "reset_options_success": "Options reset successfully",
       "unknown_error": "Unknown error",
       "processing_files": "Processing files...",

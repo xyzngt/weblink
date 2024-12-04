@@ -144,8 +144,8 @@ export default function Home(props: RouteSectionProps) {
             });
             return (
               <div
-                class="top-0 w-full overflow-x-hidden md:sticky md:max-h-[100vh]
-                  md:overflow-y-auto"
+                class="top-0 h-full w-full overflow-x-hidden md:sticky
+                  md:max-h-[100vh] md:overflow-y-auto"
               >
                 <ul
                   class={cn(
@@ -163,19 +163,10 @@ export default function Home(props: RouteSectionProps) {
                           class="absolute left-1/2 top-1/2 flex w-1/2 -translate-x-1/2
                             -translate-y-1/2 flex-col items-center"
                         >
-                          <IconPerson class="text-muted/50" />
-                          <Show
-                            when={
-                              sessionService.clientServiceStatus() ===
-                              "disconnected"
-                            }
-                          >
-                            <p class="muted md:hidden">
-                              {t(
-                                "client.index.guide_description",
-                              )}
-                            </p>
-                          </Show>
+                          <IconPerson class="text-muted/10" />
+                          <p class="text-xs text-muted-foreground md:hidden">
+                            {t("client.index.mobile_tip")}
+                          </p>
                         </div>
                       </div>
                     }

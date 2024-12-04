@@ -169,6 +169,7 @@
       "join_room": "加入房间",
       "share_room": "分享房间",
       "leave_room": "离开房间",
+      "mobile_tip": "提示：请点击右上角按钮创建或加入房间，点击头像分享房间",
       "before_join": {
         "title": "创建或连接到房间",
         "description": "请点击按钮，创建一个新房间或连接到一个现有房间"
@@ -365,7 +366,7 @@
     "notification": {
       "copy_success": "复制成功",
       "link_copy_success": "链接复制成功",
-      "copy_failed": "复制失败",
+      "link_copy_failed": "链接复制失败",
       "reset_options_success": "选项重置成功",
       "unknown_error": "未知错误",
       "processing_files": "处理文件中...",

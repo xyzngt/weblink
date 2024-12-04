@@ -59,6 +59,7 @@ import { Button } from "./components/ui/button";
 import { t } from "./i18n";
 import {
   IconHome,
+  IconLink,
   IconPermContactCalendar,
 } from "./components/icons";
 import { createIsMobile } from "./libs/hooks/create-mobile";
@@ -263,9 +264,9 @@ const InnerApp = (props: ParentProps) => {
       <div class="flex h-full min-h-full w-full flex-col md:flex-row">
         <div
           class="sticky top-0 z-50 h-[var(--mobile-header-height)]
-            w-[var(--desktop-header-width)] flex-shrink-0 border-b
-            border-border bg-background/80 backdrop-blur md:border-b-0
-            md:border-r"
+            max-h-[100vh] w-[var(--desktop-header-width)] flex-shrink-0
+            overflow-y-auto border-b border-border bg-background/80
+            backdrop-blur scrollbar-none md:border-b-0 md:border-r"
         >
           <div
             class="sticky top-0 flex h-full max-h-[100vh] items-center gap-2
@@ -275,7 +276,9 @@ const InnerApp = (props: ParentProps) => {
             <div class="flex-1"></div>
             <HoverCard
               gutter={6}
-              placement={isMobile() ? "bottom" : "right-end"}
+              placement={
+                isMobile() ? "bottom" : "right-end"
+              }
             >
               <HoverCardTrigger
                 as={Avatar}
@@ -330,12 +333,32 @@ const InnerApp = (props: ParentProps) => {
                   </div>
                 </div>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    openQRCodeDialog();
+                  class="gap-2"
+                  onClick={async () => {
+                    const [err] = await catchErrorAsync(
+                      navigator.clipboard.writeText(
+                        joinUrl(),
+                      ),
+                    );
+                    if (err) {
+                      toast.error(
+                        t(
+                          "common.notification.link_copy_failed",
+                        ),
+                      );
+                    } else {
+                      toast.success(
+                        t(
+                          "common.notification.link_copy_success",
+                        ),
+                      );
+                    }
                   }}
                 >
+                  <IconLink class="size-4" />
+
                   {t("common.nav.share_link")}
                 </Button>
               </HoverCardContent>

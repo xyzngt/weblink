@@ -68,6 +68,7 @@ import IconHome from "@material-symbols/svg-400/outlined/home.svg?component-soli
 import IconPermContactCalendar from "@material-symbols/svg-400/outlined/perm_contact_calendar.svg?component-solid";
 import IconEdit from "@material-symbols/svg-400/outlined/edit.svg?component-solid";
 import IconEditSquare from "@material-symbols/svg-400/outlined/edit_square.svg?component-solid";
+import IconLink from "@material-symbols/svg-400/outlined/link.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -139,4 +140,5 @@ export {
   IconPermContactCalendar,
   IconEdit,
   IconEditSquare,
+  IconLink,
 };
