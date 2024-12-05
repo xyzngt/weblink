@@ -69,6 +69,7 @@ import IconPermContactCalendar from "@material-symbols/svg-400/outlined/perm_con
 import IconEdit from "@material-symbols/svg-400/outlined/edit.svg?component-solid";
 import IconEditSquare from "@material-symbols/svg-400/outlined/edit_square.svg?component-solid";
 import IconLink from "@material-symbols/svg-400/outlined/link.svg?component-solid";
+import IconPlayArrow from "@material-symbols/svg-400/outlined/play_arrow.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -141,4 +142,5 @@ export {
   IconEdit,
   IconEditSquare,
   IconLink,
+  IconPlayArrow,
 };

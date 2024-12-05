@@ -22,6 +22,8 @@ import DropArea from "@/components/drop-area";
 import { FloatingButton } from "@/components/floating-button";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
+// @ts-ignore
+import PhotoSwipeVideoPlugin from "photoswipe-video-plugin";
 import {
   SendClipboardMessage,
   messageStores,
@@ -256,8 +258,9 @@ export default function ClientPage(
             <ChatHeader
               info={clientInfo()}
               client={client()}
-              class="sticky top-[var(--mobile-header-height)] md:top-0 z-10 flex items-center justify-between gap-1
-                border-b border-border bg-background/80 backdrop-blur"
+              class="sticky top-[var(--mobile-header-height)] z-10 flex
+                items-center justify-between gap-1 border-b border-border
+                bg-background/80 backdrop-blur md:top-0"
             />
             <DropArea
               class="relative flex-1"
@@ -345,13 +348,18 @@ export default function ClientPage(
                       {
                         gallery: ref,
                         bgOpacity: 0.8,
-                        children: "a#image",
+                        children: "a#pswp-item",
                         initialZoomLevel: "fit",
                         closeOnVerticalDrag: true,
                         // wheelToZoom: true, // enable wheel-based zoom
-
                         pswpModule: () =>
                           import("photoswipe"),
+                      },
+                    );
+                    lightbox.addFilter(
+                      "domItemData",
+                      (itemData, element, linkEl) => {
+                        return itemData;
                       },
                     );
                     lightbox.on("uiRegister", function () {
@@ -387,6 +395,13 @@ export default function ClientPage(
                         },
                       });
                     });
+
+                    const videoPlugin =
+                      new PhotoSwipeVideoPlugin(
+                        lightbox,
+                        {},
+                      );
+
                     lightbox.init();
                   });
                 }}

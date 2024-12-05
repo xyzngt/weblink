@@ -50,6 +50,7 @@ import {
   IconFileCopy,
   IconFileUpload,
   IconInsertDriveFile,
+  IconPlayArrow,
   IconPreview,
   IconRestore,
   IconResume,
@@ -227,7 +228,6 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         <div>
                           <IconInsertDriveFile class="size-8" />
                         </div>
-
                         <p>{cache().fileName}</p>
                       </div>
                     }
@@ -243,7 +243,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                       />
 
                       <a
-                        id="image"
+                        id="pswp-item"
                         href={url}
                         target="_blank"
                         class={cn(
@@ -290,13 +290,52 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         type="video"
                         name={props.message.fileName}
                       />
-
-                      <video
-                        class="aspect-video h-full max-h-72 object-contain"
-                        controls
-                        src={url}
-                        onCanPlay={() => props.onLoad?.()}
-                      />
+                      <a
+                        id="pswp-item"
+                        href={url}
+                        data-pswp-type="video"
+                        data-pswp-video-type={
+                          cache().mimetype
+                        }
+                        target="_blank"
+                        class={cn(
+                          `relative aspect-video h-full max-h-64 overflow-hidden
+                          rounded-sm`,
+                          isLong()
+                            ? "aspect-square"
+                            : "aspect-video",
+                        )}
+                        data-pswp-video-src={url}
+                      >
+                        <video
+                          class="h-full w-full object-cover"
+                          src={url}
+                          onLoadedMetadata={(ev) => {
+                            props.onLoad?.();
+                            const parent =
+                              ev.currentTarget
+                                .parentElement!;
+                            parent.dataset.pswpWidth =
+                              ev.currentTarget.videoWidth.toString();
+                            parent.dataset.pswpHeight =
+                              ev.currentTarget.videoHeight.toString();
+                            parent.dataset.download =
+                              cache().fileName;
+                            const diff =
+                              ev.currentTarget.videoWidth -
+                              ev.currentTarget.videoHeight;
+                            if (diff <= 0) {
+                              setIsLong(true);
+                            }
+                          }}
+                        ></video>
+                        <div
+                          class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                            rounded-lg bg-black/50 p-1 text-white/80"
+                        >
+                          <IconPlayArrow class="size-8" />
+                        </div>
+                      </a>
                     </Match>
                     <Match
                       when={cache().mimetype?.startsWith(

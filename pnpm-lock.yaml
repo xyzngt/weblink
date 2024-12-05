@@ -89,6 +89,9 @@ importers:
       photoswipe:
         specifier: ^5.4.4
         version: 5.4.4
+      photoswipe-video-plugin:
+        specifier: ^1.0.2
+        version: 1.0.2
       postcss:
         specifier: ^8.4.49
         version: 8.4.49
@@ -2726,6 +2729,9 @@ packages:
   pathval@2.0.0:
     resolution: {integrity: sha512-vE7JKRyES09KiunauX7nd2Q9/L7lhok4smP9RZTDeD4MVs72Dp2qNFVz39Nz5a0FVEW0BJR6C0DYrq6unoziZA==}
     engines: {node: '>= 14.16'}
+
+  photoswipe-video-plugin@1.0.2:
+    resolution: {integrity: sha512-skNHaalLU7rptZ3zq4XfS5hPqSDD65ctvpf2X8buvC8BpOt6XKSIgRkLzTwgQOUm9yQ8kQ4mMget7CIqGcqtDg==}
 
   photoswipe@5.4.4:
     resolution: {integrity: sha512-WNFHoKrkZNnvFFhbHL93WDkW3ifwVOXSW3w1UuZZelSmgXpIGiZSNlZJq37rR8YejqME2rHs9EhH9ZvlvFH2NA==}
@@ -6497,6 +6503,8 @@ snapshots:
   pathe@1.1.2: {}
 
   pathval@2.0.0: {}
+
+  photoswipe-video-plugin@1.0.2: {}
 
   photoswipe@5.4.4: {}
 

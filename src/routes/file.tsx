@@ -7,7 +7,6 @@ import {
   onMount,
   Show,
 } from "solid-js";
-
 import {
   Table,
   TableBody,

@@ -1,18 +1,12 @@
 import { Component, Match, Show, Switch } from "solid-js";
 import { t } from "@/i18n";
 import { sessionService } from "@/libs/services/session-service";
-import Logo from "../../../public/favicon.svg?component-solid";
-import {
-  createRoomDialog,
-  JoinRoomButton,
-} from "@/components/join-dialog";
+import { createRoomDialog } from "@/components/join-dialog";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/spinner";
-import { appOptions } from "@/options";
 import { clientProfile } from "@/libs/core/store";
 import {
-  IconEdit,
   IconEditSquare,
   IconLogin,
   IconLogout,
@@ -40,7 +34,7 @@ const Client: Component = (props) => {
           gap-2 overflow-hidden rounded-lg border border-border/50
           bg-background/50 p-4 backdrop-blur"
       >
-        <Switch fallback>
+        <Switch>
           <Match
             when={
               sessionService.clientServiceStatus() ===
