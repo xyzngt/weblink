@@ -280,8 +280,8 @@
         "stopped": "已停止",
         "transferring": "传输中",
         "merging": "合并中",
-        "completed": "已完成",
-        "incompleted": "未完成"
+        "complete": "已完成",
+        "incomplete": "未完成"
       },
       "filter": {
         "clear_filters": "清空过滤器",

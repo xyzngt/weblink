@@ -256,8 +256,8 @@
         "stopped": "Stopped",
         "transferring": "Transferring",
         "merging": "Merging",
-        "completed": "Completed",
-        "incompleted": "Incompleted"
+        "complete": "Complete",
+        "incomplete": "Incomplete"
       },
       "filter": {
         "clear_filters": "Clear Filters",

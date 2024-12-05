@@ -35,10 +35,10 @@ const Client: Component = (props) => {
       <QRCodeDialogComponent />
 
       <div
-        class="absolute left-1/2 top-1/2 flex w-full max-w-xs
+        class="absolute left-1/2 top-1/2 flex max-h-[100vh] w-full max-w-xs
           -translate-x-1/2 -translate-y-1/2 flex-col items-stretch
-          gap-2 rounded-lg border border-border/50 bg-background/50
-          p-4 text-center backdrop-blur overflow-hidden max-h-[100vh]"
+          gap-2 overflow-hidden rounded-lg border border-border/50
+          bg-background/50 p-4 backdrop-blur"
       >
         <Switch fallback>
           <Match

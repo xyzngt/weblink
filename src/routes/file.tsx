@@ -164,12 +164,12 @@ export default function File() {
     }
     return info.isComplete
       ? {
-          label: t("common.file_table.status.completed"),
-          value: "completed",
+          label: t("common.file_table.status.complete"),
+          value: "complete",
         }
       : {
-          label: t("common.file_table.status.incompleted"),
-          value: "incompleted",
+          label: t("common.file_table.status.incomplete"),
+          value: "incomplete",
         };
   };
 
@@ -826,9 +826,9 @@ export default function File() {
             options={[
               {
                 label: t(
-                  "common.file_table.status.completed",
+                  "common.file_table.status.complete",
                 ),
-                value: "completed",
+                value: "complete",
               },
               {
                 label: t(
@@ -838,9 +838,9 @@ export default function File() {
               },
               {
                 label: t(
-                  "common.file_table.status.incompleted",
+                  "common.file_table.status.incomplete",
                 ),
-                value: "incompleted",
+                value: "incomplete",
               },
             ]}
           />
@@ -1003,8 +1003,8 @@ export default function File() {
           <div
             data-sync-scroll="file-table"
             class="sticky top-[calc(var(--mobile-header-height)+3rem)] z-10
-              h-auto overflow-x-auto bg-background/50 backdrop-blur
-              scrollbar-thin sm:top-12"
+              h-auto overflow-x-auto overflow-y-hidden bg-background/50
+              backdrop-blur scrollbar-thin sm:top-12"
           >
             <Table
               style={{

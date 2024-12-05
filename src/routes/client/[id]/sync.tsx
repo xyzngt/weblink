@@ -98,7 +98,7 @@ type ChunkStatus =
   | "stopped"
   | "transferring"
   | "merging"
-  | "completed";
+  | "complete";
 
 const Sync = (props: RouteSectionProps) => {
   const { requestFile } = useWebRTC();
@@ -543,7 +543,7 @@ const Sync = (props: RouteSectionProps) => {
         if (info.isMerging) {
           setStatus("merging");
         } else if (info.isComplete) {
-          setStatus("completed");
+          setStatus("complete");
         } else if (transfer()) {
           setStatus("transferring");
         } else {
@@ -679,9 +679,9 @@ const Sync = (props: RouteSectionProps) => {
               },
               {
                 label: t(
-                  "common.file_table.status.completed",
+                  "common.file_table.status.complete",
                 ),
-                value: "completed",
+                value: "complete",
               },
             ]}
           />
@@ -740,7 +740,7 @@ const Sync = (props: RouteSectionProps) => {
                   <TableRow
                     onDblClick={() => {
                       const status = statuses()[row.index];
-                      if (status() === "completed") {
+                      if (status() === "complete") {
                         const file =
                           cacheManager.cacheInfo[
                             row.original.id
