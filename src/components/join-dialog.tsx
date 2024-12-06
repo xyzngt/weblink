@@ -268,7 +268,7 @@ export function JoinRoomButton(
                 "connected"
               }
               onClick={() => leaveRoom()}
-              variant="destructive"
+              variant="outline"
               size="icon"
             >
               <Show
@@ -295,7 +295,6 @@ export function JoinRoomButton(
             as={Button}
             class={local.class}
             size="icon"
-            variant="outline"
             disabled={
               sessionService.clientServiceStatus() !==
               "disconnected"
@@ -323,10 +322,10 @@ export function JoinRoomButton(
 }
 
 /**
- * 将图片文件转换为填充整个正方形头像的 dataURL
- * @param file - 用户上传的图片文件
- * @param size - 目标头像尺寸（正方形大小）
- * @returns Promise<string> 返回裁剪并填充后的图片的 dataURL
+ * Convert the image file to a dataURL that fills the entire square avatar
+ * @param file - The image file uploaded by the user
+ * @param size - The target avatar size (square size)
+ * @returns Promise<string> Returns the dataURL of the cropped and filled image
  */
 function imageFileToFilledSquareAvatar(
   file: File,
@@ -334,7 +333,9 @@ function imageFileToFilledSquareAvatar(
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) {
-      return reject(new Error("请上传一个有效的图片文件"));
+      return reject(
+        new Error("Please upload a valid image file"),
+      );
     }
 
     const reader = new FileReader();
@@ -348,33 +349,28 @@ function imageFileToFilledSquareAvatar(
         const ctx = canvas.getContext("2d");
         if (!ctx) {
           return reject(
-            new Error("无法获取 Canvas 上下文"),
+            new Error("Failed to get Canvas context"),
           );
         }
 
-        // 设置目标尺寸为正方形
         canvas.width = size;
         canvas.height = size;
 
-        // 计算缩放比例，以保证图片能完全覆盖整个正方形区域
         const imgAspectRatio = img.width / img.height;
-        const canvasAspectRatio = 1; // 因为 canvas 是正方形
+        const canvasAspectRatio = 1;
         let sx = 0,
           sy = 0,
           sWidth = img.width,
           sHeight = img.height;
 
         if (imgAspectRatio > canvasAspectRatio) {
-          // 图片宽比高长，以高度为基准裁剪
           sWidth = img.height * canvasAspectRatio;
-          sx = (img.width - sWidth) / 2; // 水平居中裁剪
+          sx = (img.width - sWidth) / 2;
         } else {
-          // 图片高比宽长，以宽度为基准裁剪
           sHeight = img.width / canvasAspectRatio;
-          sy = (img.height - sHeight) / 2; // 垂直居中裁剪
+          sy = (img.height - sHeight) / 2;
         }
 
-        // 在 canvas 上绘制裁剪并缩放后的图片
         ctx.drawImage(
           img,
           sx,
@@ -387,21 +383,19 @@ function imageFileToFilledSquareAvatar(
           size,
         );
 
-        // 将 canvas 转换为 dataURL
         const dataURL = canvas.toDataURL("image/png");
         resolve(dataURL);
       };
 
       img.onerror = () => {
-        reject(new Error("加载图片失败"));
+        reject(new Error("Failed to load image"));
       };
     };
 
     reader.onerror = () => {
-      reject(new Error("读取图片文件失败"));
+      reject(new Error("Failed to read image file"));
     };
 
-    // 开始读取文件
     reader.readAsDataURL(file);
   });
 }

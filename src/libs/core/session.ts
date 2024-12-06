@@ -858,12 +858,12 @@ export class PeerSession {
     if (this.peerConnection) {
       this.peerConnection.close();
       this.peerConnection = null;
-      this.dispatchEvent("disconnect", undefined);
     }
     if (this.reconnectTimeout) {
       window.clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
+    this.dispatchEvent("disconnect", undefined);
   }
 
   close() {

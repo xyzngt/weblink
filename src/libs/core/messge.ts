@@ -391,7 +391,7 @@ class MessageStores {
       this.setMessages(index, "error", undefined);
       this.setMessageDB(this.messages[index]);
 
-      this.setTimeout(message.id, 3000, () => {
+      this.setTimeout(message.id, 5000, () => {
         this.setMessages(index, "status", "error");
         this.setMessages(index, "error", "send timeout");
         this.setMessageDB(this.messages[index]);
@@ -532,6 +532,7 @@ class MessageStores {
           index,
           produce((state) => {
             state.status = "received";
+            state.error = undefined;
             this.setMessageDB(state);
           }),
         );
