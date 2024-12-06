@@ -9,8 +9,6 @@ import {
 } from "solid-js";
 import { ClientID, FileID, RoomStatus } from "./type";
 import { createStore, reconcile } from "solid-js/store";
-import { FirebaseClientService } from "./services/client/firebase-client-service";
-
 import { PeerSession } from "./session";
 import {
   TRANSFER_CHANNEL_PREFIX,
@@ -40,23 +38,26 @@ import {
   StorageMessage,
 } from "./messge";
 import { sessionService } from "../services/session-service";
-import { WebSocketClientService } from "./services/client/ws-client-service";
 import { appOptions } from "@/options";
 import { toast } from "solid-sonner";
 import { ChunkMetaData, FileMetaData } from "../cache";
 import { catchErrorAsync } from "../catch";
 
-function getClientService(
+async function getClientService(
   options: ClientServiceInitOptions,
-): ClientService {
+): Promise<ClientService> {
   switch (import.meta.env.VITE_BACKEND) {
     case "FIREBASE":
-      return new FirebaseClientService(options);
+      return import(
+        "./services/client/firebase-client-service"
+      ).then((m) => new m.FirebaseClientService(options));
     case "WEBSOCKET":
       options.websocketUrl =
         appOptions.websocketUrl ??
         import.meta.env.VITE_WEBSOCKET_URL;
-      return new WebSocketClientService(options);
+      return import(
+        "./services/client/ws-client-service"
+      ).then((m) => new m.WebSocketClientService(options));
     default:
       throw Error("invalid backend type");
   }
@@ -434,7 +435,7 @@ export const WebRTCProvider: Component<
     if (sessionService.clientService) {
       cs = sessionService.clientService;
     } else {
-      cs = getClientService({
+      cs = await getClientService({
         roomId: clientProfile.roomId,
         password: clientProfile.password,
         client: {
