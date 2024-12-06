@@ -6,27 +6,27 @@
 
 Weblink is a pure web-based file transfer and chat application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase and WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
 
-The project is deployed on Vercel and can be accessed at [https://web1ink.vercel.app](https://web1ink.vercel.app).
+The project is deployed on Vercel and using Firebase as backend can be accessed at [https://v.webl.ink](https://v.webl.ink).
 
-Alternatively, you can use the version deployed on Alibaba Cloud at [https://webl.ink](https://webl.ink).
+Alternatively, you can use the version using self-hosted WebSocket as backend at [https://webl.ink](https://webl.ink).
 
-## Features
+## 🌟Features
 
 Weblink currently supports the following features:
 
-| Feature                   | Description                                                                                               |
-| ------------------------- | --------------------------------------------------------------------------------------------------------- |
-| ✅ File Synchronization   | Retrieve cached files from the other party                                                                |
-| ✅ Resume Transfer        | Resume file transfer if the connection is interrupted                                                     |
-| ✅ File Caching           | Transferred files are cached in IndexedDB                                                                 |
-| ✅ File Search            | Search for files cached by you and the other party                                                        |
-| ✅ Video Calling          | Supports video calls                                                                                      |
-| ✅ Clipboard Transfer     | Press `Ctrl + V` in the chat window or paste in the input box on mobile devices to send clipboard content |
-| ✅ Folder Transfer        | Send folders, which will be automatically compressed                                                      |
-| ✅ Compressed Transfer    | Choose to compress files during transfer; files will be compressed in blocks and sent accordingly         |
-| ✅ Multi-Channel Transfer | Improve transfer performance by parallel data transfer through multiple DataChannels                      |
-| ✅ Share and Forward      | After installing as a PWA, you can send text or files via system sharing                                  |
-| ✅ Text Chat              | Send text messages for chatting                                                                           |
+| **Feature**                   | **Description**                                                                         |
+| ----------------------------- | --------------------------------------------------------------------------------------- |
+| 🔄 **File Synchronization**   | Retrieve cached files from the other party seamlessly.                                  |
+| ⏯️ **Resume Transfer**        | Resume file transfer effortlessly if the connection is interrupted.                     |
+| 📂 **File Caching**           | Transferred files are securely cached in IndexedDB.                                     |
+| 🔍 **File Search**            | Quickly search for cached files from you and the other party.                           |
+| 🖥️ **Screen Sharing**         | Share screens and cameras with multiple clients simultaneously.                         |
+| 📋 **Clipboard Transfer**     | Paste clipboard content directly into the chat with `Ctrl + V` or mobile paste actions. |
+| 📁 **Folder Transfer**        | Send folders effortlessly with automatic compression.                                   |
+| 📦 **Compressed Transfer**    | Choose to compress files during transfer for efficient data handling.                   |
+| ⚡ **Multi-Channel Transfer** | Boost transfer performance with parallel data transfers across multiple channels.       |
+| 🔗 **Share and Forward**      | Share text or files via system sharing after installing as a PWA.                       |
+| 💬 **Text Chat**              | Exchange text messages for smooth communication.                                        |
 
 More information can be found in [CHANGELOG](CHANGELOG.md).
 
