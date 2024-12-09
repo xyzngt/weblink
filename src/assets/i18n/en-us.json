@@ -391,6 +391,7 @@
       "just_now": "Just Now"
     },
     "starter": {
+      "starter_name": "Starter",
       "welcome": "Welcome to weblink, a chat, file transfer, file synchronization and screen sharing tool that can be run directly in the browser.",
       "tip1": "Please follow these steps to start:\n 1. Set your name and avatar.\n 2. Set the room ID and password to encrypt the signaling messages between clients, preventing others from joining.\n 3. Share the room profile to invite others to join the room.",
       "tip2": "If you encounter any problems or have any suggestions, please submit an issue on GitHub."

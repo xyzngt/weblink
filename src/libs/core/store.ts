@@ -105,13 +105,18 @@ export async function getIceServers() {
   return servers;
 }
 
+export const getRandomAvatar = (seed: string) => {
+  return `https://api.dicebear.com/9.x/initials/svg?seed=${seed}`;
+};
+
 export const getDefaultProfile = () => {
+  const name = faker.person.lastName();
   return {
     roomId: faker.word.noun(),
-    name: faker.person.firstName(),
+    name: name,
     clientId: v4(),
     password: null,
-    avatar: faker.image.avatar(),
+    avatar: getRandomAvatar(name),
     autoJoin: false,
     initalJoin: true,
   };

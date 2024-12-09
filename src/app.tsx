@@ -20,6 +20,7 @@ import {
 } from "@kobalte/core";
 import {
   clientProfile,
+  getRandomAvatar,
   setClientProfile,
 } from "./libs/core/store";
 import { useWebRTC } from "./libs/core/rtc-context";
@@ -227,12 +228,12 @@ const InnerApp = (props: ParentProps) => {
   };
 
   const initStarterMessage = async () => {
-    console.log(appOptions.locale);
     const instructorClientId = v4();
+    const instructorName = t("common.starter.starter_name");
     messageStores.setClient({
       clientId: instructorClientId,
-      name: "Starter",
-      avatar: null,
+      name: instructorName,
+      avatar: getRandomAvatar(instructorName),
     });
 
     await messageStores.addMessage({
