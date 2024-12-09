@@ -370,7 +370,7 @@
       "reset_options_success": "選項重置成功",
       "unknown_error": "未知錯誤",
       "processing_files": "處理檔案中...",
-      "new_version_available": "新版本可用，點擊重新加載",
+      "new_version_available": "新版本可用",
       "share_failed": "分享失敗，錯誤: {{error}}"
     },
     "nav": {

@@ -45,6 +45,7 @@ export class PeerSession {
   private closed: boolean = false;
   private relayOnly: boolean;
   private signalCache: Array<ClientSignal> = [];
+  private isReconnecting: boolean = false;
   readonly polite: boolean;
   private reconnectTimeout: number | null = null;
   constructor(
@@ -149,7 +150,7 @@ export class PeerSession {
     window.addEventListener(
       "beforeunload",
       () => {
-        this.disconnect();
+        this.close();
       },
       { signal: this.controller.signal },
     );
@@ -157,7 +158,12 @@ export class PeerSession {
     window.addEventListener(
       "visibilitychange",
       () => {
-        if (pc.connectionState === "connected") return;
+        if (
+          ["connected", "connecting"].includes(
+            pc.connectionState,
+          )
+        )
+          return;
         this.handleDisconnection();
       },
       { signal: this.controller.signal },
@@ -209,7 +215,7 @@ export class PeerSession {
           "close",
           () => {
             const index = this.channels.findIndex(
-              (channel) => channel.id === ev.channel.id,
+              (c) => c.id === ev.channel.id,
             );
             if (index !== -1) {
               this.channels.splice(index, 1);
@@ -256,9 +262,9 @@ export class PeerSession {
     pc.addEventListener(
       "signalingstatechange",
       () => {
-        if (pc.signalingState === "closed") {
-          this.disconnect();
-        }
+        console.log(
+          `signalingstatechange, signalingState: ${pc.signalingState}`,
+        );
       },
       {
         signal: this.controller.signal,
@@ -289,28 +295,13 @@ export class PeerSession {
             this.connectable = true;
             this.dispatchEvent("connected", undefined);
             break;
-          case "failed":
           case "closed":
           case "disconnected":
+          case "failed":
             this.handleDisconnection();
             break;
           default:
             break;
-        }
-      },
-      { signal: this.controller.signal },
-    );
-
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (document.visibilityState === "visible") {
-          if (
-            this.peerConnection?.connectionState !==
-            "connected"
-          ) {
-            this.disconnect();
-          }
         }
       },
       { signal: this.controller.signal },
@@ -329,6 +320,13 @@ export class PeerSession {
   }
 
   private async handleDisconnection() {
+    if (this.isReconnecting) {
+      console.warn(
+        `session ${this.clientId} is reconnecting, skip handle disconnection`,
+      );
+      return;
+    }
+    this.isReconnecting = true;
     if (this.reconnectTimeout) {
       window.clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -385,7 +383,10 @@ export class PeerSession {
             `reconnect attempt ${reconnectAttempts} failed`,
           );
           this.disconnect();
+          this.isReconnecting = false;
         }
+      } else {
+        this.isReconnecting = false;
       }
     };
     attemptReconnect();
@@ -716,7 +717,6 @@ export class PeerSession {
               "error",
               Error("reconnect error"),
             );
-            this.disconnect();
             reject(
               new Error(
                 `Connection failed with state: ${pc.connectionState}`,
@@ -797,19 +797,19 @@ export class PeerSession {
       pc.addEventListener(
         "connectionstatechange",
         () => {
+          window.clearTimeout(timer);
           switch (pc.connectionState) {
             case "connected":
               console.log(
                 `connection established, session ${this.clientId}, connectable: ${this.connectable}`,
               );
-              window.clearTimeout(timer);
               connectAbortController.abort();
+              this.connectable = true;
               resolve();
               break;
             case "failed":
             case "closed":
             case "disconnected":
-              window.clearTimeout(timer);
               connectAbortController.abort();
               this.disconnect();
               reject(

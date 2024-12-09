@@ -18,7 +18,10 @@ import {
 } from "../type";
 import { UpdateClientOptions } from "./firebase-client-service";
 import { toast } from "solid-sonner";
-import { catchErrorAsync } from "@/libs/catch";
+import {
+  catchErrorAsync,
+  catchErrorSync,
+} from "@/libs/catch";
 
 export class WebSocketClientService
   implements ClientService
@@ -165,7 +168,16 @@ export class WebSocketClientService
     socket.addEventListener(
       "message",
       (ev) => {
-        const signal: RawSignal = JSON.parse(ev.data);
+        const [error, signal] = catchErrorSync(
+          () => JSON.parse(ev.data) as RawSignal,
+        );
+        if (error) {
+          console.error(
+            `WebSocket message error: ${error.message}`,
+          );
+          this.destroy();
+          return;
+        }
         switch (signal.type) {
           case "join":
             this.emit(
@@ -191,7 +203,7 @@ export class WebSocketClientService
     socket.addEventListener(
       "error",
       (ev) => {
-        console.warn(`WebSocket error: ${ev}`);
+        console.warn(`WebSocket error:`, ev);
       },
       { signal: controller.signal },
     );
@@ -232,7 +244,16 @@ export class WebSocketClientService
       socket.addEventListener(
         "message",
         async (ev) => {
-          const message = JSON.parse(ev.data) as RawSignal;
+          const [error, message] = catchErrorSync(
+            () => JSON.parse(ev.data) as RawSignal,
+          );
+          if (error) {
+            console.error(
+              `WebSocket message error: ${error.message}`,
+            );
+            this.destroy();
+            return reject(error);
+          }
           if (message.type === "connected") {
             const passwordHash = message.data;
             if (passwordHash) {

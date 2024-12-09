@@ -30,6 +30,8 @@ Weblink 目前支持以下功能：
 
 更多信息请查看 [CHANGELOG](CHANGELOG.md) 了解最新更新。
 
+如果遇到使用上的问题，欢迎加入QQ群进行提问或者反馈：[762463759 ](https://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=5MRpXPQN4vGtiLnTzCUb-NlAK9txeEoE&authKey=Gm3OmhI6g3ccmNx8rXVcPsbmEzsoBcj%2FpF%2FOlq7edcbMxTlhPLipZ6i9fwsPCsLt&noverify=0&group_code=762463759)
+
 ## 使用方法
 
 ### 本地运行
