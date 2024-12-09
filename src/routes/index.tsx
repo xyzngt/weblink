@@ -1,24 +1,14 @@
 import {
-  Avatar,
-  AvatarFallback,
-} from "@/components/ui/avatar";
-import {
-  Component,
   For,
   createMemo,
-  Switch,
-  Match,
   createEffect,
   Show,
   createSignal,
   ComponentProps,
-  splitProps,
-  Suspense,
 } from "solid-js";
 import { cn } from "@/libs/cn";
 
 import {
-  A,
   RouteSectionProps,
   useCurrentMatches,
   useNavigate,

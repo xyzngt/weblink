@@ -116,7 +116,8 @@
     },
     "about": {
       "title": "About",
-      "reset_options": "Reset Options"
+      "reset_options": "Reset Options",
+      "clear_service_worker_cache": "Clear Service Worker Cache"
     },
     "advanced_settings": {
       "title": "Advanced Settings",
@@ -286,8 +287,14 @@
     },
     "reset_options_dialog": {
       "title": "Reset Options",
-      "description": "This operation resets the options to default values",
+      "description": "This operation resets the options to default values, but will not clear user data",
       "content": "Are you really sure you want to reset the options?"
+    },
+    "clear_service_worker_cache_dialog": {
+      "title": "Clear Service Worker Cache",
+      "description": "This operation clears the Service Worker cache",
+      "content": "If you encounter problems after page updates, you can clear the cache and try again",
+      "reload": "Reload the page after clearing"
     },
     "preview_dialog": {
       "title": "Preview",
@@ -350,7 +357,9 @@
       "unknown_error": "Unknown error",
       "processing_files": "Processing files...",
       "new_version_available": "New version available",
-      "share_failed": "Share failed, error: {{error}}"
+      "share_failed": "Share failed, error: {{error}}",
+      "clear_cache_success": "Cache Storage and Service Worker cleared successfully",
+      "clear_cache_failed": "Failed to clear Cache Storage and Service Worker, error: {{error}}"
     },
     "forward_dialog": {
       "title": "Forward items",
@@ -380,6 +389,11 @@
     },
     "timeago": {
       "just_now": "Just Now"
+    },
+    "starter": {
+      "welcome": "Welcome to weblink, a chat, file transfer, file synchronization and screen sharing tool that can be run directly in the browser.",
+      "tip1": "Please follow these steps to start:\n 1. Set your name and avatar.\n 2. Set the room ID and password to encrypt the signaling messages between clients, preventing others from joining.\n 3. Share the room profile to invite others to join the room.",
+      "tip2": "If you encounter any problems or have any suggestions, please submit an issue on GitHub."
     }
   }
 }

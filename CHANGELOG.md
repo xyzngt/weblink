@@ -2,7 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.9.1] - 2024-12-05
+## [0.9.2] - 2024-12-09
+
+### New Features
+
+- Add starter message 添加开始指引
 
 ### Improvements
 

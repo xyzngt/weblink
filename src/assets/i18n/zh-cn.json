@@ -132,7 +132,7 @@
         "title": "视频通话设置",
         "video_max_bitrate": {
           "title": "视频最大比特率",
-          "description": "更改应用程序的视频最大比特率"
+          "description": "更改应用程序的视��最大比特率"
         },
         "audio_max_bitrate": {
           "title": "音频最大比特率",
@@ -142,7 +142,8 @@
     },
     "about": {
       "title": "关于",
-      "reset_options": "重置选项"
+      "reset_options": "重置选项",
+      "clear_service_worker_cache": "清除 Service Worker 缓存"
     }
   },
   "cache": {
@@ -243,7 +244,7 @@
       "avatar_url": "头像 URL",
       "password": {
         "title": "房间密码",
-        "description": "可选，房间的密码，用于加密客户端之间的信令消息，防止其他人加入，你可以点击按钮生成一个强密码"
+        "description": "可选，房间的密码，用于加密客户端之间的信令消息，防止其他人加入，你可以点击按钮生成一个��密码"
       },
       "auto_join": "下次自动加入"
     },
@@ -263,7 +264,13 @@
     "reset_options_dialog": {
       "title": "重置选项",
       "description": "重置后将无法恢复，请谨慎操作",
-      "content": "确认重置选项？"
+      "content": "这个操作会重置所有选项，但不会清除用户数据"
+    },
+    "clear_service_worker_cache_dialog": {
+      "title": "清除 Service Worker 缓存",
+      "description": "这个操作会清除 Service Worker 缓存",
+      "content": "如果你在页面更新后遇到问题，可以清除缓存后重试",
+      "reload": "清除后重新加载页面"
     },
     "file_table": {
       "columns": {
@@ -313,7 +320,7 @@
     },
     "action": {
       "copy": "复制",
-      "copy_link": "复制链接",
+      "copy_link": "��制链接",
       "copy_file_name": "复制文件名",
       "copy_as_png": "复制为 PNG",
       "copy_as_svg": "复制为 SVG",
@@ -371,7 +378,9 @@
       "unknown_error": "未知错误",
       "processing_files": "处理文件中...",
       "new_version_available": "新版本可用",
-      "share_failed": "分享失败，错误: {{error}}"
+      "share_failed": "分享失败，错误: {{error}}",
+      "clear_cache_success": "Cache Storage 和 Service Worker 清除成功",
+      "clear_cache_failed": "清除 Cache Storage 和 Service Worker 失败，错误: {{error}}"
     },
     "nav": {
       "chat": "聊天",
@@ -384,6 +393,11 @@
     },
     "timeago": {
       "just_now": "刚刚"
+    },
+    "starter": {
+      "welcome": "欢迎使用weblink，这是一个可以直接在浏览器中运行的聊天、文件传输、文件同步和屏幕共享工具。",
+      "tip1": "请按以下步骤开始：\n 1. 设置你的名称和头像。\n 2. 设置房间ID和密码以加密客户端之间的信令消息，防止其他人加入。\n 3. 分享房间资料以邀请其他人加入房间。",
+      "tip2": "如果遇到任何问题或有任何建议，请在GitHub上提交issue, 或加入QQ群反馈：762463759"
     }
   }
 }

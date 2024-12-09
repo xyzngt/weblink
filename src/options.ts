@@ -55,7 +55,6 @@ export type AppOption = {
 
   // Appearance
   locale: Locale;
-  showAboutDialog: boolean;
   backgroundImage?: FileID;
   backgroundImageOpacity: number;
   redirectToClient?: ClientID;
@@ -103,7 +102,6 @@ export const getDefaultAppOptions = () => {
     relayOnly: false,
     compressionLevel: 6,
     locale: localFromLanguage(navigator.language),
-    showAboutDialog: true,
     shareServersWithOthers: true,
     backgroundImageOpacity: 0.5,
     automaticDownload: false,
@@ -112,6 +110,18 @@ export const getDefaultAppOptions = () => {
     maxFileSize: 1024 * 1024 * 1024, // 1GB
   } satisfies AppOption;
 };
+
+export const [appInitialized, setAppInitialized] =
+  makePersisted(createSignal(false), {
+    name: "app_initialized",
+    storage: localStorage,
+  });
+
+export const [starterMessageSent, setStarterMessageSent] =
+  makePersisted(createSignal(false), {
+    name: "starter_message_sent",
+    storage: localStorage,
+  });
 
 export const [appOptions, setAppOptions] = makePersisted(
   createStore<AppOption>(getDefaultAppOptions()),

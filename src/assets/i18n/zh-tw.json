@@ -5,20 +5,20 @@
       "title": "外觀",
       "theme": {
         "title": "主題",
-        "description": "更改應用程式的主題"
+        "description": "變更應用程式的主題"
       },
       "language": {
         "title": "語言",
-        "description": "更改應用程式的語言"
+        "description": "變更應用程式的語言"
       },
       "background_image": {
         "title": "背景圖片",
-        "description": "更改應用程式的背景圖片，也可以在檔案快取中選擇",
+        "description": "變更應用程式的背景圖片，也可以在檔案快取中選擇",
         "click_to_select": "點擊選擇"
       },
       "background_image_opacity": {
         "title": "背景圖片透明度",
-        "description": "更改背景圖片的透明度"
+        "description": "變更背景圖片的透明度"
       }
     },
     "connection": {
@@ -142,7 +142,8 @@
     },
     "about": {
       "title": "關於",
-      "reset_options": "重置選項"
+      "reset_options": "重置選項",
+      "clear_service_worker_cache": "清除 Service Worker 快取"
     }
   },
   "cache": {
@@ -243,7 +244,7 @@
       "avatar_url": "頭像 URL",
       "password": {
         "title": "房間密碼",
-        "description": "可選，房間的密碼，用於加密客戶端之間的信令訊息，防止其他人加入，你可以點擊按鈕生成一個強密碼"
+        "description": "可選，房間的密碼，用於加密客戶端之間的信令訊息，防止其他人加入，你可以點擊按鈕生成個強密碼"
       },
       "auto_join": "下次自動加入"
     },
@@ -263,7 +264,13 @@
     "reset_options_dialog": {
       "title": "重置選項",
       "description": "重置後將無法恢復，請謹慎操作",
-      "content": "確認重置選項？"
+      "content": "這個操作會重置所有選項，但不會清除使用者資料"
+    },
+    "clear_service_worker_cache_dialog": {
+      "title": "清除 Service Worker 快取",
+      "description": "這個操作會清除 Service Worker 快取",
+      "content": "如果你在頁面更新後遇到問題，可以清除快取後重試",
+      "reload": "清除後重新加載頁面"
     },
     "file_table": {
       "columns": {
@@ -353,10 +360,10 @@
     },
     "about_dialog": {
       "title": "關於 Weblink",
-      "description1": "Weblink 是一款基於 WebRTC 的 P2P 聊天和檔案傳輸工具，它可以幫助你快速、安全地傳輸檔案。",
-      "description2": "提供檔案同步、進度顯示、斷點續傳、資料夾傳輸、剪貼簿傳輸、檔案快取、視訊通話等多種功能。",
-      "description3": "此專案是純 Web 應用，無需安裝。功能較多實現比較複雜，如果遇到不穩定的情況，請嘗試重新整理頁面，資訊不會丟失。",
-      "disclaimer": "免責聲明：此應用使用 P2P 技術，所有資料儲存在使用者客戶端（瀏覽器）中，伺服器不儲存任何使用者資料，只負責轉發信令。使用者應自行承擔使用風險，開發者不對任何資料丟失或隱私洩露負責。",
+      "description1": "Weblink 是一款基於 WebRTC 的 P2P 聊天和檔案傳輸工具，可以幫助你快速、安全地傳輸檔案。",
+      "description2": "提供進度顯示、斷點續傳、資料夾傳輸、剪貼簿傳輸、檔案快取、視訊通話等多種功能。",
+      "description3": "此專案是純 Web 應用，無需安裝。如遇到任何不穩定情況，請嘗試重新整理頁面。資訊不會遺失。",
+      "disclaimer": "免責聲明：此應用使用 P2P 技術，所有資料儲存在使用者客戶端（瀏覽器）中，伺服器不儲存任何使用者資料，僅負責轉發信令。使用者應自行承擔使用風險，開發者不對任何資料遺失或隱私洩露負責。",
       "star_repo": "如果您喜歡這個專案，歡迎在 GitHub 上給我一個 ⭐！",
       "version": "版本",
       "author": "作者",
@@ -371,7 +378,9 @@
       "unknown_error": "未知錯誤",
       "processing_files": "處理檔案中...",
       "new_version_available": "新版本可用",
-      "share_failed": "分享失敗，錯誤: {{error}}"
+      "share_failed": "分享失敗，錯誤: {{error}}",
+      "clear_cache_success": "Cache Storage 和 Service Worker 清除成功",
+      "clear_cache_failed": "清除 Cache Storage 和 Service Worker 失敗，錯誤: {{error}}"
     },
     "nav": {
       "chat": "聊天",
@@ -384,6 +393,11 @@
     },
     "timeago": {
       "just_now": "剛剛"
+    },
+    "starter": {
+      "welcome": "歡迎使用 Weblink，這是一個可以直接在瀏覽器中運行的聊天、檔案傳輸、檔案同步和螢幕共享工具。",
+      "tip1": "請按照以下步驟開始：\n 1. 設定您的名稱和頭像。\n 2. 設定房間 ID 和密碼以加密客戶端之間的信令訊息，防止他人加入。\n 3. 分享房間資訊，邀請其他人加入房間。",
+      "tip2": "如果遇到任何問題或有任何建議，請在 GitHub 上提交 issue, 或加入 QQ 群反饋：762463759"
     }
   }
 }

@@ -1,6 +1,5 @@
 import {
   clientProfile,
-  getDefaultProfile,
   setClientProfile,
 } from "@/libs/core/store";
 import { createDialog } from "./dialogs/dialog";
@@ -9,11 +8,8 @@ import { Button } from "./ui/button";
 import { optional } from "@/libs/core/utils/optional";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import {
-  Component,
   ComponentProps,
   createMemo,
-  createSignal,
-  onMount,
   Show,
   splitProps,
 } from "solid-js";
@@ -53,7 +49,7 @@ export const createRoomDialog = () => {
           class="grid gap-4 overflow-y-auto p-1"
           onSubmit={(ev) => {
             ev.preventDefault();
-            setClientProfile("firstTime", false);
+            setClientProfile("initalJoin", false);
             submit(clientProfile);
           }}
         >

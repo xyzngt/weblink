@@ -163,6 +163,10 @@ export default function Settings() {
     open: openResetOptionsDialog,
     Component: ResetOptionsDialogComponent,
   } = createResetOptionsDialog();
+  const {
+    open: openClearServiceWorkerCacheDialog,
+    Component: ClearServiceWorkerCacheDialogComponent,
+  } = createClearServiceWorkerCacheDialog();
   const [imageHole, setImageHole] =
     createSignal<HTMLElement | null>(null);
   const size = createElementSize(imageHole);
@@ -177,6 +181,7 @@ export default function Settings() {
     <>
       <AboutDialogComponent />
       <ResetOptionsDialogComponent />
+      <ClearServiceWorkerCacheDialogComponent />
       <div
         class="container relative bg-background/80 backdrop-blur
           [mask:url(#bg-image-mask)]"
@@ -401,7 +406,7 @@ export default function Settings() {
 
           <div class="flex flex-col gap-2">
             <Switch
-              disabled={clientProfile.firstTime}
+              disabled={clientProfile.initalJoin}
               class="flex items-center justify-between"
               checked={clientProfile.autoJoin}
               onChange={(isChecked) =>
@@ -1257,22 +1262,96 @@ export default function Settings() {
             <Button
               variant="destructive"
               onClick={async () => {
-                if (
-                  (await openResetOptionsDialog()).result
-                ) {
-                  setAppOptions(getDefaultAppOptions());
-                  toast.success(
-                    t(
-                      "common.notification.reset_options_success",
-                    ),
-                  );
+                const { result } =
+                  await openResetOptionsDialog();
+                if (!result) {
+                  return;
                 }
+                setAppOptions(getDefaultAppOptions());
+                toast.success(
+                  t(
+                    "common.notification.reset_options_success",
+                  ),
+                );
               }}
               class="gap-1"
             >
               <IconDelete class="size-4" />
               {t("setting.about.reset_options")}
             </Button>
+
+            <Show
+              when={
+                typeof window !== "undefined" &&
+                "caches" in window &&
+                "serviceWorker" in navigator
+              }
+            >
+              <Button
+                variant="destructive"
+                class="gap-1"
+                onClick={async () => {
+                  const { result } =
+                    await openClearServiceWorkerCacheDialog();
+                  if (!result) {
+                    return;
+                  }
+
+                  try {
+                    await window.caches
+                      .keys()
+                      .then((keys) => {
+                        return Promise.all(
+                          keys.map((key) => {
+                            return window.caches.delete(
+                              key,
+                            );
+                          }),
+                        );
+                      });
+                    await navigator.serviceWorker
+                      .getRegistrations()
+                      .then((registrations) => {
+                        return Promise.all(
+                          registrations.map(
+                            (registration) => {
+                              return registration.unregister();
+                            },
+                          ),
+                        );
+                      });
+                    toast.success(
+                      t(
+                        "common.notification.clear_cache_success",
+                      ),
+                    );
+                    if (result.reload) {
+                      window.location.reload();
+                    }
+                  } catch (error) {
+                    if (error instanceof Error) {
+                      toast.error(
+                        t(
+                          "common.notification.clear_cache_failed",
+                          { error: error.message },
+                        ),
+                      );
+                    } else {
+                      toast.error(
+                        t(
+                          "common.notification.unknown_error",
+                        ),
+                      );
+                    }
+                  }
+                }}
+              >
+                <IconDelete class="size-4" />
+                {t(
+                  "setting.about.clear_service_worker_cache",
+                )}
+              </Button>
+            </Show>
 
             <Button onClick={() => open()} class="gap-1">
               <IconInfo class="size-4" />
@@ -1302,6 +1381,66 @@ const createResetOptionsDialog = () => {
       <Button
         variant="destructive"
         onClick={() => submit(true)}
+      >
+        {t("common.action.confirm")}
+      </Button>
+    ),
+  });
+  return {
+    open,
+    Component,
+  };
+};
+
+const createClearServiceWorkerCacheDialog = () => {
+  const [reload, setReload] = createSignal(true);
+  const { open, close, submit, Component } = createDialog<{
+    reload: boolean;
+  }>({
+    title: () =>
+      t("common.clear_service_worker_cache_dialog.title"),
+    description: () =>
+      t(
+        "common.clear_service_worker_cache_dialog.description",
+      ),
+    content: () => (
+      <>
+        <p>
+          {t(
+            "common.clear_service_worker_cache_dialog.content",
+          )}
+        </p>
+        <p>
+          <Switch
+           class="flex items-center justify-between text-sm"
+            checked={reload()}
+            onChange={(isChecked) => setReload(isChecked)}
+          >
+            <SwitchLabel>
+              {t(
+                "common.clear_service_worker_cache_dialog.reload",
+              )}
+            </SwitchLabel>
+            <SwitchControl>
+              <SwitchThumb />
+            </SwitchControl>
+          </Switch>
+        </p>
+      </>
+    ),
+    cancel: (
+      <Button onClick={() => close()}>
+        {t("common.action.cancel")}
+      </Button>
+    ),
+    confirm: (
+      <Button
+        variant="destructive"
+        onClick={() =>
+          submit({
+            reload: reload(),
+          })
+        }
       >
         {t("common.action.confirm")}
       </Button>

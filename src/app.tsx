@@ -3,6 +3,7 @@ import {
   useSearchParams,
 } from "@solidjs/router";
 import {
+  createEffect,
   createSignal,
   onCleanup,
   onMount,
@@ -16,7 +17,6 @@ import {
   ColorModeProvider,
   ColorModeScript,
   createLocalStorageManager,
-  useColorMode,
 } from "@kobalte/core";
 import {
   clientProfile,
@@ -32,9 +32,15 @@ import { toast } from "solid-sonner";
 import { sessionService } from "./libs/services/session-service";
 import createAboutDialog from "./components/about-dialog";
 import {
+  appInitialized,
   appOptions,
   backgroundImage,
+  localeOptionsMap,
+  localFromLanguage,
+  setAppInitialized,
   setAppOptions,
+  setStarterMessageSent,
+  starterMessageSent,
   TurnServerOptions,
 } from "./options";
 import { MetaProvider, Style } from "@solidjs/meta";
@@ -48,21 +54,24 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "./components/ui/avatar";
-import { getInitials } from "./libs/utils/name";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "./components/ui/hover-card";
-import { QRCode } from "./components/qrcode";
-import { Button } from "./components/ui/button";
-import { t } from "./i18n";
 import {
   IconHome,
   IconLink,
   IconPermContactCalendar,
 } from "./components/icons";
+import { getInitials } from "./libs/utils/name";
+import { Button } from "./components/ui/button";
+import { t, isDictLoaded } from "./i18n";
+import { v4 } from "uuid";
 import { createIsMobile } from "./libs/hooks/create-mobile";
+import { messageStores } from "./libs/core/messge";
+import { sleep } from "./libs/utils/sleep";
+import { makePersisted } from "@solid-primitives/storage";
 
 const createWakeLock = () => {
   const [wakeLock, setWakeLock] =
@@ -131,7 +140,7 @@ const InnerApp = (props: ParentProps) => {
   } = createAboutDialog();
 
   const onJoinRoom = async () => {
-    if (clientProfile.firstTime) {
+    if (clientProfile.initalJoin) {
       const result = await openRoomDialog();
       if (result.cancel) {
         return;
@@ -201,7 +210,7 @@ const InnerApp = (props: ParentProps) => {
       );
     }
     if (reset) {
-      setClientProfile("firstTime", true);
+      setClientProfile("initalJoin", true);
     }
 
     if (search.join) {
@@ -217,11 +226,65 @@ const InnerApp = (props: ParentProps) => {
     }
   };
 
+  const initStarterMessage = async () => {
+    console.log(appOptions.locale);
+    const instructorClientId = v4();
+    messageStores.setClient({
+      clientId: instructorClientId,
+      name: "Starter",
+      avatar: null,
+    });
+
+    await messageStores.addMessage({
+      id: v4(),
+      type: "text",
+      client: instructorClientId,
+      target: clientProfile.clientId,
+      data: t("common.starter.welcome"),
+      createdAt: Date.now(),
+      status: "received",
+    });
+    await sleep(1);
+    await messageStores.addMessage({
+      id: v4(),
+      type: "text",
+      client: instructorClientId,
+      target: clientProfile.clientId,
+      data: t("common.starter.tip1"),
+      createdAt: Date.now(),
+      status: "received",
+    });
+    await sleep(1);
+    await messageStores.addMessage({
+      id: v4(),
+      type: "text",
+      client: instructorClientId,
+      target: clientProfile.clientId,
+      data: t("common.starter.tip2"),
+      createdAt: Date.now(),
+      status: "received",
+    });
+  };
+
   onMount(async () => {
     parseSearchParams();
+    if (!localeOptionsMap[appOptions.locale]) {
+      setAppOptions(
+        "locale",
+        localFromLanguage(navigator.language),
+      );
+    }
 
-    if (appOptions.showAboutDialog) {
+    if (!appInitialized()) {
+      setAppInitialized(true);
       openAboutDialog();
+    }
+  });
+
+  createEffect(() => {
+    if (isDictLoaded() && !starterMessageSent()) {
+      setStarterMessageSent(true);
+      initStarterMessage();
     }
   });
 

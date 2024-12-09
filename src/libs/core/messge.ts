@@ -271,25 +271,23 @@ class MessageStores {
 
   private async setMessageDB(message: StoreMessage) {
     const db = await this.db;
-    message.type;
     let request: IDBRequest<IDBValidKey>;
-    if (message.type === "text") {
-      request = db
-        .transaction("messages", "readwrite")
-        .objectStore("messages")
-        .put({
-          ...message,
-        });
-    } else if (message.type === "file") {
-      const { progress, ...storeMessage } = message;
-
-      request = db
-        .transaction("messages", "readwrite")
-        .objectStore("messages")
-        .put(storeMessage);
-    }
-
     return new Promise((resolve, reject) => {
+      if (message.type === "text") {
+        request = db
+          .transaction("messages", "readwrite")
+          .objectStore("messages")
+          .put({
+            ...message,
+          });
+      } else if (message.type === "file") {
+        const { progress, ...storeMessage } = message;
+
+        request = db
+          .transaction("messages", "readwrite")
+          .objectStore("messages")
+          .put(storeMessage);
+      }
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
@@ -538,6 +536,20 @@ class MessageStores {
         );
       }
     }
+  }
+
+  async addMessage(message: StoreMessage) {
+    new Promise((resolve, reject) => {
+      this.setMessages(
+        produce((state) => {
+          state.push(message);
+        }),
+      );
+
+      this.setMessageDB(message)
+        .then(resolve)
+        .catch(reject);
+    });
   }
 
   setClient(client: Client) {

@@ -11,7 +11,7 @@ export interface ClientProfile extends Client {
   roomId: string;
   password: string | null;
   autoJoin: boolean;
-  firstTime: boolean;
+  initalJoin: boolean;
 }
 
 /**
@@ -113,7 +113,7 @@ export const getDefaultProfile = () => {
     password: null,
     avatar: faker.image.avatar(),
     autoJoin: false,
-    firstTime: true,
+    initalJoin: true,
   };
 };
 

@@ -125,7 +125,7 @@ const Client: Component = (props) => {
                 {t("client.index.edit_profile")}
               </span>
             </Button>
-            <Show when={!clientProfile.firstTime}>
+            <Show when={!clientProfile.initalJoin}>
               <Button
                 class="gap-2"
                 onClick={() => joinRoom()}
