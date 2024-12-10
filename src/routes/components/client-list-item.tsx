@@ -41,6 +41,7 @@ import { t } from "@/i18n";
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { getInitials } from "@/libs/utils/name";
 import { ConnectionBadge } from "../../components/connection-badge";
+import { IconFile } from "@/components/icon-file";
 
 export interface UserItemProps
   extends ComponentProps<"li"> {
@@ -48,6 +49,31 @@ export interface UserItemProps
   collapsed: boolean;
   message?: StoreMessage;
 }
+
+const MessageData = (props: { message?: StoreMessage }) => {
+  switch (props.message?.type) {
+    case "text": {
+      return (
+        <p class="muted line-clamp-2 break-all">
+          {props.message.data}
+        </p>
+      );
+    }
+    case "file": {
+      return (
+        <div class="muted line-clamp-2 break-all">
+          <div class="space-x-1 [&>*]:align-middle [&_*]:inline [&_svg]:size-4">
+            <IconFile mimetype={props.message.mimeType} />
+            <span>{props.message.fileName}</span>
+          </div>
+        </div>
+      );
+    }
+    default: {
+      return <></>;
+    }
+  }
+};
 
 export const UserItem: Component<UserItemProps> = (
   props,
@@ -66,76 +92,6 @@ export const UserItem: Component<UserItemProps> = (
     open: openConfirmDeleteClientDialog,
     Component: ConfirmDeleteClientDialog,
   } = createComfirmDeleteClientDialog();
-
-  const renderLastMessage = () => {
-    switch (props.message?.type) {
-      case "text": {
-        return (
-          <p class="muted line-clamp-2 break-all">
-            {props.message.data}
-          </p>
-        );
-      }
-      case "file": {
-        return (
-          <div class="muted line-clamp-2 break-all">
-            <div class="space-x-1 [&>*]:align-middle [&_*]:inline [&_svg]:size-4">
-              <Switch
-                fallback={
-                  <>
-                    <span>
-                      <IconDraftFilled />
-                    </span>
-                    <span>{props.message.fileName}</span>
-                  </>
-                }
-              >
-                <Match
-                  when={props.message.mimeType?.startsWith(
-                    "image",
-                  )}
-                >
-                  <>
-                    <span>
-                      <IconPhotoFilled />
-                    </span>
-                    <span>{props.message.fileName}</span>
-                  </>
-                </Match>
-                <Match
-                  when={props.message.mimeType?.startsWith(
-                    "video",
-                  )}
-                >
-                  <>
-                    <span>
-                      <IconVideoFileFilled />
-                    </span>
-                    <span>{props.message.fileName}</span>
-                  </>
-                </Match>
-                <Match
-                  when={props.message.mimeType?.startsWith(
-                    "audio",
-                  )}
-                >
-                  <>
-                    <span>
-                      <IconAudioFileFilled />
-                    </span>
-                    <span>{props.message.fileName}</span>
-                  </>
-                </Match>
-              </Switch>
-            </div>
-          </div>
-        );
-      }
-      default: {
-        return <></>;
-      }
-    }
-  };
 
   return (
     <>
@@ -192,7 +148,7 @@ export const UserItem: Component<UserItemProps> = (
                 sm:px-1"
               href={`/client/${local.client.clientId}/chat`}
             >
-              <Avatar class="self-center size-10">
+              <Avatar class="size-10 self-center">
                 <AvatarImage
                   src={local.client.avatar ?? undefined}
                 />
@@ -210,7 +166,7 @@ export const UserItem: Component<UserItemProps> = (
                       client={clientInfo()}
                     />
                   </p>
-                  {renderLastMessage()}
+                  <MessageData message={props.message} />
                   <Show when={props.message?.createdAt}>
                     {(createdAt) => (
                       <span class="muted float-end text-nowrap text-xs">

@@ -23,6 +23,12 @@ import {
   CalloutTitle,
 } from "@/components/ui/callout";
 import { Collapsible } from "@/components/ui/collapsible";
+import {
+  IconClose,
+  IconScreenShare,
+  IconStopScreenShare,
+} from "@/components/icons";
+import { makePersisted } from "@solid-primitives/storage";
 
 export interface VideoChatProps {}
 
@@ -93,14 +99,43 @@ export default function Video() {
     setDisplayStream(null);
   };
 
+  const [showWarning, setShowWarning] = makePersisted(
+    createSignal(true),
+    {
+      name: "video-warning",
+      storage: localStorage,
+    },
+  );
+
   return (
-    <div class="flex flex-col gap-2 w-full">
-      <Callout variant="warning">
-        <CalloutContent>
-          The video chat feature is still under development
-          and functionality may be unstable.
-        </CalloutContent>
-      </Callout>
+    <>
+      <div
+        class="sticky top-[var(--mobile-header-height)] z-10 flex h-12
+          w-full items-center justify-between border-b border-border
+          bg-background/50 px-4 backdrop-blur sm:top-0"
+      >
+        <h4 class="h4">
+          {t("video.title")}
+          {roomStatus.roomId
+            ? ` - ${roomStatus.roomId}`
+            : ""}
+        </h4>
+      </div>
+      <Show when={showWarning()}>
+        <Callout variant="warning" class="relative">
+          <CalloutContent>
+            The video chat feature is still under
+            development and functionality may be unstable.
+          </CalloutContent>
+          <button
+            class="absolute right-2 top-1/2 -translate-y-1/2"
+            onClick={() => setShowWarning(false)}
+          >
+            <IconClose class="size-4" />
+          </button>
+        </Callout>
+      </Show>
+
       <div
         class="grid w-full grid-cols-1 place-content-center gap-2
           md:grid-cols-2"
@@ -140,15 +175,24 @@ export default function Video() {
               </div>
             )}
           </Show>
-          <div class="absolute right-1 top-1 flex gap-1">
+          <div class="absolute left-1/2 top-1 flex -translate-x-1/2 gap-1">
             <Show
               when={navigator.mediaDevices.getDisplayMedia}
             >
-              <Button size="sm" onClick={openScreen}>
-                {localStream()
-                  ? t("common.action.change")
-                  : t("common.action.open")}
-                {t("video.device.screen")}
+              <Button
+                size="sm"
+                onClick={openScreen}
+                class="h-8 text-nowrap rounded-full p-2 hover:gap-1
+                  [&:hover>.grid]:grid-cols-[1fr]"
+              >
+                <IconScreenShare class="size-4" />
+                <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
+                  <span class="min-w-0">
+                    {localStream()
+                      ? t("common.action.change")
+                      : t("common.action.open")}
+                  </span>
+                </p>
               </Button>
             </Show>
             <Show when={devices.camera}>
@@ -156,7 +200,6 @@ export default function Video() {
                 {localStream()
                   ? t("common.action.change")
                   : t("common.action.open")}
-                {t("video.device.camera")}
               </Button>
             </Show>
 
@@ -165,9 +208,15 @@ export default function Video() {
                 size="sm"
                 onClick={closeStream}
                 variant="destructive"
+                class="h-8 text-nowrap rounded-full p-2 hover:gap-1
+                  [&:hover>.grid]:grid-cols-[1fr]"
               >
-                {t("common.action.close")}
-                {t("video.device.screen")}
+                <IconStopScreenShare class="size-4" />
+                <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
+                  <span class="min-w-0">
+                    {t("common.action.close")}
+                  </span>
+                </p>
               </Button>
             </Show>
           </div>
@@ -224,11 +273,10 @@ export default function Video() {
           )}
         </For>
       </div>
-
       {/* <div class="h-auto overflow-x-auto text-xs">
           <pre>{JSON.stringify(devices(), null, 2)}</pre>
           <pre>{JSON.stringify(roomStatus, null, 2)}</pre>
-        </div> */}
-    </div>
+          </div> */}
+    </>
   );
 }

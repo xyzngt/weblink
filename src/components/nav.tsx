@@ -2,13 +2,14 @@ import { cn } from "@/libs/cn";
 import { A, useLocation } from "@solidjs/router";
 import {
   ComponentProps,
+  createEffect,
   createMemo,
   splitProps,
 } from "solid-js";
 import {
   IconFolder,
   IconForum,
-  IconMeetingRoom,
+  IconMonitor,
   IconSettings,
 } from "./icons";
 import { t } from "@/i18n";
@@ -20,20 +21,20 @@ import {
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 
 export const linkClasses = cn(
-  "text-foreground/60 hover:text-foreground/80 aria-[current]:text-foreground transition-colors font-semibold",
+  "text-foreground/60 [&:not(&[aria-current])]:hover:text-foreground/80 aria-[current]:text-foreground transition-colors font-semibold",
 );
 
 export default function Nav(props: ComponentProps<"nav">) {
   const location = useLocation();
-  const active = (path: string) =>
-    path == location.pathname
-      ? "border-sky-600"
-      : "border-transparent hover:border-sky-600";
   const [local, other] = splitProps(props, ["class"]);
   const isMobile = createIsMobile();
   const placement = createMemo(() =>
     isMobile() ? "bottom" : "right",
   );
+  const active = (path: string) =>
+    location.pathname.startsWith(path)
+      ? "text-foreground"
+      : "";
   return (
     <nav class={cn("flex gap-2", local.class)} {...other}>
       <Tooltip placement={placement()}>
@@ -41,7 +42,7 @@ export default function Nav(props: ComponentProps<"nav">) {
           as={A}
           href="/"
           aria-label={t("nav.chat")}
-          class={cn(linkClasses, active("/"))}
+          class={cn(linkClasses, active("/client"))}
         >
           <IconForum class="size-8" />
         </TooltipTrigger>
@@ -53,13 +54,13 @@ export default function Nav(props: ComponentProps<"nav">) {
         <TooltipTrigger
           as={A}
           href="/video"
-          aria-label={t("nav.video_conference")}
-          class={cn(linkClasses, active("/video"))}
+          aria-label={t("nav.screen_sharing")}
+          class={cn(linkClasses)}
         >
-          <IconMeetingRoom class="size-8" />
+          <IconMonitor class="size-8" />
         </TooltipTrigger>
         <TooltipContent>
-          {t("common.nav.video_conference")}
+          {t("common.nav.screen_sharing")}
         </TooltipContent>
       </Tooltip>
       <Tooltip placement={placement()}>
@@ -67,7 +68,7 @@ export default function Nav(props: ComponentProps<"nav">) {
           as={A}
           href="/file"
           aria-label={t("nav.file_cache")}
-          class={cn(linkClasses, active("/file"))}
+          class={cn(linkClasses)}
         >
           <IconFolder class="size-8" />
         </TooltipTrigger>
@@ -80,7 +81,7 @@ export default function Nav(props: ComponentProps<"nav">) {
           as={A}
           href="/setting"
           aria-label={t("nav.settings")}
-          class={cn(linkClasses, active("/setting"))}
+          class={cn(linkClasses)}
         >
           <IconSettings class="size-8" />
         </TooltipTrigger>

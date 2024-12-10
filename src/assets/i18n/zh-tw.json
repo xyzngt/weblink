@@ -200,7 +200,7 @@
     "message_error": "發生錯誤"
   },
   "video": {
-    "title": "視訊通話",
+    "title": "螢幕共享",
     "device": {
       "screen": "螢幕",
       "camera": "攝影機"
@@ -330,9 +330,9 @@
       "cancel": "取消",
       "confirm": "確定",
       "actions": "操作",
-      "close": "關閉",
-      "change": "更改",
       "open": "打開",
+      "change": "更改",
+      "close": "關閉",
       "preview": "預覽",
       "send": "傳送",
       "view": "查看",
@@ -385,7 +385,7 @@
     "nav": {
       "chat": "聊天",
       "file_cache": "檔案快取",
-      "video_conference": "視訊會議",
+      "screen_sharing": "螢幕共享",
       "settings": "設定",
       "join_room": "加入房間",
       "leave_room": "離開房間",

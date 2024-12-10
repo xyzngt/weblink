@@ -201,6 +201,7 @@
     }
   },
   "video": {
+    "title": "Screen Sharing",
     "device": {
       "screen": "Screen",
       "camera": "Camera"
@@ -330,6 +331,7 @@
       "cancel": "Cancel",
       "confirm": "Confirm",
       "actions": "Actions",
+      "open": "Open",
       "close": "Close",
       "change": "Change",
       "preview": "Preview",
@@ -381,7 +383,7 @@
     "nav": {
       "chat": "Chat",
       "file_cache": "File Cache",
-      "video_conference": "Video Conference",
+      "screen_sharing": "Screen Sharing",
       "settings": "Settings",
       "join_room": "Join Room",
       "leave_room": "Leave Room",

@@ -430,7 +430,7 @@ const InnerApp = (props: ParentProps) => {
             <JoinRoomButton class="md:hidden" />
           </div>
         </div>
-        {props.children}
+        <div class="flex-1">{props.children}</div>
       </div>
     </>
   );

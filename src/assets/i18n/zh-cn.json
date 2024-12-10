@@ -200,7 +200,7 @@
     "message_error": "发生错误"
   },
   "video": {
-    "title": "视频通话",
+    "title": "屏幕共享",
     "device": {
       "screen": "屏幕",
       "camera": "摄像头"
@@ -330,9 +330,9 @@
       "cancel": "取消",
       "confirm": "确定",
       "actions": "操作",
-      "close": "关闭",
-      "change": "更改",
       "open": "打开",
+      "change": "更改",
+      "close": "关闭",
       "preview": "预览",
       "send": "发送",
       "view": "查看",
@@ -385,7 +385,7 @@
     "nav": {
       "chat": "聊天",
       "file_cache": "文件缓存",
-      "video_conference": "视频会议",
+      "screen_sharing": "屏幕共享",
       "settings": "设置",
       "join_room": "加入房间",
       "leave_room": "离开房间",

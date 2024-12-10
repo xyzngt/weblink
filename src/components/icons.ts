@@ -21,7 +21,6 @@ import IconDelete from "@material-design-icons/svg/outlined/delete.svg?component
 import IconPersonOff from "@material-symbols/svg-400/outlined/person_off.svg?component-solid";
 import IconPerson from "@material-symbols/svg-400/outlined/person.svg?component-solid";
 import IconForum from "@material-symbols/svg-400/outlined/forum.svg?component-solid";
-import IconMeetingRoom from "@material-symbols/svg-400/outlined/meeting_room.svg?component-solid";
 import IconSettings from "@material-symbols/svg-400/outlined/settings.svg?component-solid";
 import IconFolder from "@material-symbols/svg-400/outlined/folder.svg?component-solid";
 import IconLogin from "@material-symbols/svg-400/outlined/login.svg?component-solid";
@@ -70,6 +69,11 @@ import IconEdit from "@material-symbols/svg-400/outlined/edit.svg?component-soli
 import IconEditSquare from "@material-symbols/svg-400/outlined/edit_square.svg?component-solid";
 import IconLink from "@material-symbols/svg-400/outlined/link.svg?component-solid";
 import IconPlayArrow from "@material-symbols/svg-400/outlined/play_arrow.svg?component-solid";
+import IconMonitor from "@material-symbols/svg-400/outlined/monitor.svg?component-solid";
+import IconScreenShare from "@material-symbols/svg-400/outlined/screen_share.svg?component-solid";
+import IconStopScreenShare from "@material-symbols/svg-400/outlined/stop_screen_share.svg?component-solid";
+import IconImageFilled from "@material-symbols/svg-400/outlined/image-fill.svg?component-solid";
+import IconFolderZipFilled from "@material-symbols/svg-400/outlined/folder_zip-fill.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -94,7 +98,6 @@ export {
   IconPersonOff,
   IconPerson,
   IconForum,
-  IconMeetingRoom,
   IconSettings,
   IconFolder,
   IconLogin,
@@ -143,4 +146,9 @@ export {
   IconEditSquare,
   IconLink,
   IconPlayArrow,
+  IconMonitor,
+  IconScreenShare,
+  IconStopScreenShare,
+  IconImageFilled,
+  IconFolderZipFilled,
 };

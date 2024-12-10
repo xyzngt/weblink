@@ -1,9 +1,11 @@
 import {
   batch,
+  ComponentProps,
   createEffect,
   createMemo,
   createSignal,
   For,
+  JSX,
   onMount,
   Show,
 } from "solid-js";
@@ -57,12 +59,16 @@ import {
 } from "@/components/ui/checkbox";
 import {
   IconAdd,
+  IconAudioFileFilled,
   IconClose,
   IconClose700,
   IconDelete,
   IconDownload,
+  IconDraftFilled,
   IconFolder,
+  IconFolderZipFilled as IconFolderZipFilled,
   IconForward,
+  IconImageFilled as IconImageFilled,
   IconMenu,
   IconMerge,
   IconMoreHoriz,
@@ -70,6 +76,7 @@ import {
   IconPreview,
   IconSearch700,
   IconShare,
+  IconVideoFileFilled,
   IconWallpaper,
 } from "@/components/icons";
 import { t } from "@/i18n";
@@ -102,6 +109,7 @@ import { DataTableFacetedFilter } from "@/components/data-table/data-table-facet
 import { toast } from "solid-sonner";
 import { catchErrorAsync } from "@/libs/catch";
 import { canShareFile } from "@/libs/utils/can-share";
+import { IconFile } from "../components/icon-file";
 
 const columnHelper = createColumnHelper<FileMetaData>();
 
@@ -221,9 +229,13 @@ export default function File() {
         />
       ),
       cell: (info) => (
-        <p class="max-w-xs overflow-hidden text-ellipsis">
-          {info.getValue()}
-        </p>
+        <div
+          class="space-x-1 overflow-hidden text-ellipsis [&>*]:align-middle
+            [&_*]:inline [&_svg]:size-4"
+        >
+          <IconFile mimetype={info.row.original.mimetype} />
+          <span>{info.getValue()}</span>
+        </div>
       ),
       enableGlobalFilter: true,
     }),
@@ -700,9 +712,10 @@ export default function File() {
       </PortableContextMenu>
 
       <div
-        class="container relative z-[10] flex min-h-[calc(100%-3rem)]
-          flex-col gap-4 bg-background/80 px-0 pb-20 pt-4
-          sm:max-w-[calc(100%-var(--desktop-header-width))]"
+        class="container relative z-[10] flex h-full
+          min-h-[calc(100%-3rem)] flex-col gap-4 bg-background/80 px-0
+          pb-20 pt-4
+          sm:max-w-[calc(100vw-var(--desktop-header-width))]"
       >
         <div class="pointer-events-none absolute inset-0 z-[-1] backdrop-blur" />
         <h2 class="h2 px-2">{t("cache.title")}</h2>
@@ -850,7 +863,7 @@ export default function File() {
         </div>
 
         <DropArea
-          class="relative flex flex-1 flex-col-reverse"
+          class="relative flex h-full flex-col-reverse"
           overlay={(ev) => {
             if (!ev) return;
             if (ev.dataTransfer) {
