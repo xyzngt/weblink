@@ -27,6 +27,7 @@ import {
   IconClose,
   IconScreenShare,
   IconStopScreenShare,
+  IconVideoCam,
 } from "@/components/icons";
 import { makePersisted } from "@solid-primitives/storage";
 
@@ -196,10 +197,20 @@ export default function Video() {
               </Button>
             </Show>
             <Show when={devices.camera}>
-              <Button size="sm" onClick={openCamera}>
-                {localStream()
-                  ? t("common.action.change")
-                  : t("common.action.open")}
+              <Button
+                size="sm"
+                class="h-8 text-nowrap rounded-full p-2 hover:gap-1
+                  [&:hover>.grid]:grid-cols-[1fr]"
+                onClick={openCamera}
+              >
+                <IconVideoCam class="size-4" />
+                <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
+                  <span class="min-w-0">
+                    {localStream()
+                      ? t("common.action.change")
+                      : t("common.action.open")}
+                  </span>
+                </p>
               </Button>
             </Show>
 

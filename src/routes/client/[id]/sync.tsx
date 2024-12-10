@@ -40,7 +40,6 @@ import { t } from "@/i18n";
 import {
   ChunkCacheInfo,
   ChunkMetaData,
-  FileMetaData,
   getTotalChunkCount,
 } from "@/libs/cache";
 import { cn } from "@/libs/cn";
@@ -89,9 +88,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { toast } from "solid-sonner";
 import { catchErrorAsync } from "@/libs/catch";
 import { canShareFile } from "@/libs/utils/can-share";
+import { IconFile } from "@/components/icon-file";
 
 type ChunkStatus =
   | "not_started"
@@ -148,8 +147,15 @@ const Sync = (props: RouteSectionProps) => {
         />
       ),
       cell: (info) => (
-        <p class="max-w-xs overflow-hidden text-ellipsis">
-          {info.getValue()}
+        <p
+          class="max-w-xs space-x-1 overflow-hidden text-ellipsis
+            [&>*]:align-middle"
+        >
+          <IconFile
+            mimetype={info.row.original.mimetype}
+            class="inline size-4"
+          />
+          <span>{info.getValue()}</span>
         </p>
       ),
     }),

@@ -45,7 +45,6 @@ export class PeerSession {
   private closed: boolean = false;
   private relayOnly: boolean;
   private signalCache: Array<ClientSignal> = [];
-  private isReconnecting: boolean = false;
   readonly polite: boolean;
   private reconnectTimeout: number | null = null;
   constructor(
@@ -320,23 +319,19 @@ export class PeerSession {
   }
 
   private async handleDisconnection() {
-    if (this.isReconnecting) {
-      console.warn(
-        `session ${this.clientId} is reconnecting, skip handle disconnection`,
-      );
-      return;
-    }
-    this.isReconnecting = true;
-    if (this.reconnectTimeout) {
-      window.clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
-    }
     if (this.closed) {
       console.warn(
         `session ${this.clientId} is closed, skip handle connection error`,
       );
       return;
     }
+    if (this.reconnectTimeout) {
+      console.warn(
+        `session ${this.clientId} is reconnecting, skip handle connection error`,
+      );
+      return;
+    }
+
     if (
       ["connected", "connecting"].includes(
         this.peerConnection?.connectionState ?? "",
@@ -373,9 +368,12 @@ export class PeerSession {
           `reconnect attempt ${reconnectAttempts} failed, error: `,
           err,
         );
-        if (reconnectAttempts <= 10) {
+        if (reconnectAttempts < 10) {
           this.reconnectTimeout = window.setTimeout(
-            () => attemptReconnect(),
+            () =>
+              attemptReconnect().then(
+                () => (this.reconnectTimeout = null),
+              ),
             Math.random() * (500 + reconnectAttempts * 500),
           );
         } else {
@@ -383,10 +381,7 @@ export class PeerSession {
             `reconnect attempt ${reconnectAttempts} failed`,
           );
           this.disconnect();
-          this.isReconnecting = false;
         }
-      } else {
-        this.isReconnecting = false;
       }
     };
     attemptReconnect();

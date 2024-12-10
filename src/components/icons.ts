@@ -74,6 +74,7 @@ import IconScreenShare from "@material-symbols/svg-400/outlined/screen_share.svg
 import IconStopScreenShare from "@material-symbols/svg-400/outlined/stop_screen_share.svg?component-solid";
 import IconImageFilled from "@material-symbols/svg-400/outlined/image-fill.svg?component-solid";
 import IconFolderZipFilled from "@material-symbols/svg-400/outlined/folder_zip-fill.svg?component-solid";
+import IconVideoCam from "@material-symbols/svg-400/outlined/videocam.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -151,4 +152,5 @@ export {
   IconStopScreenShare,
   IconImageFilled,
   IconFolderZipFilled,
+  IconVideoCam,
 };

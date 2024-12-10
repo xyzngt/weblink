@@ -62,7 +62,6 @@ import { t } from "@/i18n";
 import { Dynamic } from "solid-js/web";
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { FileMetaData } from "@/libs/cache";
-import { FileMessageTitle } from "@/components/message-title";
 import {
   Tooltip,
   TooltipContent,
@@ -75,6 +74,7 @@ import { createPreviewDialog } from "@/components/preview-dialog";
 import { downloadFile } from "@/libs/utils/download-file";
 import { FileID } from "@/libs/core/type";
 import { canShareFile } from "@/libs/utils/can-share";
+import { IconFile } from "@/components/icon-file";
 
 export interface MessageCardProps
   extends ComponentProps<"li"> {
@@ -87,6 +87,34 @@ export interface FileMessageCardProps {
   message: FileTransferMessage;
   onLoad?: () => void;
 }
+
+const Title = (
+  props: {
+    name: string;
+    type?: string;
+  } & ComponentProps<"div">,
+) => {
+  const [local, other] = splitProps(props, [
+    "name",
+    "type",
+    "class",
+  ]);
+  return (
+    <div class={cn("relative", local.class)} {...other}>
+      {" "}
+      <div
+        class="absolute inset-0 space-x-1 overflow-hidden text-ellipsis
+          whitespace-nowrap [&>*]:align-middle"
+      >
+        <IconFile
+          mimetype={local.type}
+          class="inline size-4"
+        />
+        <span>{local.name}</span>
+      </div>
+    </div>
+  );
+};
 
 const FileMessageCard: Component<FileMessageCardProps> = (
   props,
@@ -177,7 +205,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
       <Show
         when={cacheData()}
         fallback={
-          <FileMessageTitle
+          <Title
+            class="w-full max-w-[calc(100vw*0.5)]"
             type="default"
             name={props.message.fileName}
           />
@@ -237,11 +266,10 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         "image/",
                       )}
                     >
-                      <FileMessageTitle
-                        type="image"
+                      <Title
                         name={props.message.fileName}
+                        type={cache().mimetype}
                       />
-
                       <a
                         id="pswp-item"
                         href={url}
@@ -255,6 +283,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         )}
                       >
                         <img
+                          class="object-cover"
                           src={url}
                           alt={cache().fileName}
                           onload={(ev) => {
@@ -286,9 +315,9 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         "video/",
                       )}
                     >
-                      <FileMessageTitle
-                        type="video"
+                      <Title
                         name={props.message.fileName}
+                        type={cache().mimetype}
                       />
                       <a
                         id="pswp-item"
@@ -342,15 +371,16 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         "audio/",
                       )}
                     >
-                      <FileMessageTitle
-                        type="audio"
+                      <Title
                         name={props.message.fileName}
+                        type={cache().mimetype}
                       />
                       <audio
-                        class=""
                         controls
                         src={url}
-                        onCanPlay={() => props.onLoad?.()}
+                        onLoadedMetadata={() =>
+                          props.onLoad?.()
+                        }
                       />
                     </Match>
                   </Switch>
