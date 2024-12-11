@@ -44,6 +44,12 @@ createRoot(() => {
             setLocalStream(null);
           }
         });
+        track.addEventListener("mute", () => {
+          console.log("track mute");
+        });
+        track.addEventListener("unmute", () => {
+          console.log("track unmute");
+        });
       });
       setLocalStream(stream);
     }

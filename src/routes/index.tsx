@@ -176,7 +176,7 @@ export default function Home(props: RouteSectionProps) {
         </ResizablePanel>
       </Show>
       <Show when={!isMobile()}>
-        <ResizableHandle withHandle />
+        <ResizableHandle />
       </Show>
 
       <Show

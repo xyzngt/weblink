@@ -1412,7 +1412,7 @@ const createClearServiceWorkerCacheDialog = () => {
         </p>
         <p>
           <Switch
-           class="flex items-center justify-between text-sm"
+            class="flex items-center justify-between text-sm"
             checked={reload()}
             onChange={(isChecked) => setReload(isChecked)}
           >
@@ -1508,7 +1508,64 @@ const MediaSetting: Component = () => {
         {t("setting.media.title")}
       </h3>
       <div class="flex flex-col gap-2">
-        <Show
+        <Show when={cameraPermission() === "prompt"}>
+          <Button
+            onClick={() => {
+              navigator.mediaDevices
+                .getUserMedia({
+                  video: true,
+                })
+                .then((stream) => {
+                  stream.getTracks().forEach((track) => {
+                    track.stop();
+                  });
+                  toast.success(
+                    t(
+                      "setting.media.request_permission.camera_success",
+                    ),
+                  );
+                })
+                .catch((error) => {
+                  console.error(error);
+                  toast.error(error.message);
+                });
+            }}
+          >
+            {t(
+              "setting.media.request_permission.camera_title",
+            )}
+          </Button>
+        </Show>
+        <Show when={microphonePermission() === "prompt"}>
+          <Button
+            onClick={() => {
+              navigator.mediaDevices
+                .getUserMedia({
+                  audio: true,
+                })
+                .then((stream) => {
+                  stream.getTracks().forEach((track) => {
+                    track.stop();
+                  });
+                  toast.success(
+                    t(
+                      "setting.media.request_permission.microphone_success",
+                    ),
+                  );
+                })
+                .catch((error) => {
+                  console.error(error);
+                  toast.error(error.message);
+                });
+            }}
+          >
+            {t(
+              "setting.media.request_permission.microphone_title",
+            )}
+          </Button>
+        </Show>
+
+        {/* <Show
           when={
             cameraPermission() === "prompt" ||
             microphonePermission() === "prompt"
@@ -1551,7 +1608,7 @@ const MediaSetting: Component = () => {
               "setting.media.request_permission.description",
             )}
           </p>
-        </Show>
+        </Show> */}
       </div>
       <Show when={availableCameras().length !== 0}>
         <label class="flex flex-col gap-2">
@@ -1637,7 +1694,7 @@ const MediaSetting: Component = () => {
           </Select>
         </label>
       </Show>
-      <Show when={localStream()}>
+      {/* <Show when={localStream()}>
         <video
           class="max-h-64 w-full object-contain"
           muted
@@ -1649,7 +1706,7 @@ const MediaSetting: Component = () => {
             });
           }}
         />
-      </Show>
+      </Show> */}
     </>
   );
 };

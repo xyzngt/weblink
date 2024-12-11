@@ -18,17 +18,22 @@ export interface PeerSessionOptions {
 }
 
 export type PeerSessionEventMap = {
-  created: void;
-  connecting: void;
-  connected: void;
-  close: void;
   channel: RTCDataChannel;
   message: SessionMessage;
   error: Error;
-  disconnect: void;
-  messageChannelChange: "ready" | "closed";
-  reconnect: void;
+  messagechannelchange: "ready" | "closed";
+  stream: MediaStream | null;
+  statuschange: PeerSessionStatus;
 };
+
+type PeerSessionStatus =
+  | "init"
+  | "created"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "disconnected"
+  | "closed";
 
 export class PeerSession {
   private eventEmitter: MultiEventEmitter<PeerSessionEventMap> =
@@ -42,11 +47,12 @@ export class PeerSession {
   private channels: RTCDataChannel[] = [];
   private messageChannel: RTCDataChannel | null = null;
   private iceServers: RTCIceServer[] = [];
-  private closed: boolean = false;
   private relayOnly: boolean;
   private signalCache: Array<ClientSignal> = [];
   readonly polite: boolean;
   private reconnectTimeout: number | null = null;
+  private remoteStream: MediaStream | null = null;
+  private status: PeerSessionStatus = "init";
   constructor(
     sender: SignalingService,
     {
@@ -101,8 +107,14 @@ export class PeerSession {
     );
   }
 
+  private setStatus(status: PeerSessionStatus) {
+    if (this.status === status) return;
+    this.status = status;
+    this.dispatchEvent("statuschange", status);
+  }
+
   private initializeConnection() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `can not initialize connection, session ${this.clientId} is closed`,
       );
@@ -144,7 +156,7 @@ export class PeerSession {
       });
     }
 
-    this.dispatchEvent("created", undefined);
+    this.setStatus("created");
 
     window.addEventListener(
       "beforeunload",
@@ -183,6 +195,38 @@ export class PeerSession {
       {
         signal: this.controller.signal,
       },
+    );
+
+    pc.addEventListener(
+      "track",
+      (ev) => {
+        const stream = ev.streams[0];
+        if (!stream) return;
+        if (
+          this.remoteStream &&
+          stream.id === this.remoteStream.id
+        ) {
+          const track = ev.track;
+          this.remoteStream.addTrack(track);
+          this.dispatchEvent("stream", this.remoteStream);
+          return;
+        }
+        this.remoteStream = stream;
+
+        stream.addEventListener("removetrack", (ev) => {
+          console.log(
+            `client ${this.targetClientId} removetrack`,
+            ev.track.id,
+          );
+          if (stream.getTracks().length === 0) {
+            this.remoteStream = null;
+            this.dispatchEvent("stream", null);
+          }
+        });
+
+        this.dispatchEvent("stream", stream);
+      },
+      { signal: this.controller.signal },
     );
 
     pc.addEventListener(
@@ -245,10 +289,7 @@ export class PeerSession {
           );
 
           this.messageChannel = ev.channel;
-          this.dispatchEvent(
-            "messageChannelChange",
-            "ready",
-          );
+          this.dispatchEvent("messagechannelchange", "ready");
         }
 
         this.dispatchEvent("channel", ev.channel);
@@ -288,11 +329,11 @@ export class PeerSession {
           case "new":
             break;
           case "connecting":
-            this.dispatchEvent("connecting", undefined);
+            this.setStatus("connecting");
             break;
           case "connected":
             this.connectable = true;
-            this.dispatchEvent("connected", undefined);
+            this.setStatus("connected");
             break;
           case "closed":
           case "disconnected":
@@ -319,7 +360,7 @@ export class PeerSession {
   }
 
   private async handleDisconnection() {
-    if (this.closed) {
+    if (this.status === "closed") {
       console.warn(
         `session ${this.clientId} is closed, skip handle connection error`,
       );
@@ -350,7 +391,7 @@ export class PeerSession {
     }
     let reconnectAttempts = 0;
     const attemptReconnect = async () => {
-      if (this.closed) {
+      if (this.status === "closed") {
         console.warn(
           `session ${this.clientId} is closed, skip reconnect`,
         );
@@ -488,7 +529,7 @@ export class PeerSession {
   }
 
   async listen() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not listen`,
       );
@@ -548,10 +589,7 @@ export class PeerSession {
 
         if (channel.protocol === "message") {
           this.messageChannel = null;
-          this.dispatchEvent(
-            "messageChannelChange",
-            "closed",
-          );
+          this.dispatchEvent("messagechannelchange", "closed");
         }
       },
       { once: true },
@@ -577,10 +615,7 @@ export class PeerSession {
       channel.addEventListener(
         "open",
         () => {
-          this.dispatchEvent(
-            "messageChannelChange",
-            "ready",
-          );
+          this.dispatchEvent("messagechannelchange", "ready");
         },
         { signal: this.controller?.signal },
       );
@@ -594,10 +629,7 @@ export class PeerSession {
       channel.addEventListener(
         "close",
         () => {
-          this.dispatchEvent(
-            "messageChannelChange",
-            "closed",
-          );
+          this.dispatchEvent("messagechannelchange", "closed");
         },
         { signal: this.controller?.signal },
       );
@@ -608,7 +640,7 @@ export class PeerSession {
   }
 
   sendMessage(message: SessionMessage) {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not send message`,
       );
@@ -624,7 +656,7 @@ export class PeerSession {
   }
 
   async renegotiate() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not renegotiate`,
       );
@@ -660,7 +692,7 @@ export class PeerSession {
   }
 
   async reconnect() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not reconnect`,
       );
@@ -673,7 +705,7 @@ export class PeerSession {
         this.initializeConnection(),
       );
       if (err) throw err;
-      this.dispatchEvent("reconnect", undefined);
+      this.setStatus("reconnecting");
       return await this.connect();
     }
     const pc = this.peerConnection;
@@ -688,7 +720,7 @@ export class PeerSession {
       return;
     }
 
-    this.dispatchEvent("reconnect", undefined);
+    this.setStatus("reconnecting");
 
     return new Promise<void>(async (resolve, reject) => {
       const onConnectionStateChange = () => {
@@ -752,7 +784,7 @@ export class PeerSession {
   }
 
   async connect() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not connect`,
       );
@@ -848,7 +880,7 @@ export class PeerSession {
     if (this.messageChannel) {
       this.messageChannel.close();
       this.messageChannel = null;
-      this.dispatchEvent("messageChannelChange", "closed");
+      this.dispatchEvent("messagechannelchange", "closed");
     }
     if (this.peerConnection) {
       this.peerConnection.close();
@@ -858,13 +890,18 @@ export class PeerSession {
       window.clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
     }
-    this.dispatchEvent("disconnect", undefined);
+    if (this.remoteStream) {
+      this.remoteStream.getTracks().forEach((track) => {
+        track.stop();
+      });
+      this.remoteStream = null;
+    }
+    this.setStatus("disconnected");
   }
 
   close() {
     this.disconnect();
-    this.closed = true;
-    this.dispatchEvent("close", undefined);
+    this.setStatus("closed");
   }
 }
 

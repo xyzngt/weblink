@@ -108,7 +108,10 @@
         "description": "更改應用程式的揚聲器"
       },
       "request_permission": {
-        "title": "請求媒體權限",
+        "camera_title": "請求攝影機權限",
+        "microphone_title": "請求麥克風權限",
+        "camera_success": "攝影機權限已授予",
+        "microphone_success": "麥克風權限已授予",
         "description": "請求媒體權限以使用媒體設定，如果請求權限後無法選擇媒體裝置，請嘗試重新整理頁面",
         "fallback_description": "請允許瀏覽器使用攝影機和麥克風"
       }
@@ -348,7 +351,9 @@
       "resume": "恢復",
       "add_folder": "添加資料夾",
       "check_availability": "檢查可用性",
-      "reload": "重新加載"
+      "reload": "重新加載",
+      "mute": "靜音",
+      "unmute": "取消靜音"
     },
     "clipboard_history": {
       "title": "剪貼簿歷史"

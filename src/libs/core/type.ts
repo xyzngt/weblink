@@ -34,6 +34,7 @@ export interface ClientInfo extends TransferClient {
   clipboard?: SendClipboardMessage[];
   storage?: ChunkMetaData[];
   messageChannel: boolean;
+  stream?: MediaStream;
 }
 export type RoomID = string;
 export type ClientID = string;

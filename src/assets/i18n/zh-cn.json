@@ -108,7 +108,10 @@
         "description": "更改应用程序的扬声器"
       },
       "request_permission": {
-        "title": "请求媒体权限",
+        "camera_title": "请求摄像头权限",
+        "microphone_title": "请求麦克风权限",
+        "camera_success": "摄像头权限已授予",
+        "microphone_success": "麦克风权限已授予",
         "description": "请求媒体权限以使用媒体设置，如果请求权限后无法选择媒体设备，请尝试刷新页面",
         "fallback_description": "请允许浏览器使用摄像头和麦克风"
       }
@@ -348,7 +351,9 @@
       "resume": "恢复",
       "add_folder": "添加文件夹",
       "check_availability": "检查可用性",
-      "reload": "重新加载"
+      "reload": "重新加载",
+      "mute": "静音",
+      "unmute": "取消静音"
     },
     "clipboard_history": {
       "title": "剪贴板历史"

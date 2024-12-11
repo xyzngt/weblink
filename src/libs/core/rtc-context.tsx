@@ -42,6 +42,7 @@ import { appOptions } from "@/options";
 import { toast } from "solid-sonner";
 import { ChunkMetaData, FileMetaData } from "../cache";
 import { catchErrorAsync } from "../catch";
+import { create } from "qrcode";
 
 async function getClientService(
   options: ClientServiceInitOptions,
@@ -104,7 +105,7 @@ export interface WebRTCContextProps {
   shareFile: (fileId: FileID, target: ClientID) => void;
   resumeFile: (fileId: FileID, target: ClientID) => void;
   roomStatus: RoomStatus;
-  remoteStreams: Record<string, MediaStream>;
+  // remoteStreams: Record<string, MediaStream>;
 }
 
 export interface WebRTCProviderProps extends ParentProps {
@@ -146,9 +147,15 @@ export const WebRTCProvider: Component<
     });
   });
 
-  const [remoteStreams, setRemoteStreams] = createStore<
-    Record<string, MediaStream>
-  >({});
+  // createEffect(() => {
+  //   if (props.localStream) {
+  //    setRoomStatus
+  //   }
+  // });
+
+  // const [remoteStreams, setRemoteStreams] = createStore<
+  //   Record<string, MediaStream>
+  // >({});
 
   const [roomStatus, setRoomStatus] =
     createStore<RoomStatus>({
@@ -465,6 +472,8 @@ export const WebRTCProvider: Component<
         return;
       }
 
+      
+
       const localStream = props.localStream;
 
       session.addEventListener("message", async (ev) => {
@@ -496,7 +505,15 @@ export const WebRTCProvider: Component<
         }
       });
 
-      session.addEventListener("created", () => {
+      session.addEventListener("statuschange", (ev) => {
+        switch (ev.detail) {
+          case "created":
+            handleCreated();
+            break;
+        }
+      });
+
+      const handleCreated = () => {
         const pc = session.peerConnection!;
 
         if (localStream) {
@@ -514,45 +531,45 @@ export const WebRTCProvider: Component<
             }
           });
         }
-        props.onTrackChanged?.(targetClient.clientId, pc);
+        // props.onTrackChanged?.(targetClient.clientId, pc);
 
-        const onTrack = ({
-          track,
-          streams,
-        }: RTCTrackEvent) => {
-          console.log(`on track event:`, streams, track);
-          const stream = streams[0];
-          if (!stream) return;
-          if (
-            remoteStreams[targetClient.clientId] &&
-            remoteStreams[targetClient.clientId].id ===
-              stream.id
-          )
-            return;
+        // const onTrack = ({
+        //   track,
+        //   streams,
+        // }: RTCTrackEvent) => {
+        //   // console.log(`on track event:`, streams, track);
+        //   const stream = streams[0];
+        //   if (!stream) return;
+        //   if (
+        //     remoteStreams[targetClient.clientId] &&
+        //     remoteStreams[targetClient.clientId].id ===
+        //       stream.id
+        //   )
+        //     return;
 
-          stream.addEventListener("removetrack", (ev) => {
-            console.log(
-              `client ${targetClient.clientId} removetrack`,
-              ev.track.id,
-            );
-            if (stream.getTracks().length === 0) {
-              setRemoteStreams(
-                targetClient.clientId,
-                undefined!,
-              );
-            }
-          });
+        //   stream.addEventListener("removetrack", (ev) => {
+        //     console.log(
+        //       `client ${targetClient.clientId} removetrack`,
+        //       ev.track.id,
+        //     );
+        //     if (stream.getTracks().length === 0) {
+        //       setRemoteStreams(
+        //         targetClient.clientId,
+        //         undefined!,
+        //       );
+        //     }
+        //   });
 
-          console.log(
-            `new remote stream from client ${targetClient.clientId}`,
-            stream.getTracks(),
-          );
+        //   console.log(
+        //     `new remote stream from client ${targetClient.clientId}`,
+        //     stream.getTracks(),
+        //   );
 
-          setRemoteStreams(targetClient.clientId, stream);
-          props.onTrackChanged?.(targetClient.clientId, pc);
-        };
-        pc.addEventListener("track", onTrack);
-      });
+        //   setRemoteStreams(targetClient.clientId, stream);
+        //   props.onTrackChanged?.(targetClient.clientId, pc);
+        // };
+        // pc.addEventListener("track", onTrack);
+      };
 
       await session.listen();
       messageStores.setClient(targetClient);
@@ -578,7 +595,7 @@ export const WebRTCProvider: Component<
       console.log(`client ${client.clientId} leave`);
       sessionService.destorySession(client.clientId);
 
-      setRemoteStreams(client.clientId, undefined!);
+      // setRemoteStreams(client.clientId, undefined!);
     });
 
     setRoomStatus("roomId", clientProfile.roomId);
@@ -590,13 +607,13 @@ export const WebRTCProvider: Component<
       console.log(`on leave room ${room}`);
     }
 
-    updateRemoteStreams(null);
+    // updateRemoteStreams(null);
 
     sessionService.destoryAllSession();
     setRoomStatus("roomId", null);
     setRoomStatus("profile", null);
 
-    setRemoteStreams(reconcile({}));
+    // setRemoteStreams(reconcile({}));
   };
 
   onCleanup(() => {
@@ -884,7 +901,7 @@ export const WebRTCProvider: Component<
         requestFile,
         resumeFile,
         roomStatus,
-        remoteStreams: remoteStreams,
+        // remoteStreams: remoteStreams,
       }}
     >
       {props.children}

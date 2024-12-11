@@ -75,6 +75,12 @@ import IconStopScreenShare from "@material-symbols/svg-400/outlined/stop_screen_
 import IconImageFilled from "@material-symbols/svg-400/outlined/image-fill.svg?component-solid";
 import IconFolderZipFilled from "@material-symbols/svg-400/outlined/folder_zip-fill.svg?component-solid";
 import IconVideoCam from "@material-symbols/svg-400/outlined/videocam.svg?component-solid";
+import IconWindow from "@material-symbols/svg-700/outlined/window.svg?component-solid";
+import IconCropSquare from "@material-symbols/svg-700/outlined/crop_square.svg?component-solid";
+import IconMic from "@material-symbols/svg-400/outlined/mic.svg?component-solid";
+import IconMicOff from "@material-symbols/svg-400/outlined/mic_off.svg?component-solid";
+import IconVolumeOff from "@material-symbols/svg-400/outlined/volume_off.svg?component-solid";
+import IconVolumeUp from "@material-symbols/svg-400/outlined/volume_up.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -153,4 +159,10 @@ export {
   IconImageFilled,
   IconFolderZipFilled,
   IconVideoCam,
+  IconWindow,
+  IconCropSquare,
+  IconMic,
+  IconMicOff,
+  IconVolumeOff,
+  IconVolumeUp,
 };

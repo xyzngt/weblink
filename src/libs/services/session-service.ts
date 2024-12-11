@@ -192,52 +192,52 @@ class SessionService {
     this.setSessions(client.clientId, session);
 
     const controller = new AbortController();
-    session.addEventListener(
-      "connecting",
-      () => {
-        this.setClientInfo(
-          client.clientId,
-          "onlineStatus",
-          "connecting",
-        );
-      },
-      { signal: controller.signal },
-    );
 
     session.addEventListener(
-      "connected",
-      () => {
-        this.setClientInfo(
-          client.clientId,
-          "onlineStatus",
-          "online",
-        );
-      },
-      { signal: controller.signal },
-    );
-
-    session.addEventListener(
-      "close",
-      () => {
-        this.setClientInfo(
-          client.clientId,
-          "onlineStatus",
-          "offline",
-        );
-        controller.abort();
-        this.destorySession(session.clientId);
-      },
-      { signal: controller.signal },
-    );
-
-    session.addEventListener(
-      "disconnect",
-      () => {
-        this.setClientInfo(
-          client.clientId,
-          "onlineStatus",
-          "offline",
-        );
+      "statuschange",
+      (ev) => {
+        console.log(`session status change`, ev.detail);
+        switch (ev.detail) {
+          case "created":
+            break;
+          case "connecting":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "connecting",
+            );
+            break;
+          case "connected":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "online",
+            );
+            break;
+          case "reconnecting":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "reconnecting",
+            );
+            break;
+          case "disconnected":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "offline",
+            );
+            break;
+          case "closed":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "offline",
+            );
+            controller.abort();
+            this.destorySession(session.clientId);
+            break;
+        }
       },
       { signal: controller.signal },
     );
@@ -253,16 +253,20 @@ class SessionService {
       { signal: controller.signal },
     );
 
-    session.addEventListener("reconnect", (ev) => {
-      this.setClientInfo(
-        client.clientId,
-        "onlineStatus",
-        "reconnecting",
-      );
-    });
+    session.addEventListener(
+      "stream",
+      (ev) => {
+        this.setClientInfo(
+          client.clientId,
+          "stream",
+          reconcile(ev.detail ?? undefined),
+        );
+      },
+      { signal: controller.signal },
+    );
 
     session.addEventListener(
-      "messageChannelChange",
+      "messagechannelchange",
       (ev) => {
         if (this.clientInfo[client.clientId]) {
           this.setClientInfo(

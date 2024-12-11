@@ -109,7 +109,10 @@
         "description": "Change the speaker of the media"
       },
       "request_permission": {
-        "title": "Request Media Permission",
+        "camera_title": "Request Camera Permission",
+        "microphone_title": "Request Microphone Permission",
+        "camera_success": "Camera permission granted",
+        "microphone_success": "Microphone permission granted",
         "description": "Request media permission to use the media settings, if you can't select the media devices after requesting permission, please try to refresh the page",
         "fallback_description": "Please allow the browser to use the camera and microphone"
       }
@@ -349,7 +352,9 @@
       "resume": "Resume",
       "add_folder": "Add Folder",
       "check_availability": "Check Availability",
-      "reload": "Reload"
+      "reload": "Reload",
+      "mute": "Mute",
+      "unmute": "Unmute"
     },
     "notification": {
       "copy_success": "Copy success",
