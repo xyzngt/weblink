@@ -90,23 +90,11 @@ import { checkIceServerAvailability } from "@/libs/core/utils/turn";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import DropArea from "@/components/drop-area";
 import { catchErrorAsync } from "@/libs/catch";
-type MediaDeviceInfoType = Omit<MediaDeviceInfo, "toJSON">;
-
-export const [devices, setDevices] = makePersisted(
-  createStore<{
-    camera: MediaDeviceInfoType | null;
-    microphone: MediaDeviceInfoType | null;
-    speaker: MediaDeviceInfoType | null;
-  }>({
-    camera: null,
-    microphone: null,
-    speaker: null,
-  }),
-  {
-    storage: localStorage,
-    name: "devices",
-  },
-);
+import {
+  devices,
+  MediaDeviceInfoType,
+  setDevices,
+} from "@/components/media-selection-dialog";
 
 function parseTurnServers(
   input: string,
@@ -934,7 +922,7 @@ export default function Settings() {
             </p>
           </div>
 
-          <MediaSetting />
+          {/* <MediaSetting /> */}
           <Collapsible>
             <CollapsibleTrigger
               as={(props: ComponentProps<"div">) => (
@@ -1694,19 +1682,6 @@ const MediaSetting: Component = () => {
           </Select>
         </label>
       </Show>
-      {/* <Show when={localStream()}>
-        <video
-          class="max-h-64 w-full object-contain"
-          muted
-          autoplay
-          controls
-          ref={(ref) => {
-            createEffect(() => {
-              ref.srcObject = localStream();
-            });
-          }}
-        />
-      </Show> */}
     </>
   );
 };

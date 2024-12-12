@@ -353,7 +353,8 @@
       "check_availability": "檢查可用性",
       "reload": "重新加載",
       "mute": "靜音",
-      "unmute": "取消靜音"
+      "unmute": "取消靜音",
+      "select": "選擇"
     },
     "clipboard_history": {
       "title": "剪貼簿歷史"
@@ -374,6 +375,27 @@
       "author": "作者",
       "license": "許可證",
       "github": "GitHub 儲存庫"
+    },
+    "media_selection_dialog": {
+      "title": "媒體選擇",
+      "screen": "螢幕",
+      "user_media": "用戶媒體",
+      "camera": "攝影機",
+      "microphone": "麥克風",
+      "enable_camera": "啟用攝影機",
+      "enable_microphone": "啟用麥克風",
+      "no_camera_available": "沒有攝影機可用",
+      "no_microphone_available": "沒有麥克風可用",
+      "request_camera_permission": "請求攝影機權限",
+      "request_microphone_permission": "請求麥克風權限",
+      "select_microphone": "選擇麥克風 (預設)",
+      "select_camera": "選擇攝影機 (預設)",
+      "open_screen": "打開螢幕",
+      "open_camera": "打開攝影機",
+      "close": "關閉",
+      "change": "更改",
+      "current": "當前",
+      "preview": "預覽"
     },
     "notification": {
       "copy_success": "複製成功",

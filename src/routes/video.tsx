@@ -3,7 +3,6 @@ import {
   createMemo,
   createSignal,
   For,
-  onMount,
   Show,
 } from "solid-js";
 import { useWebRTC } from "@/libs/core/rtc-context";
@@ -15,7 +14,6 @@ import {
   localStream,
   setDisplayStream,
 } from "@/libs/stream";
-import { devices } from "./setting";
 import { sessionService } from "@/libs/services/session-service";
 import { t } from "@/i18n";
 import {
@@ -23,7 +21,6 @@ import {
   CalloutContent,
   CalloutTitle,
 } from "@/components/ui/callout";
-import { Collapsible } from "@/components/ui/collapsible";
 import {
   IconClose,
   IconCropSquare,
@@ -36,11 +33,6 @@ import {
 } from "@/components/icons";
 import { makePersisted } from "@solid-primitives/storage";
 import {
-  Resizable,
-  ResizableHandle,
-  ResizablePanel,
-} from "@/components/ui/resizable";
-import {
   Tabs,
   TabsIndicator,
   TabsList,
@@ -51,21 +43,7 @@ import { ClientInfo } from "@/libs/core/type";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { Dynamic } from "solid-js/web";
 import { createCheckVolume } from "@/libs/hooks/check-volume";
-
-export interface VideoChatProps {}
-
-const constraints = {
-  video: {
-    width: { max: 1920 },
-    height: { max: 1080 },
-    frameRate: { max: 60 },
-  },
-  audio: {
-    autoGainControl: true,
-    echoCancellation: true,
-    noiseSuppression: true,
-  },
-} satisfies MediaStreamConstraints;
+import { createMediaSelectionDialog } from "@/components/media-selection-dialog";
 
 export default function Video() {
   if (!navigator.mediaDevices) {
@@ -229,45 +207,14 @@ const LocalToolbar = (props: {
   client?: ClientInfo;
   class?: string;
 }) => {
-  const openScreen = async () => {
-    const local =
-      await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          ...constraints.video,
-        },
-        audio: {
-          deviceId: devices.speaker?.deviceId,
-          ...constraints.audio,
-        },
-      });
-
-    setDisplayStream(local);
-  };
-
-  const openCamera = async () => {
-    const local = await navigator.mediaDevices.getUserMedia(
-      {
-        video: devices.camera
-          ? {
-              deviceId: devices.camera?.deviceId,
-              ...constraints.video,
-            }
-          : undefined,
-        audio: devices.microphone
-          ? {
-              deviceId: devices.microphone?.deviceId,
-              ...constraints.audio,
-            }
-          : undefined,
-      },
-    );
-
-    setDisplayStream(local);
-  };
-
   const closeStream = async () => {
     setDisplayStream(null);
   };
+
+  const {
+    open: openMediaSelection,
+    Component: MediaSelectionDialogComponent,
+  } = createMediaSelectionDialog();
 
   const audioTrack = createMemo(() => {
     const stream = localStream();
@@ -279,37 +226,7 @@ const LocalToolbar = (props: {
     return null;
   });
 
-  // const hasVoice = createMemo(() => {
-  //   const stream = localStream();
-  //   if (!stream) {
-  //     return false;
-  //   }
-
-  //   const audioContext = new AudioContext();
-  //   const analyser = audioContext.createAnalyser();
-
-  //   const source = audioContext.createMediaStreamSource(track);
-  //   if (track) {
-  //     return track;
-  //   }
-  //   return false;
-  // });
-
   const [muted, setMuted] = createSignal(false);
-
-  createEffect(() => {
-    const track = audioTrack();
-    if (track) {
-      track.addEventListener("mute", () => {
-        console.log("mute");
-        // setMuted(true);
-      });
-      track.addEventListener("unmute", () => {
-        console.log("unmute");
-        // setMuted(false);
-      });
-    }
-  });
 
   createEffect(() => {
     const track = audioTrack();
@@ -319,42 +236,34 @@ const LocalToolbar = (props: {
   });
 
   return (
-    <div class={props.class}>
-      <Show when={navigator.mediaDevices.getDisplayMedia}>
-        <Button
-          size="sm"
-          onClick={openScreen}
-          variant={localStream() ? "secondary" : "default"}
-          class="h-8 text-nowrap rounded-full p-2 hover:gap-1
-            [&:hover>.grid]:grid-cols-[1fr]"
-        >
-          <IconScreenShare class="size-4" />
-          <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
-            <span class="min-w-0">
-              {localStream()
-                ? t("common.action.change")
-                : t("common.action.open")}
-            </span>
-          </p>
-        </Button>
-      </Show>
-      <Show when={devices.camera}>
-        <Button
-          size="sm"
-          class="h-8 text-nowrap rounded-full p-2 hover:gap-1
-            [&:hover>.grid]:grid-cols-[1fr]"
-          onClick={openCamera}
-        >
-          <IconVideoCam class="size-4" />
-          <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
-            <span class="min-w-0">
-              {localStream()
-                ? t("common.action.change")
-                : t("common.action.open")}
-            </span>
-          </p>
-        </Button>
-      </Show>
+    <div
+      class={cn(
+        "flex gap-1 rounded-full bg-black/50",
+        props.class,
+      )}
+    >
+      <MediaSelectionDialogComponent />
+      <Button
+        size="sm"
+        onClick={async () => {
+          const { result } = await openMediaSelection();
+          if (result) {
+            setDisplayStream(result);
+          }
+        }}
+        variant={localStream() ? "secondary" : "default"}
+        class="h-8 text-nowrap rounded-full p-2 hover:gap-1
+          [&:hover>.grid]:grid-cols-[1fr]"
+      >
+        <IconScreenShare class="size-4" />
+        <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
+          <span class="min-w-0">
+            {localStream()
+              ? t("common.action.change")
+              : t("common.action.select")}
+          </span>
+        </p>
+      </Button>
 
       <Show when={audioTrack()}>
         <Button
@@ -437,7 +346,7 @@ const VideoItem = (props: { client: ClientInfo }) => {
         <div class="absolute left-1 top-1 flex gap-1">
           <Badge
             variant="secondary"
-            class="bg-black/50 text-xs text-white hover:bg-black/80 gap-1"
+            class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"
           >
             {props.client.name}
             <IconVolumeUp

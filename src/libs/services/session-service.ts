@@ -144,20 +144,14 @@ class SessionService {
 
   async addClient(client: TransferClient) {
     if (!this.service) {
-      console.warn(
+      throw new Error(
         `can not add client, client service not found`,
       );
-      return;
     }
     if (this.sessions[client.clientId]) {
-      console.log(
+      throw new Error(
         `client ${client.clientId} has already created`,
       );
-      return;
-    }
-
-    if (this.sessions[client.clientId]) {
-      return;
     }
 
     const polite =
@@ -254,7 +248,7 @@ class SessionService {
     );
 
     session.addEventListener(
-      "stream",
+      "remotestreamchange",
       (ev) => {
         this.setClientInfo(
           client.clientId,

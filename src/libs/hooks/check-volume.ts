@@ -23,6 +23,7 @@ export const createCheckVolume = (
   let timer: number | undefined;
   createEffect(() => {
     const checkStream = stream();
+
     setSpeaking(false);
     if (audioContext) {
       audioContext.close();
@@ -33,8 +34,8 @@ export const createCheckVolume = (
       timer = undefined;
     }
     if (!checkStream) return;
-
-    let context: AudioContext = new AudioContext();
+    if (checkStream.getAudioTracks().length === 0) return;
+    const context: AudioContext = new AudioContext();
     audioContext = context;
     const source =
       context.createMediaStreamSource(checkStream);

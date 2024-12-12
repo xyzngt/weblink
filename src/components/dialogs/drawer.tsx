@@ -14,13 +14,13 @@ import {
 } from "./base";
 import { cn } from "@/libs/cn";
 
-const BaseDrawer: Component<BaseModalProps> = (props) => {
+const BaseDrawer: Component<BaseModalProps<any>> = (props) => {
   return (
     <Drawer
       noOutsidePointerEvents={false}
       open={props.isOpen}
       closeOnOutsidePointerStrategy="pointerdown"
-      onOpenChange={() => props.onClose()}
+      onOpenChange={() => props.onCancel?.()}
     >
       <DrawerContent class={cn(props.class)}>
         <DrawerHeader>

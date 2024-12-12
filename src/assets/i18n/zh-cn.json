@@ -353,7 +353,8 @@
       "check_availability": "检查可用性",
       "reload": "重新加载",
       "mute": "静音",
-      "unmute": "取消静音"
+      "unmute": "取消静音",
+      "select": "选择"
     },
     "clipboard_history": {
       "title": "剪贴板历史"
@@ -374,6 +375,27 @@
       "author": "作者",
       "license": "许可证",
       "github": "GitHub 仓库"
+    },
+    "media_selection_dialog": {
+      "title": "媒体选择",
+      "screen": "屏幕",
+      "user_media": "用户媒体",
+      "camera": "摄像头",
+      "microphone": "麦克风",
+      "enable_camera": "启用摄像头",
+      "enable_microphone": "启用麦克风",
+      "no_camera_available": "没有摄像头可用",
+      "no_microphone_available": "没有麦克风可用",
+      "request_camera_permission": "请求摄像头权限",
+      "request_microphone_permission": "请求麦克风权限",
+      "select_microphone": "选择麦克风 (默认)",
+      "select_camera": "选择摄像头 (默认)",
+      "open_screen": "打开屏幕",
+      "open_camera": "打开摄像头",
+      "close": "关闭",
+      "change": "更改",
+      "current": "当前",
+      "preview": "预览"
     },
     "notification": {
       "copy_success": "复制成功",

@@ -42,7 +42,6 @@ import { appOptions } from "@/options";
 import { toast } from "solid-sonner";
 import { ChunkMetaData, FileMetaData } from "../cache";
 import { catchErrorAsync } from "../catch";
-import { create } from "qrcode";
 
 async function getClientService(
   options: ClientServiceInitOptions,
@@ -147,23 +146,11 @@ export const WebRTCProvider: Component<
     });
   });
 
-  // createEffect(() => {
-  //   if (props.localStream) {
-  //    setRoomStatus
-  //   }
-  // });
-
-  // const [remoteStreams, setRemoteStreams] = createStore<
-  //   Record<string, MediaStream>
-  // >({});
-
   const [roomStatus, setRoomStatus] =
     createStore<RoomStatus>({
       roomId: null,
       profile: null,
     });
-
-  // targetClientId, connection
 
   async function handleReceiveMessage(
     session: PeerSession,
@@ -334,10 +321,16 @@ export const WebRTCProvider: Component<
               i < appOptions.channelsNumber;
               i++
             ) {
-              const channel = await session.createChannel(
-                `${transferer.id}-${i}`,
-                "transfer",
+              const [err, channel] = await catchErrorAsync(
+                session.createChannel(
+                  `${transferer.id}-${i}`,
+                  "transfer",
+                ),
               );
+              if (err) {
+                console.error(err);
+                throw err;
+              }
 
               if (channel) {
                 transferManager.addChannel(
@@ -373,10 +366,16 @@ export const WebRTCProvider: Component<
               i < appOptions.channelsNumber;
               i++
             ) {
-              const channel = await session.createChannel(
-                `${transferer.id}-${i}`,
-                "transfer",
+              const [err, channel] = await catchErrorAsync(
+                session.createChannel(
+                  `${transferer.id}-${i}`,
+                  "transfer",
+                ),
               );
+              if (err) {
+                console.error(err);
+                throw err;
+              }
 
               if (!channel) continue;
 
@@ -465,16 +464,13 @@ export const WebRTCProvider: Component<
     cs.listenForJoin(async (targetClient) => {
       console.log(`new client join in `, targetClient);
 
-      const session =
-        await sessionService.addClient(targetClient);
-      if (!session) {
-        console.error(`no client service setted`);
+      const [err, session] = await catchErrorAsync(
+        sessionService.addClient(targetClient),
+      );
+      if (err) {
+        console.error(err);
         return;
       }
-
-      
-
-      const localStream = props.localStream;
 
       session.addEventListener("message", async (ev) => {
         const message = ev.detail;
@@ -514,61 +510,7 @@ export const WebRTCProvider: Component<
       });
 
       const handleCreated = () => {
-        const pc = session.peerConnection!;
-
-        if (localStream) {
-          const tracks = localStream.getTracks();
-
-          pc.getTransceivers().forEach((transceiver) => {
-            const track = tracks.find(
-              (t) =>
-                t.kind === transceiver.receiver.track.kind,
-            );
-            if (track) {
-              transceiver.direction = "sendrecv";
-              transceiver.sender.replaceTrack(track);
-              transceiver.sender.setStreams(localStream);
-            }
-          });
-        }
-        // props.onTrackChanged?.(targetClient.clientId, pc);
-
-        // const onTrack = ({
-        //   track,
-        //   streams,
-        // }: RTCTrackEvent) => {
-        //   // console.log(`on track event:`, streams, track);
-        //   const stream = streams[0];
-        //   if (!stream) return;
-        //   if (
-        //     remoteStreams[targetClient.clientId] &&
-        //     remoteStreams[targetClient.clientId].id ===
-        //       stream.id
-        //   )
-        //     return;
-
-        //   stream.addEventListener("removetrack", (ev) => {
-        //     console.log(
-        //       `client ${targetClient.clientId} removetrack`,
-        //       ev.track.id,
-        //     );
-        //     if (stream.getTracks().length === 0) {
-        //       setRemoteStreams(
-        //         targetClient.clientId,
-        //         undefined!,
-        //       );
-        //     }
-        //   });
-
-        //   console.log(
-        //     `new remote stream from client ${targetClient.clientId}`,
-        //     stream.getTracks(),
-        //   );
-
-        //   setRemoteStreams(targetClient.clientId, stream);
-        //   props.onTrackChanged?.(targetClient.clientId, pc);
-        // };
-        // pc.addEventListener("track", onTrack);
+        session.setStream(props.localStream);
       };
 
       await session.listen();
@@ -594,8 +536,6 @@ export const WebRTCProvider: Component<
     cs.listenForLeave((client) => {
       console.log(`client ${client.clientId} leave`);
       sessionService.destorySession(client.clientId);
-
-      // setRemoteStreams(client.clientId, undefined!);
     });
 
     setRoomStatus("roomId", clientProfile.roomId);
@@ -620,51 +560,12 @@ export const WebRTCProvider: Component<
     leaveRoom();
   });
 
-  async function updateRemoteStreams(
-    stream: MediaStream | null,
-  ) {
+  createEffect(() => {
     for (const session of Object.values(
       sessionService.sessions,
     )) {
-      let renegotiate: boolean = false;
-      const pc = session.peerConnection;
-      if (!pc) return;
-
-      const tracks = stream?.getTracks() || [];
-      console.log(`get tracks`, tracks);
-
-      const transceivers = pc.getTransceivers();
-      console.log(`get transceivers`, transceivers);
-      transceivers.forEach((transceiver) => {
-        const track = tracks.find(
-          (t) => t.kind === transceiver.receiver.track.kind,
-        );
-        if (track) {
-          if (transceiver.sender.track !== track) {
-            transceiver.direction = "sendrecv";
-            transceiver.sender.replaceTrack(track);
-            stream && transceiver.sender.setStreams(stream);
-            renegotiate = true;
-          }
-        } else {
-          if (transceiver.sender.track) {
-            transceiver.direction = "recvonly";
-            transceiver.sender.replaceTrack(null);
-            transceiver.sender.setStreams();
-            renegotiate = true;
-          }
-        }
-      });
-
-      if (renegotiate) {
-        await session.renegotiate();
-        props.onTrackChanged?.(session.targetClientId, pc);
-      }
+      session.setStream(props.localStream);
     }
-  }
-
-  createEffect(() => {
-    updateRemoteStreams(props.localStream);
   });
 
   const getTargetSessions = (
@@ -901,7 +802,6 @@ export const WebRTCProvider: Component<
         requestFile,
         resumeFile,
         roomStatus,
-        // remoteStreams: remoteStreams,
       }}
     >
       {props.children}

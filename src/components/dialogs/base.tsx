@@ -14,7 +14,9 @@ export interface ModalOptions<T extends any> {
   content?: Component;
   confirm?: JSX.Element;
   cancel?: JSX.Element;
-  component: Component<BaseModalProps>;
+  component: Component<BaseModalProps<T>>;
+  onSubmit?: (data: T) => void;
+  onCancel?: () => void;
 }
 
 export interface ReturnValue<T> {
@@ -22,15 +24,16 @@ export interface ReturnValue<T> {
   cancel: boolean;
 }
 
-export interface BaseModalProps {
+export interface BaseModalProps<T extends any> {
   class?: string;
   isOpen: boolean;
-  onClose: () => void;
   title?: JSX.Element;
   description?: JSX.Element;
   content?: JSX.Element;
   confirm?: JSX.Element;
   cancel?: JSX.Element;
+  onSubmit?: (data: T) => void;
+  onCancel?: () => void;
 }
 
 export const createModal = <T extends any>(
@@ -48,6 +51,7 @@ export const createModal = <T extends any>(
   };
 
   const close = () => {
+    options.onCancel?.();
     reslovePromise()?.({
       result: undefined,
       cancel: true,
@@ -56,6 +60,7 @@ export const createModal = <T extends any>(
   };
 
   const submit = (data: T) => {
+    options.onSubmit?.(data);
     setIsOpen(false);
     reslovePromise()?.({
       result: data,
@@ -81,12 +86,13 @@ export const createModal = <T extends any>(
       <Component
         class={cn(props.class)}
         isOpen={isOpen()}
-        onClose={close}
         title={options?.title?.()}
         content={renderContent()}
         description={options?.description?.()}
         confirm={options?.confirm}
         cancel={options?.cancel}
+        onSubmit={options?.onSubmit}
+        onCancel={close}
       />
     );
   };

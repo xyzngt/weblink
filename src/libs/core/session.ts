@@ -22,7 +22,7 @@ export type PeerSessionEventMap = {
   message: SessionMessage;
   error: Error;
   messagechannelchange: "ready" | "closed";
-  stream: MediaStream | null;
+  remotestreamchange: MediaStream | null;
   statuschange: PeerSessionStatus;
 };
 
@@ -51,6 +51,7 @@ export class PeerSession {
   private signalCache: Array<ClientSignal> = [];
   readonly polite: boolean;
   private reconnectTimeout: number | null = null;
+  private stream: MediaStream | null = null;
   private remoteStream: MediaStream | null = null;
   private status: PeerSessionStatus = "init";
   constructor(
@@ -147,7 +148,12 @@ export class PeerSession {
     });
     this.peerConnection = pc;
 
-    if (pc.getTransceivers().length === 0) {
+    if (this.stream) {
+      const stream = this.stream;
+      stream.getTracks().forEach((track) => {
+        pc.addTrack(track, stream);
+      });
+    } else if (pc.getTransceivers().length === 0) {
       pc.addTransceiver("video", {
         direction: "recvonly",
       });
@@ -200,15 +206,23 @@ export class PeerSession {
     pc.addEventListener(
       "track",
       (ev) => {
+        console.log(
+          `client ${this.targetClientId} add track ${ev.track.id} stream ${ev.streams[0]?.id}`,
+        );
+
         const stream = ev.streams[0];
         if (!stream) return;
+
         if (
           this.remoteStream &&
           stream.id === this.remoteStream.id
         ) {
           const track = ev.track;
           this.remoteStream.addTrack(track);
-          this.dispatchEvent("stream", this.remoteStream);
+          this.dispatchEvent(
+            "remotestreamchange",
+            this.remoteStream,
+          );
           return;
         }
         this.remoteStream = stream;
@@ -218,13 +232,13 @@ export class PeerSession {
             `client ${this.targetClientId} removetrack`,
             ev.track.id,
           );
+          this.dispatchEvent("remotestreamchange", null);
           if (stream.getTracks().length === 0) {
             this.remoteStream = null;
-            this.dispatchEvent("stream", null);
           }
         });
 
-        this.dispatchEvent("stream", stream);
+        this.dispatchEvent("remotestreamchange", stream);
       },
       { signal: this.controller.signal },
     );
@@ -289,7 +303,10 @@ export class PeerSession {
           );
 
           this.messageChannel = ev.channel;
-          this.dispatchEvent("messagechannelchange", "ready");
+          this.dispatchEvent(
+            "messagechannelchange",
+            "ready",
+          );
         }
 
         this.dispatchEvent("channel", ev.channel);
@@ -560,12 +577,62 @@ export class PeerSession {
     });
   }
 
+  private removeStream() {
+    if (this.stream) {
+      this.stream.getTracks().forEach((track) => {
+        this.stream?.removeTrack(track);
+        track.stop();
+      });
+      this.stream = null;
+    }
+    this.peerConnection?.getSenders().forEach((sender) => {
+      if (sender.track) {
+        this.peerConnection?.removeTrack(sender);
+      }
+    });
+  }
+
+  setStream(stream: MediaStream | null) {
+    if (!stream) {
+      this.removeStream();
+      return;
+    }
+
+    if (this.stream) {
+      if (this.stream.id === stream.id) return;
+
+      this.removeStream();
+    }
+
+    this.stream = stream;
+
+    stream.addEventListener("removetrack", (ev) => {
+      console.log(
+        `client ${this.targetClientId} removetrack`,
+        ev.track.id,
+      );
+      const sender = this.peerConnection
+        ?.getSenders()
+        .find((sender) => sender.track?.id === ev.track.id);
+      if (sender) {
+        this.peerConnection?.removeTrack(sender);
+      }
+    });
+
+    stream.addEventListener("addtrack", (ev) => {
+      this.peerConnection?.addTrack(ev.track, stream);
+    });
+
+    stream.getTracks().forEach((track) => {
+      this.peerConnection?.addTrack(track, stream);
+    });
+  }
+
   async createChannel(label: string, protocol: string) {
     if (!this.peerConnection) {
-      console.error(
+      throw new Error(
         `failed to create channel, peer connection is null`,
       );
-      return;
     }
     const channel = this.peerConnection.createDataChannel(
       label,
@@ -589,7 +656,10 @@ export class PeerSession {
 
         if (channel.protocol === "message") {
           this.messageChannel = null;
-          this.dispatchEvent("messagechannelchange", "closed");
+          this.dispatchEvent(
+            "messagechannelchange",
+            "closed",
+          );
         }
       },
       { once: true },
@@ -615,7 +685,10 @@ export class PeerSession {
       channel.addEventListener(
         "open",
         () => {
-          this.dispatchEvent("messagechannelchange", "ready");
+          this.dispatchEvent(
+            "messagechannelchange",
+            "ready",
+          );
         },
         { signal: this.controller?.signal },
       );
@@ -629,7 +702,10 @@ export class PeerSession {
       channel.addEventListener(
         "close",
         () => {
-          this.dispatchEvent("messagechannelchange", "closed");
+          this.dispatchEvent(
+            "messagechannelchange",
+            "closed",
+          );
         },
         { signal: this.controller?.signal },
       );

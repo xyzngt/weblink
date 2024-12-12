@@ -354,7 +354,8 @@
       "check_availability": "Check Availability",
       "reload": "Reload",
       "mute": "Mute",
-      "unmute": "Unmute"
+      "unmute": "Unmute",
+      "select": "Select"
     },
     "notification": {
       "copy_success": "Copy success",
@@ -384,6 +385,27 @@
       "author": "Author",
       "license": "License",
       "github": "GitHub Repository"
+    },
+    "media_selection_dialog": {
+      "title": "Media Selection",
+      "screen": "Screen",
+      "user_media": "User Media",
+      "camera": "Camera",
+      "microphone": "Microphone",
+      "enable_camera": "Enable Camera",
+      "enable_microphone": "Enable Microphone",
+      "no_camera_available": "No camera available",
+      "no_microphone_available": "No microphone available",
+      "request_camera_permission": "Request Camera Permission",
+      "request_microphone_permission": "Request Microphone Permission",
+      "select_microphone": "Select Microphone (Default)",
+      "select_camera": "Select Camera (Default)",
+      "open_screen": "Open Screen",
+      "open_camera": "Open Camera",
+      "close": "Close",
+      "change": "Change",
+      "current": "Current",
+      "preview": "Preview"
     },
     "nav": {
       "chat": "Chat",
