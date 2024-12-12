@@ -6,7 +6,7 @@ import {
   onMount,
 } from "solid-js";
 
-const [devices, { refetch: refetchDevices }] =
+const [mediaDevices, { refetch: refetchDevices }] =
   createResource(
     () => navigator.mediaDevices.enumerateDevices(),
     {
@@ -16,7 +16,7 @@ const [devices, { refetch: refetchDevices }] =
 
 export const createCameras = () => {
   const cameras = createMemo(() =>
-    devices().filter(
+    mediaDevices().filter(
       (device) => device.kind === "videoinput",
     ),
   );
@@ -26,7 +26,7 @@ export const createCameras = () => {
 
 export const createMicrophones = () => {
   const microphones = createMemo(() =>
-    devices().filter(
+    mediaDevices().filter(
       (device) => device.kind === "audioinput",
     ),
   );
@@ -36,7 +36,7 @@ export const createMicrophones = () => {
 
 export const createSpeakers = () => {
   const speakers = createMemo(() =>
-    devices().filter(
+    mediaDevices().filter(
       (device) => device.kind === "audiooutput",
     ),
   );
@@ -54,9 +54,7 @@ createRoot(() => {
     onCleanup(() => {
       navigator.mediaDevices.removeEventListener(
         "devicechange",
-        () => {
-          refetchDevices();
-        },
+        refetchDevices,
       );
     });
   });
