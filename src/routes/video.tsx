@@ -1,4 +1,5 @@
 import {
+  Accessor,
   createEffect,
   createMemo,
   createSignal,
@@ -24,11 +25,14 @@ import {
 import {
   IconClose,
   IconCropSquare,
+  IconMic,
+  IconMicFilled,
   IconScreenShare,
   IconStopScreenShare,
   IconVideoCam,
   IconVolumeOff,
   IconVolumeUp,
+  IconVolumeUpFilled,
   IconWindow,
 } from "@/components/icons";
 import { makePersisted } from "@solid-primitives/storage";
@@ -44,6 +48,7 @@ import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { Dynamic } from "solid-js/web";
 import { createCheckVolume } from "@/libs/hooks/check-volume";
 import { createMediaSelectionDialog } from "@/components/media-selection-dialog";
+import { createStore } from "solid-js/store";
 
 export default function Video() {
   if (!navigator.mediaDevices) {
@@ -81,7 +86,25 @@ export default function Video() {
     setTab(isMobile() ? "1" : "2");
   });
 
-  const speaking = createCheckVolume(localStream);
+  const [speaking, setSpeaking] = createStore<
+    Array<[string, Accessor<boolean>]>
+  >([]);
+
+  createEffect(() => {
+    const localTracks = localStream()
+      ?.getAudioTracks()
+      .map((track) => {
+        return [
+          track.contentHint,
+          createCheckVolume(() => new MediaStream([track])),
+        ] as [string, Accessor<boolean>];
+      });
+    setSpeaking(localTracks ?? []);
+  });
+
+  const anySpeaking = createMemo(() => {
+    return speaking.some(([_, speak]) => speak());
+  });
 
   return (
     <>
@@ -168,10 +191,11 @@ export default function Video() {
                     class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"
                   >
                     <span>{`${info().name} (You)`}</span>
-                    <IconVolumeUp
+
+                    <IconVolumeUpFilled
                       class={cn(
                         "size-4",
-                        speaking() ? "block" : "hidden",
+                        anySpeaking() ? "block" : "hidden",
                       )}
                     />
                   </Badge>
@@ -315,7 +339,25 @@ const VideoItem = (props: { client: ClientInfo }) => {
     return props.client.stream ?? null;
   });
 
-  const speaking = createCheckVolume(remoteStream);
+  const [speaking, setSpeaking] = createStore<
+    Array<[string, Accessor<boolean>]>
+  >([]);
+
+  createEffect(() => {
+    const remoteTracks = remoteStream()
+      ?.getAudioTracks()
+      .map((track) => {
+        return [
+          track.contentHint,
+          createCheckVolume(() => new MediaStream([track])),
+        ] as [string, Accessor<boolean>];
+      });
+    setSpeaking(remoteTracks ?? []);
+  });
+
+  const anySpeaking = createMemo(() => {
+    return speaking.some(([_, speak]) => speak());
+  });
 
   return (
     <div
@@ -349,10 +391,10 @@ const VideoItem = (props: { client: ClientInfo }) => {
             class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"
           >
             {props.client.name}
-            <IconVolumeUp
+            <IconVolumeUpFilled
               class={cn(
                 "size-4",
-                speaking() ? "block" : "hidden",
+                anySpeaking() ? "block" : "hidden",
               )}
             />
           </Badge>

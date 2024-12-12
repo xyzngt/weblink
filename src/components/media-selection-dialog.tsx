@@ -35,7 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { Label } from "./ui/label";
 import { createPermission } from "@solid-primitives/permission";
 import {
   Switch,
@@ -45,7 +44,6 @@ import {
 } from "./ui/switch";
 import { t } from "@/i18n";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
-import { refetchDevices } from "@/libs/utils/devices";
 import { localStream } from "@/libs/stream";
 
 const constraints = {
@@ -76,6 +74,17 @@ export const [devices, setDevices] = createStore<{
   speaker: null,
 });
 
+const [enableScreen, setEnableScreen] = createSignal(true);
+const [enableScreenSpeaker, setEnableScreenSpeaker] =
+  createSignal(true);
+const [enableScreenMicrophone, setEnableScreenMicrophone] =
+  createSignal(false);
+
+const [enableUserMicrophone, setEnableUserMicrophone] =
+  createSignal(true);
+const [enableUserCamera, setEnableUserCamera] =
+  createSignal(true);
+
 export const createMediaSelectionDialog = () => {
   const [stream, setStream] =
     createSignal<MediaStream | null>(null);
@@ -99,20 +108,6 @@ export const createMediaSelectionDialog = () => {
   const cameraPermission = createPermission("camera");
   const microphonePermission =
     createPermission("microphone");
-
-  const [enableScreen, setEnableScreen] =
-    createSignal(true);
-  const [enableScreenSpeaker, setEnableScreenSpeaker] =
-    createSignal(true);
-  const [
-    enableScreenMicrophone,
-    setEnableScreenMicrophone,
-  ] = createSignal(false);
-
-  const [enableUserMicrophone, setEnableUserMicrophone] =
-    createSignal(true);
-  const [enableUserCamera, setEnableUserCamera] =
-    createSignal(true);
 
   const availableCameras = createMemo(() => {
     const cams = cameras()
@@ -182,6 +177,10 @@ export const createMediaSelectionDialog = () => {
       return;
     }
 
+    local.getAudioTracks().forEach((track) => {
+      track.contentHint = "music";
+    });
+
     if (enableMicrophone) {
       const [err, microphoneMedia] = await catchErrorAsync(
         navigator.mediaDevices.getUserMedia({
@@ -196,9 +195,12 @@ export const createMediaSelectionDialog = () => {
       } else {
         const microphoneTrack =
           microphoneMedia.getAudioTracks()[0];
+        microphoneTrack.contentHint = "speech";
         local.addTrack(microphoneTrack);
       }
     }
+
+    console.log(`get stream`, local.getAudioTracks());
 
     setStream(local);
   };
@@ -229,6 +231,10 @@ export const createMediaSelectionDialog = () => {
       toast.error(err.message);
       return;
     }
+
+    local.getAudioTracks().forEach((track) => {
+      track.contentHint = "speech";
+    });
 
     setStream(local);
   };

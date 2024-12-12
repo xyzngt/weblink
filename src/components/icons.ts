@@ -81,6 +81,7 @@ import IconMic from "@material-symbols/svg-400/outlined/mic.svg?component-solid"
 import IconMicOff from "@material-symbols/svg-400/outlined/mic_off.svg?component-solid";
 import IconVolumeOff from "@material-symbols/svg-400/outlined/volume_off.svg?component-solid";
 import IconVolumeUp from "@material-symbols/svg-400/outlined/volume_up.svg?component-solid";
+import IconVolumeUpFilled from "@material-symbols/svg-400/outlined/volume_up-fill.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -165,4 +166,5 @@ export {
   IconMicOff,
   IconVolumeOff,
   IconVolumeUp,
+  IconVolumeUpFilled,
 };
