@@ -355,6 +355,7 @@ export class PeerSession {
           case "closed":
           case "disconnected":
           case "failed":
+            this.setStatus("disconnected");
             this.handleDisconnection();
             break;
           default:

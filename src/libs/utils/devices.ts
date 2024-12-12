@@ -1,4 +1,6 @@
+import { createPermission } from "@solid-primitives/permission";
 import {
+  createEffect,
   createMemo,
   createResource,
   createRoot,
@@ -45,6 +47,22 @@ export const createSpeakers = () => {
 };
 
 createRoot(() => {
+  const cameraPermission = createPermission("camera");
+  const microphonePermission =
+    createPermission("microphone");
+
+  createEffect(() => {
+    if (cameraPermission()) {
+      refetchDevices();
+    }
+  });
+
+  createEffect(() => {
+    if (microphonePermission()) {
+      refetchDevices();
+    }
+  });
+
   onMount(() => {
     navigator.mediaDevices.addEventListener(
       "devicechange",
