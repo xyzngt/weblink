@@ -4,6 +4,7 @@ import {
   createSignal,
   untrack,
 } from "solid-js";
+import { reconcile } from "solid-js/store";
 
 const [streamLocal, setLocalStream] =
   createSignal<MediaStream | null>(null);
@@ -35,9 +36,9 @@ createRoot(() => {
             track.id,
           );
           display.removeTrack(track);
-          if (display.getTracks().length === 0) {
-            setLocalStream(null);
-          } else {
+
+          setLocalStream(null);
+          if (display.getTracks().length > 0) {
             setLocalStream(display);
           }
         });
@@ -45,5 +46,12 @@ createRoot(() => {
 
       setLocalStream(display);
     }
+  });
+
+  createEffect(() => {
+    console.log(
+      "displayStream changed",
+      displayStream()?.getTracks(),
+    );
   });
 });
