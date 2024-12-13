@@ -322,6 +322,7 @@
       "leave": "離開"
     },
     "action": {
+      "apply": "應用",
       "copy": "複製",
       "copy_link": "複製連結",
       "copy_file_name": "複製檔案名",
@@ -353,8 +354,9 @@
       "check_availability": "檢查可用性",
       "reload": "重新加載",
       "mute": "靜音",
-      "unmute": "取消靜音",
-      "select": "選擇"
+      "unmute": "恢復",
+      "select": "選擇",
+      "settings": "設置"
     },
     "clipboard_history": {
       "title": "剪貼簿歷史"
@@ -379,7 +381,7 @@
     "media_selection_dialog": {
       "title": "媒體選擇",
       "screen": "螢幕",
-      "user_media": "用戶媒體",
+      "media_device": "媒體設備",
       "camera": "攝影機",
       "microphone": "麥克風",
       "speaker": "揚聲器",
@@ -392,14 +394,24 @@
       "no_speaker_available": "沒有揚聲器可用",
       "request_camera_permission": "請求攝影機權限",
       "request_microphone_permission": "請求麥克風權限",
-      "select_microphone": "選擇麥克風 (預設)",
-      "select_camera": "選擇攝影機 (預設)",
+      "select_speaker": "選擇揚聲器 (自動)",
+      "select_microphone": "選擇麥克風 (自動)",
+      "select_camera": "選擇攝影機 (自動)",
       "open_screen": "打開螢幕",
-      "open_user_media": "打開用戶媒體",
+      "open_media_device": "打開媒體設備",
       "close": "關閉",
       "change": "更改",
       "current": "當前",
-      "preview": "預覽"
+      "preview": "預覽",
+      "apply_constraints": "應用媒體約束",
+      "preset_constraints": "預設媒體約束",
+      "microphone_constraints": "麥克風約束",
+      "constraints": {
+        "noise_suppression": "噪音抑制",
+        "echo_cancellation": "回聲消除",
+        "auto_gain_control": "自動增益控制",
+        "voice_isolation": "語音隔離"
+      }
     },
     "notification": {
       "copy_success": "複製成功",
@@ -430,6 +442,11 @@
       "welcome": "歡迎使用 Weblink，這是一個可以直接在瀏覽器中運行的聊天、檔案傳輸、檔案同步和螢幕共享工具。",
       "tip1": "請按照以下步驟開始：\n 1. 設定您的名稱和頭像。\n 2. 設定房間 ID 和密碼以加密客戶端之間的信令訊息，防止他人加入。\n 3. 分享房間資訊，邀請其他人加入房間。",
       "tip2": "如果遇到任何問題或有任何建議，請在 GitHub 上提交 issue, 或加入 QQ 群反饋：762463759"
+    },
+    "error_boundary": {
+      "title": "發生錯誤",
+      "description": "請嘗試刷新頁面或聯繫開發者，錯誤信息如下：",
+      "reset": "重置"
     }
   }
 }

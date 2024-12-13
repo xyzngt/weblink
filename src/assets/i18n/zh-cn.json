@@ -322,6 +322,7 @@
       "leave": "离开"
     },
     "action": {
+      "apply": "应用",
       "copy": "复制",
       "copy_link": "复制链接",
       "copy_file_name": "复制文件名",
@@ -353,8 +354,9 @@
       "check_availability": "检查可用性",
       "reload": "重新加载",
       "mute": "静音",
-      "unmute": "取消静音",
-      "select": "选择"
+      "unmute": "恢复",
+      "select": "选择",
+      "settings": "设置"
     },
     "clipboard_history": {
       "title": "剪贴板历史"
@@ -379,7 +381,7 @@
     "media_selection_dialog": {
       "title": "媒体选择",
       "screen": "屏幕",
-      "user_media": "用户媒体",
+      "media_device": "媒体设备",
       "camera": "摄像头",
       "microphone": "麦克风",
       "speaker": "扬声器",
@@ -392,15 +394,24 @@
       "no_speaker_available": "没有扬声器可用",
       "request_camera_permission": "请求摄像头权限",
       "request_microphone_permission": "请求麦克风权限",
-      "select_speaker": "选择扬声器 (默认)",
-      "select_microphone": "选择麦克风 (默认)",
-      "select_camera": "选择摄像头 (默认)",
+      "select_speaker": "选择扬声器 (自动)",
+      "select_microphone": "选择麦克风 (自动)",
+      "select_camera": "选择摄像头 (自动)",
       "open_screen": "打开屏幕",
-      "open_user_media": "打开用户媒体",
+      "open_media_device": "打开媒体设备",
       "close": "关闭",
       "change": "更改",
       "current": "当前",
-      "preview": "预览"
+      "preview": "预览",
+      "apply_constraints": "应用媒体约束",
+      "preset_constraints": "预设媒体约束",
+      "microphone_constraints": "麦克风约束",
+      "constraints": {
+        "noise_suppression": "噪音抑制",
+        "echo_cancellation": "回声消除",
+        "auto_gain_control": "自动增益控制",
+        "voice_isolation": "语音隔离"
+      }
     },
     "notification": {
       "copy_success": "复制成功",
@@ -431,6 +442,11 @@
       "welcome": "欢迎使用weblink，这是一个可以直接在浏览器中运行的聊天、文件传输、文件同步和屏幕共享工具。",
       "tip1": "请按以下步骤开始：\n 1. 设置你的名称和头像。\n 2. 设置房间ID和密码以加密客户端之间的信令消息，防止其他人加入。\n 3. 分享房间资料以邀请其他人加入房间。",
       "tip2": "如果遇到任何问题或有任何建议，请在GitHub上提交issue, 或加入QQ群反馈：762463759"
+    },
+    "error_boundary": {
+      "title": "发生错误",
+      "description": "请尝试刷新页面或联系开发者，错误信息如下：",
+      "reset": "重置"
     }
   }
 }

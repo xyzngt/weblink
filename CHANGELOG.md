@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.10.1] - 2024-12-11
+## [0.10.2] - 2024-12-11
 
 ### New Features
 
@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file.
 - Screen Sharing: Add Mute button 屏幕共享添加静音按钮
 
 - Screen Sharing: Add media selection dialog 屏幕共享添加媒体选择对话框
+
+- Screen Sharing: Add media constraints control 屏幕共享添加媒体约束控制
 
 ## [0.9.2] - 2024-12-09
 

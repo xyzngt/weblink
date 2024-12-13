@@ -4,13 +4,12 @@ import {
   createMemo,
   createSignal,
   For,
+  ParentProps,
   Show,
 } from "solid-js";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import { Button } from "@/components/ui/button";
-
 import { Badge } from "@/components/ui/badge";
-
 import {
   localStream,
   setDisplayStream,
@@ -20,16 +19,15 @@ import { t } from "@/i18n";
 import {
   Callout,
   CalloutContent,
-  CalloutTitle,
 } from "@/components/ui/callout";
 import {
   IconClose,
   IconCropSquare,
   IconMic,
-  IconMicFilled,
+  IconMicOff,
   IconScreenShare,
+  IconSettings,
   IconStopScreenShare,
-  IconVideoCam,
   IconVolumeOff,
   IconVolumeUp,
   IconVolumeUpFilled,
@@ -49,9 +47,11 @@ import { Dynamic } from "solid-js/web";
 import { createCheckVolume } from "@/libs/hooks/check-volume";
 import { createMediaSelectionDialog } from "@/components/media-selection-dialog";
 import { createStore } from "solid-js/store";
+import { clientProfile } from "@/libs/core/store";
+import { createApplyConstraintsDialog } from "@/components/track-constaints";
 
 export default function Video() {
-  if (!navigator.mediaDevices) {
+  if (!("mediaDevices" in navigator)) {
     return (
       <div
         class="mx-auto flex min-h-[calc(100%_-_3rem)] flex-col items-center
@@ -84,26 +84,6 @@ export default function Video() {
 
   createEffect(() => {
     setTab(isMobile() ? "1" : "2");
-  });
-
-  const [speaking, setSpeaking] = createStore<
-    Array<[string, Accessor<boolean>]>
-  >([]);
-
-  createEffect(() => {
-    const localTracks = localStream()
-      ?.getAudioTracks()
-      .map((track) => {
-        return [
-          track.contentHint,
-          createCheckVolume(() => new MediaStream([track])),
-        ] as [string, Accessor<boolean>];
-      });
-    setSpeaking(localTracks ?? []);
-  });
-
-  const anySpeaking = createMemo(() => {
-    return speaking.some(([_, speak]) => speak());
   });
 
   return (
@@ -156,52 +136,11 @@ export default function Video() {
             tab() == "1" ? "grid-cols-1" : "grid-cols-2",
           )}
         >
-          <div
-            class="relative aspect-video
-              max-h-[calc(100vh-3rem-var(--mobile-header-height))] w-full
-              overflow-hidden bg-muted sm:max-h-[calc(100vh-3rem)]"
+          <VideoItem
+            stream={localStream()}
+            name={`${clientProfile.name} (You)`}
+            muted={true}
           >
-            <Show
-              when={localStream()}
-              fallback={
-                <div class="absolute inset-0 content-center text-center">
-                  {t("video.no_stream")}
-                </div>
-              }
-            >
-              {(stream) => (
-                <video
-                  ref={(ref) => {
-                    createEffect(() => {
-                      ref.srcObject = stream();
-                    });
-                  }}
-                  autoplay
-                  controls
-                  muted
-                  class="absolute inset-0 size-full bg-black object-contain"
-                ></video>
-              )}
-            </Show>
-            <Show when={roomStatus.profile}>
-              {(info) => (
-                <div class="absolute left-1 top-1">
-                  <Badge
-                    variant="secondary"
-                    class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"
-                  >
-                    <span>{`${info().name} (You)`}</span>
-
-                    <IconVolumeUpFilled
-                      class={cn(
-                        "size-4",
-                        anySpeaking() ? "block" : "hidden",
-                      )}
-                    />
-                  </Badge>
-                </div>
-              )}
-            </Show>
             <LocalToolbar
               client={roomStatus.profile ?? undefined}
               class={cn(
@@ -211,7 +150,7 @@ export default function Video() {
                   : "left-1/2 -translate-x-1/2",
               )}
             />
-          </div>
+          </VideoItem>
           <For
             each={Object.values(
               sessionService.clientInfo,
@@ -219,7 +158,12 @@ export default function Video() {
               (client) => client.stream !== undefined,
             )}
           >
-            {(client) => <VideoItem client={client} />}
+            {(client) => (
+              <VideoItem
+                stream={client.stream}
+                name={client.name}
+              />
+            )}
           </For>
         </div>
       </Tabs>
@@ -240,22 +184,45 @@ const LocalToolbar = (props: {
     Component: MediaSelectionDialogComponent,
   } = createMediaSelectionDialog();
 
-  const audioTrack = createMemo(() => {
+  const {
+    open: openApplyConstraintsDialog,
+    Component: ApplyConstraintsDialogComponent,
+  } = createApplyConstraintsDialog();
+
+  const microphoneAudioTrack = createMemo(() => {
     const stream = localStream();
-    if (stream) {
-      return stream.getAudioTracks().find((track) => {
-        return track.kind === "audio";
-      });
-    }
-    return null;
+    return (
+      stream?.getAudioTracks().find((track) => {
+        return track.contentHint === "speech";
+      }) ?? null
+    );
   });
 
-  const [muted, setMuted] = createSignal(false);
+  const speakerAudioTrack = createMemo(() => {
+    const stream = localStream();
+    return (
+      stream?.getAudioTracks().find((track) => {
+        return track.contentHint === "music";
+      }) ?? null
+    );
+  });
+
+  const [microphoneMuted, setMicrophoneMuted] =
+    createSignal(false);
+  const [speakerMuted, setSpeakerMuted] =
+    createSignal(false);
 
   createEffect(() => {
-    const track = audioTrack();
+    const track = microphoneAudioTrack();
     if (track) {
-      track.enabled = !muted();
+      track.enabled = !microphoneMuted();
+    }
+  });
+
+  createEffect(() => {
+    const track = speakerAudioTrack();
+    if (track) {
+      track.enabled = !speakerMuted();
     }
   });
 
@@ -267,6 +234,7 @@ const LocalToolbar = (props: {
       )}
     >
       <MediaSelectionDialogComponent />
+      <ApplyConstraintsDialogComponent />
       <Button
         size="sm"
         onClick={async () => {
@@ -289,31 +257,82 @@ const LocalToolbar = (props: {
         </p>
       </Button>
 
-      <Show when={audioTrack()}>
+      <Show when={speakerAudioTrack()}>
         <Button
           size="sm"
           class="h-8 text-nowrap rounded-full p-2 hover:gap-1
             [&:hover>.grid]:grid-cols-[1fr]"
-          variant={muted() ? "default" : "secondary"}
+          variant={speakerMuted() ? "default" : "secondary"}
           onClick={() => {
-            setMuted(!muted());
+            setSpeakerMuted(!speakerMuted());
           }}
         >
           <Dynamic
             component={
-              muted() ? IconVolumeOff : IconVolumeUp
+              speakerMuted() ? IconVolumeOff : IconVolumeUp
             }
             class="size-4"
           />
           <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
             <span class="min-w-0">
-              {muted()
+              {speakerMuted()
                 ? t("common.action.unmute")
                 : t("common.action.mute")}
             </span>
           </p>
         </Button>
       </Show>
+
+      <Show when={microphoneAudioTrack()}>
+        <Button
+          size="sm"
+          class="h-8 text-nowrap rounded-full p-2 hover:gap-1
+            [&:hover>.grid]:grid-cols-[1fr]"
+          variant={
+            microphoneMuted() ? "default" : "secondary"
+          }
+          onClick={() => {
+            setMicrophoneMuted(!microphoneMuted());
+          }}
+        >
+          <Dynamic
+            component={
+              microphoneMuted() ? IconMicOff : IconMic
+            }
+            class="size-4"
+          />
+          <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
+            <span class="min-w-0">
+              {microphoneMuted()
+                ? t("common.action.unmute")
+                : t("common.action.mute")}
+            </span>
+          </p>
+        </Button>
+      </Show>
+
+      <Show when={microphoneAudioTrack()}>
+        <Button
+          class="h-8 text-nowrap rounded-full p-2 hover:gap-1
+            [&:hover>.grid]:grid-cols-[1fr]"
+          size="sm"
+          onClick={() => {
+            const stream = localStream();
+            if (stream) {
+              openApplyConstraintsDialog(stream);
+            }
+          }}
+          variant="secondary"
+        >
+          <IconSettings class="size-4" />
+          <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
+            <span class="min-w-0">
+              {t("common.action.settings")}
+            </span>
+          </p>
+        </Button>
+      </Show>
+
       <Show when={localStream()}>
         <Button
           size="sm"
@@ -334,17 +353,19 @@ const LocalToolbar = (props: {
   );
 };
 
-const VideoItem = (props: { client: ClientInfo }) => {
-  const remoteStream = createMemo(() => {
-    return props.client.stream ?? null;
-  });
-
+const VideoItem = (
+  props: {
+    stream: MediaStream | null | undefined;
+    name: string;
+    muted?: boolean;
+  } & ParentProps,
+) => {
   const [speaking, setSpeaking] = createStore<
     Array<[string, Accessor<boolean>]>
   >([]);
 
   createEffect(() => {
-    const remoteTracks = remoteStream()
+    const remoteTracks = props.stream
       ?.getAudioTracks()
       .map((track) => {
         return [
@@ -366,7 +387,7 @@ const VideoItem = (props: { client: ClientInfo }) => {
         overflow-hidden bg-muted sm:max-h-[calc(100vh-3rem)]"
     >
       <Show
-        when={props.client.stream}
+        when={props.stream}
         fallback={
           <div class="absolute inset-0 content-center text-center">
             no stream
@@ -376,30 +397,30 @@ const VideoItem = (props: { client: ClientInfo }) => {
         <video
           autoplay
           controls
+          muted={props.muted}
           class="absolute inset-0 size-full bg-black object-contain"
           ref={(ref) => {
             createEffect(() => {
-              if (remoteStream()) {
-                ref.srcObject = remoteStream();
-              }
+              ref && (ref.srcObject = props.stream ?? null);
             });
           }}
         />
-        <div class="absolute left-1 top-1 flex gap-1">
-          <Badge
-            variant="secondary"
-            class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"
-          >
-            {props.client.name}
-            <IconVolumeUpFilled
-              class={cn(
-                "size-4",
-                anySpeaking() ? "block" : "hidden",
-              )}
-            />
-          </Badge>
-        </div>
       </Show>
+      <div class="absolute left-1 top-1 flex gap-1">
+        <Badge
+          variant="secondary"
+          class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"
+        >
+          {props.name}
+          <IconVolumeUpFilled
+            class={cn(
+              "size-4",
+              anySpeaking() ? "block" : "hidden",
+            )}
+          />
+        </Badge>
+      </div>
+      {props.children}
     </div>
   );
 };

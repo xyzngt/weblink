@@ -5,6 +5,7 @@ import {
 import {
   createEffect,
   createSignal,
+  ErrorBoundary,
   onCleanup,
   onMount,
   ParentProps,
@@ -73,6 +74,8 @@ import { createIsMobile } from "./libs/hooks/create-mobile";
 import { messageStores } from "./libs/core/messge";
 import { sleep } from "./libs/utils/sleep";
 import { makePersisted } from "@solid-primitives/storage";
+import { Label } from "./components/ui/label";
+import { Textarea } from "./components/ui/textarea";
 
 const createWakeLock = () => {
   const [wakeLock, setWakeLock] =
@@ -430,7 +433,38 @@ const InnerApp = (props: ParentProps) => {
             <JoinRoomButton class="md:hidden" />
           </div>
         </div>
-        <div class="flex-1">{props.children}</div>
+        <div class="flex-1">
+          <ErrorBoundary
+            fallback={(err: Error, reset) => (
+              <div
+                class="flex size-full max-w-[100vw] flex-col justify-center gap-2
+                  px-2 py-4"
+              >
+                <h3 class="h3 mb-4">
+                  {t("common.error_boundary.title")}
+                </h3>
+                <Label>
+                  {t("common.error_boundary.description")}
+                </Label>
+                <div class="flex h-full flex-col gap-2">
+                  <p>{err.message}</p>
+                  {/* Print stack trace */}
+                  <Textarea
+                    readOnly
+                    class="flex-1 overflow-x-auto whitespace-pre-wrap text-nowrap
+                      text-xs scrollbar-thin"
+                    value={err.stack}
+                  />
+                </div>
+                <Button onClick={() => reset()}>
+                  {t("common.error_boundary.reset")}
+                </Button>
+              </div>
+            )}
+          >
+            {props.children}
+          </ErrorBoundary>
+        </div>
       </div>
     </>
   );

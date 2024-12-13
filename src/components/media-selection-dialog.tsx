@@ -8,6 +8,7 @@ import { createDialog } from "./dialogs/dialog";
 import {
   IconMicFilled,
   IconMonitor,
+  IconSettings,
   IconVideoCam,
   IconVolumeOff,
 } from "./icons";
@@ -45,26 +46,20 @@ import {
 import { t } from "@/i18n";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { localStream } from "@/libs/stream";
-
-const constraints = {
-  video: {
-    width: { max: 1920 },
-    height: { max: 1080 },
-    frameRate: { max: 60 },
-  },
-  audio: {
-    autoGainControl: true,
-    echoCancellation: true,
-    noiseSuppression: true,
-  },
-} satisfies MediaStreamConstraints;
+import { cn } from "@/libs/cn";
+import {
+  createPresetMicrophoneConstraintsDialog,
+  microphoneConstraints,
+  speakerConstraints,
+  videoConstraints,
+} from "./track-constaints";
 
 export type MediaDeviceInfoType = {
   label: string;
   deviceId: string;
 };
 
-export const [devices, setDevices] = createStore<{
+const [devices, setDevices] = createStore<{
   camera: MediaDeviceInfoType | null;
   microphone: MediaDeviceInfoType | null;
   speaker: MediaDeviceInfoType | null;
@@ -84,11 +79,10 @@ const [enableUserMicrophone, setEnableUserMicrophone] =
   createSignal(true);
 const [enableUserCamera, setEnableUserCamera] =
   createSignal(true);
-
+const [stream, setStream] =
+  createSignal<MediaStream | null>(null);
+  
 export const createMediaSelectionDialog = () => {
-  const [stream, setStream] =
-    createSignal<MediaStream | null>(null);
-
   const audioTrack = () => {
     return stream()?.getAudioTracks();
   };
@@ -96,18 +90,6 @@ export const createMediaSelectionDialog = () => {
   const cameras = createCameras();
   const microphones = createMicrophones();
   const speakers = createSpeakers();
-
-  const canGetUserMedia = createMemo(() => {
-    return navigator.mediaDevices.getUserMedia;
-  });
-
-  const canGetDisplayMedia = createMemo(() => {
-    return navigator.mediaDevices.getDisplayMedia;
-  });
-
-  const cameraPermission = createPermission("camera");
-  const microphonePermission =
-    createPermission("microphone");
 
   const availableCameras = createMemo(() => {
     const cams = cameras()
@@ -141,6 +123,54 @@ export const createMediaSelectionDialog = () => {
     return mics;
   });
 
+  const cameraPermission = createPermission("camera");
+  const microphonePermission =
+    createPermission("microphone");
+
+  const canUseScreenSpeaker = createMemo(() => {
+    return (
+      enableScreenSpeaker() &&
+      availableSpeakers().length !== 0
+    );
+  });
+  const canUseScreenMicrophone = createMemo(() => {
+    return (
+      enableScreenMicrophone() &&
+      availableMicrophones().length !== 0 &&
+      microphonePermission() === "granted"
+    );
+  });
+
+  const canUseUserMicrophone = createMemo(() => {
+    return (
+      enableUserMicrophone() &&
+      availableMicrophones().length !== 0 &&
+      microphonePermission() === "granted"
+    );
+  });
+
+  const canUseUserCamera = createMemo(() => {
+    return (
+      enableUserCamera() &&
+      availableCameras().length !== 0 &&
+      cameraPermission() === "granted"
+    );
+  });
+
+  const canGetUserMedia = createMemo(() => {
+    return (
+      "mediaDevices" in navigator &&
+      "getUserMedia" in navigator.mediaDevices
+    );
+  });
+
+  const canGetDisplayMedia = createMemo(() => {
+    return (
+      "mediaDevices" in navigator &&
+      "getDisplayMedia" in navigator.mediaDevices
+    );
+  });
+
   const closeStream = () => {
     stream()
       ?.getTracks()
@@ -160,14 +190,14 @@ export const createMediaSelectionDialog = () => {
         video: enableScreen
           ? {
               deviceId: devices.camera?.deviceId,
-              ...constraints.video,
+              displaySurface: "monitor",
             }
           : false,
         audio:
           enableSpeaker && speakers().length !== 0
             ? {
                 deviceId: devices.speaker?.deviceId,
-                ...constraints.audio,
+                ...speakerConstraints,
               }
             : false,
       }),
@@ -186,7 +216,7 @@ export const createMediaSelectionDialog = () => {
         navigator.mediaDevices.getUserMedia({
           audio: {
             deviceId: devices.microphone?.deviceId,
-            ...constraints.audio,
+            ...microphoneConstraints,
           },
         }),
       );
@@ -199,9 +229,6 @@ export const createMediaSelectionDialog = () => {
         local.addTrack(microphoneTrack);
       }
     }
-
-    console.log(`get stream`, local.getAudioTracks());
-
     setStream(local);
   };
   const openCamera = async (
@@ -214,7 +241,7 @@ export const createMediaSelectionDialog = () => {
           enableCamera && availableCameras().length !== 0
             ? {
                 deviceId: devices.camera?.deviceId,
-                ...constraints.video,
+                ...videoConstraints,
               }
             : undefined,
         audio:
@@ -222,7 +249,7 @@ export const createMediaSelectionDialog = () => {
           availableMicrophones().length !== 0
             ? {
                 deviceId: devices.microphone?.deviceId,
-                ...constraints.audio,
+                ...microphoneConstraints,
               }
             : undefined,
       }),
@@ -239,6 +266,12 @@ export const createMediaSelectionDialog = () => {
     setStream(local);
   };
   const isMobile = createIsMobile();
+
+  const {
+    open: openMicrophoneConstraintsDialog,
+    Component: MicrophoneConstraintsDialog,
+  } = createPresetMicrophoneConstraintsDialog();
+
   const { open, close, Component, submit } =
     createDialog<MediaStream>({
       title: () => t("common.media_selection_dialog.title"),
@@ -247,6 +280,7 @@ export const createMediaSelectionDialog = () => {
           class="flex flex-col gap-2 overflow-y-auto"
           defaultValue={isMobile() ? "user" : "screen"}
         >
+          <MicrophoneConstraintsDialog />
           <TabsList>
             <TabsTrigger value="screen" class="gap-1">
               <IconMonitor class="size-4" />
@@ -258,7 +292,7 @@ export const createMediaSelectionDialog = () => {
               <IconVideoCam class="size-4" />
               <span>
                 {t(
-                  "common.media_selection_dialog.user_media",
+                  "common.media_selection_dialog.media_device",
                 )}
               </span>
             </TabsTrigger>
@@ -273,9 +307,12 @@ export const createMediaSelectionDialog = () => {
               fallback={
                 <Show when={localStream()}>
                   <video
-                    ref={(ref) =>
-                      (ref.srcObject = localStream())
-                    }
+                    ref={(ref) => {
+                      createEffect(() => {
+                        ref &&
+                          (ref.srcObject = localStream());
+                      });
+                    }}
                     autoplay
                     controls
                     muted
@@ -334,171 +371,178 @@ export const createMediaSelectionDialog = () => {
             value="screen"
             class="flex flex-col gap-2"
           >
-            <Show
-              when={
-                microphones().length !== 0 &&
-                microphonePermission() === "prompt"
-              }
-            >
-              <Button
-                size="sm"
-                class="w-full"
-                onClick={async () => {
-                  const [err, local] =
-                    await catchErrorAsync(
-                      navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                      }),
-                    );
-                  if (err) {
-                    toast.error(err.message);
-                    return;
-                  }
-                  local.getTracks().forEach((track) => {
-                    track.stop();
-                    local?.removeTrack(track);
-                  });
-                }}
-              >
-                {t(
-                  "common.media_selection_dialog.request_microphone_permission",
-                )}
-              </Button>
-            </Show>
-            <Switch
-              class="flex items-center justify-between gap-2"
-              checked={enableScreen()}
-              onChange={(value) => setEnableScreen(value)}
-            >
-              <SwitchLabel>
-                {t(
-                  "common.media_selection_dialog.enable_screen",
-                )}
-              </SwitchLabel>
-              <SwitchControl>
-                <SwitchThumb />
-              </SwitchControl>
-            </Switch>
-            <Switch
-              class="flex items-center justify-between gap-2"
-              checked={enableScreenSpeaker()}
-              onChange={(value) =>
-                setEnableScreenSpeaker(value)
-              }
-            >
-              <SwitchLabel>
-                {t(
-                  "common.media_selection_dialog.enable_speaker",
-                )}
-              </SwitchLabel>
-              <SwitchControl>
-                <SwitchThumb />
-              </SwitchControl>
-            </Switch>
-            <Show
-              when={
-                enableScreenSpeaker() &&
-                availableSpeakers().length !== 0
-              }
-            >
-              <Select<MediaDeviceInfoType>
-                value={devices.speaker}
-                placeholder={
-                  <span class="muted">
-                    {speakers().length === 0
-                      ? t(
-                          "common.media_selection_dialog.no_speaker_available",
-                        )
-                      : t(
-                          "common.media_selection_dialog.select_speaker",
-                        )}
-                  </span>
+            <div class="flex gap-2">
+              <Show
+                when={
+                  microphones().length !== 0 &&
+                  microphonePermission() === "prompt"
                 }
-                onChange={(value) => {
-                  setDevices("speaker", value);
-                }}
-                optionTextValue="label"
-                optionValue="deviceId"
-                options={availableSpeakers()}
-                itemComponent={(props) => (
-                  <SelectItem item={props.item}>
-                    {props.item.rawValue?.label}
-                  </SelectItem>
-                )}
               >
-                <SelectTrigger>
-                  <SelectValue<MediaDeviceInfoType>>
-                    {(state) =>
-                      state.selectedOption().label
+                <Button
+                  size="sm"
+                  class="w-full"
+                  onClick={async () => {
+                    const [err, local] =
+                      await catchErrorAsync(
+                        navigator.mediaDevices.getUserMedia(
+                          {
+                            audio: true,
+                          },
+                        ),
+                      );
+                    if (err) {
+                      toast.error(err.message);
+                      return;
                     }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent />
-              </Select>
-            </Show>
+                    local.getTracks().forEach((track) => {
+                      track.stop();
+                      local?.removeTrack(track);
+                    });
+                  }}
+                >
+                  {t(
+                    "common.media_selection_dialog.request_microphone_permission",
+                  )}
+                </Button>
+              </Show>
+            </div>
 
-            <Switch
-              class="flex items-center justify-between gap-2"
-              disabled={
-                availableMicrophones().length === 0 ||
-                microphonePermission() !== "granted"
-              }
-              checked={enableScreenMicrophone()}
-              onChange={(value) =>
-                setEnableScreenMicrophone(value)
-              }
+            <div
+              class={cn(
+                "flex flex-col gap-2 rounded-lg px-2",
+                canUseScreenSpeaker() &&
+                  "border border-border py-2",
+              )}
             >
-              <SwitchLabel>
-                {t(
-                  "common.media_selection_dialog.enable_microphone",
-                )}
-              </SwitchLabel>
-              <SwitchControl>
-                <SwitchThumb />
-              </SwitchControl>
-            </Switch>
-            <Show
-              when={
-                enableScreenMicrophone() &&
-                availableMicrophones().length !== 0 &&
-                microphonePermission() === "granted"
-              }
-            >
-              <Select<MediaDeviceInfoType>
-                value={devices.microphone}
-                placeholder={
-                  <span class="muted">
-                    {availableMicrophones().length === 0
-                      ? t(
-                          "common.media_selection_dialog.no_microphone_available",
-                        )
-                      : t(
-                          "common.media_selection_dialog.select_microphone",
-                        )}
-                  </span>
+              <Switch
+                class="flex items-center justify-between gap-2"
+                checked={enableScreenSpeaker()}
+                onChange={(value) =>
+                  setEnableScreenSpeaker(value)
                 }
-                onChange={(value) => {
-                  setDevices("microphone", value);
-                }}
-                optionTextValue="label"
-                optionValue="deviceId"
-                options={availableMicrophones()}
-                itemComponent={(props) => (
-                  <SelectItem item={props.item}>
-                    {props.item.rawValue?.label}
-                  </SelectItem>
-                )}
               >
-                <SelectTrigger>
-                  <SelectValue<MediaDeviceInfoType>>
-                    {(state) =>
-                      state.selectedOption().label
+                <SwitchLabel>
+                  {t(
+                    "common.media_selection_dialog.enable_speaker",
+                  )}
+                </SwitchLabel>
+                <SwitchControl>
+                  <SwitchThumb />
+                </SwitchControl>
+              </Switch>
+              <Show when={canUseScreenSpeaker()}>
+                <Select<MediaDeviceInfoType>
+                  value={devices.speaker}
+                  placeholder={
+                    <span class="muted">
+                      {speakers().length === 0
+                        ? t(
+                            "common.media_selection_dialog.no_speaker_available",
+                          )
+                        : t(
+                            "common.media_selection_dialog.select_speaker",
+                          )}
+                    </span>
+                  }
+                  onChange={(value) =>
+                    setDevices("speaker", value)
+                  }
+                  optionTextValue="label"
+                  optionValue="deviceId"
+                  options={availableSpeakers()}
+                  itemComponent={(props) => (
+                    <SelectItem item={props.item}>
+                      {props.item.rawValue?.label}
+                    </SelectItem>
+                  )}
+                >
+                  <SelectTrigger>
+                    <SelectValue<MediaDeviceInfoType>>
+                      {(state) =>
+                        state.selectedOption().label
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent />
+                </Select>
+              </Show>
+            </div>
+            <div
+              class={cn(
+                "flex flex-col gap-2 rounded-lg px-2",
+                canUseScreenMicrophone() &&
+                  "border border-border py-2",
+              )}
+            >
+              <Switch
+                class="flex items-center justify-between gap-2"
+                disabled={
+                  availableMicrophones().length === 0 ||
+                  microphonePermission() !== "granted"
+                }
+                checked={enableScreenMicrophone()}
+                onChange={(value) =>
+                  setEnableScreenMicrophone(value)
+                }
+              >
+                <SwitchLabel>
+                  {t(
+                    "common.media_selection_dialog.enable_microphone",
+                  )}
+                </SwitchLabel>
+                <SwitchControl>
+                  <SwitchThumb />
+                </SwitchControl>
+              </Switch>
+              <Show when={canUseScreenMicrophone()}>
+                <div class="flex w-full gap-2">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={
+                      openMicrophoneConstraintsDialog
                     }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent />
-              </Select>
-            </Show>
+                  >
+                    <IconSettings class="size-6" />
+                  </Button>
+                  <Select<MediaDeviceInfoType>
+                    class="flex-1"
+                    value={devices.microphone}
+                    placeholder={
+                      <span class="muted">
+                        {availableMicrophones().length === 0
+                          ? t(
+                              "common.media_selection_dialog.no_microphone_available",
+                            )
+                          : t(
+                              "common.media_selection_dialog.select_microphone",
+                            )}
+                      </span>
+                    }
+                    onChange={(value) => {
+                      setDevices("microphone", value);
+                    }}
+                    optionTextValue="label"
+                    optionValue="deviceId"
+                    options={availableMicrophones()}
+                    itemComponent={(props) => (
+                      <SelectItem item={props.item}>
+                        {props.item.rawValue?.label}
+                      </SelectItem>
+                    )}
+                  >
+                    <SelectTrigger>
+                      <SelectValue<MediaDeviceInfoType>>
+                        {(state) =>
+                          state.selectedOption().label
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent />
+                  </Select>
+                </div>
+              </Show>
+            </div>
             <div class="flex gap-2">
               <Show
                 when={stream()}
@@ -624,133 +668,148 @@ export const createMediaSelectionDialog = () => {
                 </Button>
               </Show>
             </div>
-
-            <Switch
-              disabled={
-                availableCameras().length === 0 ||
-                cameraPermission() !== "granted"
-              }
-              class="flex items-center justify-between gap-2"
-              checked={enableUserCamera()}
-              onChange={(value) =>
-                setEnableUserCamera(value)
-              }
+            <div
+              class={cn(
+                "flex flex-col gap-2 rounded-lg px-2",
+                canUseUserCamera() &&
+                  "border border-border py-2",
+              )}
             >
-              <SwitchLabel>
-                {t(
-                  "common.media_selection_dialog.enable_camera",
-                )}
-              </SwitchLabel>
-              <SwitchControl>
-                <SwitchThumb />
-              </SwitchControl>
-            </Switch>
-
-            <Show
-              when={
-                enableUserCamera() &&
-                availableCameras().length !== 0 &&
-                cameraPermission() === "granted"
-              }
-            >
-              <Select<MediaDeviceInfoType>
-                value={devices.camera}
-                placeholder={
-                  <span class="muted">
-                    {availableCameras().length === 0
-                      ? t(
-                          "common.media_selection_dialog.no_camera_available",
-                        )
-                      : t(
-                          "common.media_selection_dialog.select_camera",
-                        )}
-                  </span>
+              <Switch
+                disabled={
+                  availableCameras().length === 0 ||
+                  cameraPermission() !== "granted"
                 }
-                onChange={(value) => {
-                  setDevices("camera", value);
-                }}
-                optionTextValue="label"
-                optionValue="deviceId"
-                options={availableCameras()}
-                itemComponent={(props) => (
-                  <SelectItem item={props.item}>
-                    {props.item.rawValue?.label}
-                  </SelectItem>
-                )}
-              >
-                <SelectTrigger>
-                  <SelectValue<MediaDeviceInfoType>>
-                    {(state) =>
-                      state.selectedOption().label
-                    }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent />
-              </Select>
-            </Show>
-            <Switch
-              disabled={
-                availableMicrophones().length === 0 ||
-                microphonePermission() !== "granted"
-              }
-              class="flex items-center justify-between gap-2"
-              checked={enableUserMicrophone()}
-              onChange={(value) =>
-                setEnableUserMicrophone(value)
-              }
-            >
-              <SwitchLabel>
-                {t(
-                  "common.media_selection_dialog.enable_microphone",
-                )}
-              </SwitchLabel>
-              <SwitchControl>
-                <SwitchThumb />
-              </SwitchControl>
-            </Switch>
-
-            <Show
-              when={
-                enableUserMicrophone() &&
-                availableMicrophones().length !== 0 &&
-                microphonePermission() === "granted"
-              }
-            >
-              <Select<MediaDeviceInfoType>
-                value={devices.microphone}
-                placeholder={
-                  <span class="muted">
-                    {availableMicrophones().length === 0
-                      ? t(
-                          "common.media_selection_dialog.no_microphone_available",
-                        )
-                      : t(
-                          "common.media_selection_dialog.select_microphone",
-                        )}
-                  </span>
+                class="flex items-center justify-between gap-2"
+                checked={enableUserCamera()}
+                onChange={(value) =>
+                  setEnableUserCamera(value)
                 }
-                onChange={(value) => {
-                  setDevices("microphone", value);
-                }}
-                optionTextValue="label"
-                optionValue="deviceId"
-                options={availableMicrophones()}
-                itemComponent={(props) => (
-                  <SelectItem item={props.item}>
-                    {props.item.rawValue?.label}
-                  </SelectItem>
-                )}
               >
-                <SelectTrigger>
-                  <SelectValue<MediaDeviceInfoType>>
-                    {(state) =>
-                      state.selectedOption().label
+                <SwitchLabel>
+                  {t(
+                    "common.media_selection_dialog.enable_camera",
+                  )}
+                </SwitchLabel>
+                <SwitchControl>
+                  <SwitchThumb />
+                </SwitchControl>
+              </Switch>
+
+              <Show when={canUseUserCamera()}>
+                <Select<MediaDeviceInfoType>
+                  value={devices.camera}
+                  placeholder={
+                    <span class="muted">
+                      {availableCameras().length === 0
+                        ? t(
+                            "common.media_selection_dialog.no_camera_available",
+                          )
+                        : t(
+                            "common.media_selection_dialog.select_camera",
+                          )}
+                    </span>
+                  }
+                  onChange={(value) => {
+                    setDevices("camera", value);
+                  }}
+                  optionTextValue="label"
+                  optionValue="deviceId"
+                  options={availableCameras()}
+                  itemComponent={(props) => (
+                    <SelectItem item={props.item}>
+                      {props.item.rawValue?.label}
+                    </SelectItem>
+                  )}
+                >
+                  <SelectTrigger>
+                    <SelectValue<MediaDeviceInfoType>>
+                      {(state) =>
+                        state.selectedOption().label
+                      }
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent />
+                </Select>
+              </Show>
+            </div>
+            <div
+              class={cn(
+                "flex flex-col gap-2 rounded-lg px-2",
+                canUseUserMicrophone() &&
+                  "border border-border py-2",
+              )}
+            >
+              <Switch
+                disabled={
+                  availableMicrophones().length === 0 ||
+                  microphonePermission() !== "granted"
+                }
+                class="flex items-center justify-between gap-2"
+                checked={enableUserMicrophone()}
+                onChange={(value) =>
+                  setEnableUserMicrophone(value)
+                }
+              >
+                <SwitchLabel>
+                  {t(
+                    "common.media_selection_dialog.enable_microphone",
+                  )}
+                </SwitchLabel>
+                <SwitchControl>
+                  <SwitchThumb />
+                </SwitchControl>
+              </Switch>
+
+              <Show when={canUseUserMicrophone()}>
+                <div class="flex w-full gap-2">
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    onClick={
+                      openMicrophoneConstraintsDialog
                     }
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent />
-              </Select>
-            </Show>
+                  >
+                    <IconSettings class="size-6" />
+                  </Button>
+                  <Select<MediaDeviceInfoType>
+                    class="flex-1"
+                    value={devices.microphone}
+                    placeholder={
+                      <span class="muted">
+                        {availableMicrophones().length === 0
+                          ? t(
+                              "common.media_selection_dialog.no_microphone_available",
+                            )
+                          : t(
+                              "common.media_selection_dialog.select_microphone",
+                            )}
+                      </span>
+                    }
+                    onChange={(value) => {
+                      setDevices("microphone", value);
+                    }}
+                    optionTextValue="label"
+                    optionValue="deviceId"
+                    options={availableMicrophones()}
+                    itemComponent={(props) => (
+                      <SelectItem item={props.item}>
+                        {props.item.rawValue?.label}
+                      </SelectItem>
+                    )}
+                  >
+                    <SelectTrigger>
+                      <SelectValue<MediaDeviceInfoType>>
+                        {(state) =>
+                          state.selectedOption().label
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent />
+                  </Select>
+                </div>
+              </Show>
+            </div>
             <div class="flex gap-2">
               <Show
                 when={
@@ -775,7 +834,7 @@ export const createMediaSelectionDialog = () => {
                         }
                       >
                         {t(
-                          "common.media_selection_dialog.open_user_media",
+                          "common.media_selection_dialog.open_media_device",
                         )}
                       </Button>
                     </Show>

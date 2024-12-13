@@ -323,6 +323,7 @@
       "invite": "Invite you to join the room {{room}}"
     },
     "action": {
+      "apply": "Apply",
       "copy": "Copy",
       "copy_link": "Copy Link",
       "copy_file_name": "Copy File Name",
@@ -355,7 +356,8 @@
       "reload": "Reload",
       "mute": "Mute",
       "unmute": "Unmute",
-      "select": "Select"
+      "select": "Select",
+      "settings": "Settings"
     },
     "notification": {
       "copy_success": "Copy success",
@@ -389,7 +391,7 @@
     "media_selection_dialog": {
       "title": "Media Selection",
       "screen": "Screen",
-      "user_media": "User Media",
+      "media_device": "Media Device",
       "camera": "Camera",
       "microphone": "Microphone",
       "speaker": "Speaker",
@@ -402,15 +404,24 @@
       "no_speaker_available": "No speaker available",
       "request_camera_permission": "Request Camera Permission",
       "request_microphone_permission": "Request Microphone Permission",
-      "select_speaker": "Select Speaker (Default)",
-      "select_microphone": "Select Microphone (Default)",
-      "select_camera": "Select Camera (Default)",
+      "select_speaker": "Select Speaker (Auto)",
+      "select_microphone": "Select Microphone (Auto)",
+      "select_camera": "Select Camera (Auto)",
       "open_screen": "Open Screen",
-      "open_user_media": "Open User Media",
+      "open_media_device": "Open Media Device",
       "close": "Close",
       "change": "Change",
       "current": "Current",
-      "preview": "Preview"
+      "preview": "Preview",
+      "apply_constraints": "Apply Media Constraints",
+      "preset_constraints": "Preset Media Constraints",
+      "microphone_constraints": "Microphone Constraints",
+      "constraints": {
+        "noise_suppression": "Noise Suppression",
+        "echo_cancellation": "Echo Cancellation",
+        "auto_gain_control": "Auto Gain Control",
+        "voice_isolation": "Voice Isolation"
+      }
     },
     "nav": {
       "chat": "Chat",
@@ -429,6 +440,11 @@
       "welcome": "Welcome to weblink, a chat, file transfer, file synchronization and screen sharing tool that can be run directly in the browser.",
       "tip1": "Please follow these steps to start:\n 1. Set your name and avatar.\n 2. Set the room ID and password to encrypt the signaling messages between clients, preventing others from joining.\n 3. Share the room profile to invite others to join the room.",
       "tip2": "If you encounter any problems or have any suggestions, please submit an issue on GitHub."
+    },
+    "error_boundary": {
+      "title": "Error Occurred",
+      "description": "Please try to refresh the page or contact the developer, the error message is:",
+      "reset": "Reset"
     }
   }
 }

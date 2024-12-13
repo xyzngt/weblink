@@ -153,7 +153,7 @@ export class PeerSession {
       stream.getTracks().forEach((track) => {
         pc.addTrack(track, stream);
       });
-    } else if (pc.getTransceivers().length === 0) {
+    } else {
       pc.addTransceiver("video", {
         direction: "recvonly",
       });
@@ -212,6 +212,16 @@ export class PeerSession {
 
         const stream = ev.streams[0];
         if (!stream) return;
+
+        ev.track.addEventListener("ended", () => {
+          if (this.remoteStream) {
+            this.remoteStream.removeTrack(ev.track);
+            this.dispatchEvent(
+              "remotestreamchange",
+              this.remoteStream,
+            );
+          }
+        });
 
         if (
           this.remoteStream &&
@@ -778,12 +788,18 @@ export class PeerSession {
       console.log(
         `peer connection ${this.targetClientId} is null, new connection`,
       );
-      const [err] = catchErrorSync(() =>
+      let err: Error | undefined;
+      [err] = catchErrorSync(() =>
         this.initializeConnection(),
       );
       if (err) throw err;
       this.setStatus("reconnecting");
-      return await this.connect();
+      [err] = await catchErrorAsync(this.connect());
+      if (err) {
+        this.setStatus("disconnected");
+        throw err;
+      }
+      return;
     }
     const pc = this.peerConnection;
     if (

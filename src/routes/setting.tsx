@@ -6,8 +6,6 @@ import {
   For,
   Show,
 } from "solid-js";
-
-import { optional } from "@/libs/core/utils/optional";
 import {
   Switch,
   SwitchControl,
@@ -19,23 +17,6 @@ import {
   parseTurnServer,
   setClientProfile,
 } from "@/libs/core/store";
-import {
-  createCameras,
-  createMicrophones,
-  createSpeakers,
-} from "@solid-primitives/devices";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  localStream,
-  setDisplayStream,
-} from "@/libs/stream";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Slider,
@@ -52,7 +33,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { textareaAutoResize } from "@/libs/hooks/input-resize";
-import { createStore, reconcile } from "solid-js/store";
+import { reconcile } from "solid-js/store";
 import { LocaleSelector, t } from "@/i18n";
 import {
   TurnServerOptions,
@@ -78,8 +59,6 @@ import { toast } from "solid-sonner";
 import { Input } from "@/components/ui/input";
 import { cacheManager } from "@/libs/services/cache-serivce";
 import { v4 } from "uuid";
-import { makePersisted } from "@solid-primitives/storage";
-import { createPermission } from "@solid-primitives/permission";
 import {
   Collapsible,
   CollapsibleContent,
@@ -90,11 +69,6 @@ import { checkIceServerAvailability } from "@/libs/core/utils/turn";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import DropArea from "@/components/drop-area";
 import { catchErrorAsync } from "@/libs/catch";
-import {
-  devices,
-  MediaDeviceInfoType,
-  setDevices,
-} from "@/components/media-selection-dialog";
 
 function parseTurnServers(
   input: string,
@@ -1438,250 +1412,4 @@ const createClearServiceWorkerCacheDialog = () => {
     open,
     Component,
   };
-};
-
-const MediaSetting: Component = () => {
-  if (!navigator.mediaDevices) {
-    return <></>;
-  }
-  const cameras = createCameras();
-  const microphones = createMicrophones();
-  const speakers = createSpeakers();
-
-  const availableCameras = createMemo(() =>
-    cameras().filter((cam) => cam.deviceId !== ""),
-  );
-  const availableMicrophones = createMemo(() =>
-    microphones().filter((mic) => mic.deviceId !== ""),
-  );
-  const availableSpeakers = createMemo(() =>
-    speakers().filter((speaker) => speaker.deviceId !== ""),
-  );
-
-  createEffect(() => {
-    if (
-      !availableCameras().find(
-        (cam) => cam.deviceId === devices.camera?.deviceId,
-      )
-    ) {
-      setDevices("camera", availableCameras()[0] ?? null);
-    }
-    if (
-      !availableMicrophones().find(
-        (mic) =>
-          mic.deviceId === devices.microphone?.deviceId,
-      )
-    ) {
-      setDevices(
-        "microphone",
-        availableMicrophones()[0] ?? null,
-      );
-    }
-    if (
-      !availableSpeakers().find(
-        (speaker) =>
-          speaker.deviceId === devices.speaker?.deviceId,
-      )
-    ) {
-      setDevices("speaker", availableSpeakers()[0] ?? null);
-    }
-  });
-  const cameraPermission = createPermission("camera");
-  const microphonePermission =
-    createPermission("microphone");
-
-  return (
-    <>
-      <h3 id="media" class="h3">
-        {t("setting.media.title")}
-      </h3>
-      <div class="flex flex-col gap-2">
-        <Show when={cameraPermission() === "prompt"}>
-          <Button
-            onClick={() => {
-              navigator.mediaDevices
-                .getUserMedia({
-                  video: true,
-                })
-                .then((stream) => {
-                  stream.getTracks().forEach((track) => {
-                    track.stop();
-                  });
-                  toast.success(
-                    t(
-                      "setting.media.request_permission.camera_success",
-                    ),
-                  );
-                })
-                .catch((error) => {
-                  console.error(error);
-                  toast.error(error.message);
-                });
-            }}
-          >
-            {t(
-              "setting.media.request_permission.camera_title",
-            )}
-          </Button>
-        </Show>
-        <Show when={microphonePermission() === "prompt"}>
-          <Button
-            onClick={() => {
-              navigator.mediaDevices
-                .getUserMedia({
-                  audio: true,
-                })
-                .then((stream) => {
-                  stream.getTracks().forEach((track) => {
-                    track.stop();
-                  });
-                  toast.success(
-                    t(
-                      "setting.media.request_permission.microphone_success",
-                    ),
-                  );
-                })
-                .catch((error) => {
-                  console.error(error);
-                  toast.error(error.message);
-                });
-            }}
-          >
-            {t(
-              "setting.media.request_permission.microphone_title",
-            )}
-          </Button>
-        </Show>
-
-        {/* <Show
-          when={
-            cameraPermission() === "prompt" ||
-            microphonePermission() === "prompt"
-          }
-          fallback={
-            <Show
-              when={
-                cameraPermission() === "denied" ||
-                microphonePermission() === "denied"
-              }
-            >
-              <p class="text-sm text-destructive">
-                {t(
-                  "setting.media.request_permission.fallback_description",
-                )}
-              </p>
-            </Show>
-          }
-        >
-          <Button
-            onClick={() => {
-              navigator.mediaDevices
-                .getUserMedia({
-                  video: true,
-                  audio: true,
-                })
-                .then((stream) => {
-                  setDisplayStream(stream);
-                })
-                .catch((error) => {
-                  console.error(error);
-                  toast.error(error.message);
-                });
-            }}
-          >
-            {t("setting.media.request_permission.title")}
-          </Button>
-          <p class="muted">
-            {t(
-              "setting.media.request_permission.description",
-            )}
-          </p>
-        </Show> */}
-      </div>
-      <Show when={availableCameras().length !== 0}>
-        <label class="flex flex-col gap-2">
-          <Label>{t("setting.media.camera.title")}</Label>
-          <Select
-            defaultValue={devices.camera}
-            value={devices.camera}
-            onChange={(value) => {
-              setDevices("camera", value);
-            }}
-            options={cameras()}
-            optionTextValue="label"
-            optionValue="deviceId"
-            itemComponent={(props) => (
-              <SelectItem
-                item={props.item}
-                value={props.item.rawValue?.deviceId}
-              >
-                {props.item.rawValue?.label}
-              </SelectItem>
-            )}
-          >
-            <SelectTrigger>
-              <SelectValue<MediaDeviceInfoType>>
-                {(state) => state.selectedOption().label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent />
-          </Select>
-        </label>
-      </Show>
-      <Show when={availableMicrophones().length !== 0}>
-        <label class="flex flex-col gap-2">
-          <Label>
-            {t("setting.media.microphone.title")}
-          </Label>
-          <Select
-            value={devices.microphone}
-            onChange={(value) => {
-              setDevices("microphone", value);
-            }}
-            options={microphones()}
-            optionTextValue="label"
-            optionValue="deviceId"
-            itemComponent={(props) => (
-              <SelectItem item={props.item}>
-                {props.item.rawValue?.label}
-              </SelectItem>
-            )}
-          >
-            <SelectTrigger>
-              <SelectValue<MediaDeviceInfoType>>
-                {(state) => state.selectedOption().label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent />
-          </Select>
-        </label>
-      </Show>
-      <Show when={availableSpeakers().length !== 0}>
-        <label class="flex flex-col gap-2">
-          <Label>{t("setting.media.speaker.title")}</Label>
-          <Select
-            value={devices.speaker}
-            onChange={(value) => {
-              setDevices("speaker", value);
-            }}
-            options={speakers()}
-            optionTextValue="label"
-            optionValue="deviceId"
-            itemComponent={(props) => (
-              <SelectItem item={props.item}>
-                {props.item.rawValue?.label}
-              </SelectItem>
-            )}
-          >
-            <SelectTrigger>
-              <SelectValue<MediaDeviceInfoType>>
-                {(state) => state.selectedOption().label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent />
-          </Select>
-        </label>
-      </Show>
-    </>
-  );
 };

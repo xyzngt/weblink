@@ -28,13 +28,6 @@ createRoot(() => {
 
     const display = displayStream();
     if (display) {
-      display.getAudioTracks().forEach((track) => {
-        track.contentHint = "speech";
-      });
-      display.getVideoTracks().forEach((track) => {
-        track.contentHint = "motion";
-      });
-
       display.getTracks().forEach((track) => {
         track.addEventListener("ended", () => {
           console.log(
@@ -44,6 +37,8 @@ createRoot(() => {
           display.removeTrack(track);
           if (display.getTracks().length === 0) {
             setLocalStream(null);
+          } else {
+            setLocalStream(display);
           }
         });
       });
