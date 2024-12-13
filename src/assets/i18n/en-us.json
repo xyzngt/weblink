@@ -414,13 +414,16 @@
       "current": "Current",
       "preview": "Preview",
       "apply_constraints": "Apply Media Constraints",
+      "apply_constraints_description": "Some constraints may not be supported to change dynamically, please select a new stream to apply",
       "preset_constraints": "Preset Media Constraints",
       "microphone_constraints": "Microphone Constraints",
+      "speaker_constraints": "Speaker Constraints",
       "constraints": {
         "noise_suppression": "Noise Suppression",
         "echo_cancellation": "Echo Cancellation",
         "auto_gain_control": "Auto Gain Control",
-        "voice_isolation": "Voice Isolation"
+        "voice_isolation": "Voice Isolation",
+        "suppress_local_audio_playback": "Suppress Local Audio Playback"
       }
     },
     "nav": {

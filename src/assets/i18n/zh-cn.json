@@ -404,13 +404,16 @@
       "current": "当前",
       "preview": "预览",
       "apply_constraints": "应用媒体约束",
+      "apply_constraints_description": "某些约束可能不支持动态更改，请选择新的流以应用",
       "preset_constraints": "预设媒体约束",
       "microphone_constraints": "麦克风约束",
+      "speaker_constraints": "扬声器约束",
       "constraints": {
         "noise_suppression": "噪音抑制",
         "echo_cancellation": "回声消除",
         "auto_gain_control": "自动增益控制",
-        "voice_isolation": "语音隔离"
+        "voice_isolation": "语音隔离",
+        "suppress_local_audio_playback": "抑制本地音频播放"
       }
     },
     "notification": {

@@ -404,13 +404,16 @@
       "current": "當前",
       "preview": "預覽",
       "apply_constraints": "應用媒體約束",
+      "apply_constraints_description": "某些約束可能不支持動態更改，請選擇新的流以應用",
       "preset_constraints": "預設媒體約束",
       "microphone_constraints": "麥克風約束",
+      "speaker_constraints": "揚聲器約束",
       "constraints": {
         "noise_suppression": "噪音抑制",
         "echo_cancellation": "回聲消除",
         "auto_gain_control": "自動增益控制",
-        "voice_isolation": "語音隔離"
+        "voice_isolation": "語音隔離",
+        "suppress_local_audio_playback": "抑制本地音訊播放"
       }
     },
     "notification": {

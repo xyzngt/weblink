@@ -49,10 +49,12 @@ import { localStream } from "@/libs/stream";
 import { cn } from "@/libs/cn";
 import {
   createPresetMicrophoneConstraintsDialog,
+  createPresetSpeakerTrackConstraintsDialog,
   microphoneConstraints,
   speakerConstraints,
   videoConstraints,
 } from "./track-constaints";
+import { makePersisted } from "@solid-primitives/storage";
 
 export type MediaDeviceInfoType = {
   label: string;
@@ -69,20 +71,31 @@ const [devices, setDevices] = createStore<{
   speaker: null,
 });
 
-const [enableScreen, setEnableScreen] = createSignal(true);
 const [enableScreenSpeaker, setEnableScreenSpeaker] =
-  createSignal(true);
+  makePersisted(createSignal(true), {
+    name: "enableScreenSpeaker",
+    storage: sessionStorage,
+  });
 const [enableScreenMicrophone, setEnableScreenMicrophone] =
-  createSignal(false);
+  makePersisted(createSignal(false), {
+    name: "enableScreenMicrophone",
+    storage: sessionStorage,
+  });
 
 const [enableUserMicrophone, setEnableUserMicrophone] =
-  createSignal(true);
+  makePersisted(createSignal(true), {
+    name: "enableUserMicrophone",
+    storage: sessionStorage,
+  });
 const [enableUserCamera, setEnableUserCamera] =
-  createSignal(true);
-const [stream, setStream] =
-  createSignal<MediaStream | null>(null);
-  
+  makePersisted(createSignal(true), {
+    name: "enableUserCamera",
+    storage: sessionStorage,
+  });
+
 export const createMediaSelectionDialog = () => {
+  const [stream, setStream] =
+    createSignal<MediaStream | null>(null);
   const audioTrack = () => {
     return stream()?.getAudioTracks();
   };
@@ -181,18 +194,15 @@ export const createMediaSelectionDialog = () => {
     setStream(null);
   };
   const openScreen = async (
-    enableScreen: boolean = true,
     enableSpeaker: boolean = true,
     enableMicrophone: boolean = false,
   ) => {
     const [err, local] = await catchErrorAsync(
       navigator.mediaDevices.getDisplayMedia({
-        video: enableScreen
-          ? {
-              deviceId: devices.camera?.deviceId,
-              displaySurface: "monitor",
-            }
-          : false,
+        video: {
+          deviceId: devices.camera?.deviceId,
+          displaySurface: "monitor",
+        },
         audio:
           enableSpeaker && speakers().length !== 0
             ? {
@@ -272,6 +282,11 @@ export const createMediaSelectionDialog = () => {
     Component: MicrophoneConstraintsDialog,
   } = createPresetMicrophoneConstraintsDialog();
 
+  const {
+    open: openSpeakerConstraintsDialog,
+    Component: SpeakerConstraintsDialog,
+  } = createPresetSpeakerTrackConstraintsDialog();
+
   const { open, close, Component, submit } =
     createDialog<MediaStream>({
       title: () => t("common.media_selection_dialog.title"),
@@ -281,6 +296,7 @@ export const createMediaSelectionDialog = () => {
           defaultValue={isMobile() ? "user" : "screen"}
         >
           <MicrophoneConstraintsDialog />
+          <SpeakerConstraintsDialog />
           <TabsList>
             <TabsTrigger value="screen" class="gap-1">
               <IconMonitor class="size-4" />
@@ -431,40 +447,50 @@ export const createMediaSelectionDialog = () => {
                 </SwitchControl>
               </Switch>
               <Show when={canUseScreenSpeaker()}>
-                <Select<MediaDeviceInfoType>
-                  value={devices.speaker}
-                  placeholder={
-                    <span class="muted">
-                      {speakers().length === 0
-                        ? t(
-                            "common.media_selection_dialog.no_speaker_available",
-                          )
-                        : t(
-                            "common.media_selection_dialog.select_speaker",
-                          )}
-                    </span>
-                  }
-                  onChange={(value) =>
-                    setDevices("speaker", value)
-                  }
-                  optionTextValue="label"
-                  optionValue="deviceId"
-                  options={availableSpeakers()}
-                  itemComponent={(props) => (
-                    <SelectItem item={props.item}>
-                      {props.item.rawValue?.label}
-                    </SelectItem>
-                  )}
-                >
-                  <SelectTrigger>
-                    <SelectValue<MediaDeviceInfoType>>
-                      {(state) =>
-                        state.selectedOption().label
-                      }
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent />
-                </Select>
+                <div class="flex w-full gap-1">
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={openSpeakerConstraintsDialog}
+                  >
+                    <IconSettings class="size-6" />
+                  </Button>
+                  <Select<MediaDeviceInfoType>
+                    class="flex-1"
+                    value={devices.speaker}
+                    placeholder={
+                      <span class="muted">
+                        {speakers().length === 0
+                          ? t(
+                              "common.media_selection_dialog.no_speaker_available",
+                            )
+                          : t(
+                              "common.media_selection_dialog.select_speaker",
+                            )}
+                      </span>
+                    }
+                    onChange={(value) =>
+                      setDevices("speaker", value)
+                    }
+                    optionTextValue="label"
+                    optionValue="deviceId"
+                    options={availableSpeakers()}
+                    itemComponent={(props) => (
+                      <SelectItem item={props.item}>
+                        {props.item.rawValue?.label}
+                      </SelectItem>
+                    )}
+                  >
+                    <SelectTrigger class="border-none transition-colors hover:bg-muted/80">
+                      <SelectValue<MediaDeviceInfoType>>
+                        {(state) =>
+                          state.selectedOption().label
+                        }
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent />
+                  </Select>
+                </div>
               </Show>
             </div>
             <div
@@ -495,10 +521,10 @@ export const createMediaSelectionDialog = () => {
                 </SwitchControl>
               </Switch>
               <Show when={canUseScreenMicrophone()}>
-                <div class="flex w-full gap-2">
+                <div class="flex w-full gap-1">
                   <Button
                     size="icon"
-                    variant="outline"
+                    variant="ghost"
                     onClick={
                       openMicrophoneConstraintsDialog
                     }
@@ -531,7 +557,7 @@ export const createMediaSelectionDialog = () => {
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger class="border-none transition-colors hover:bg-muted/80">
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label
@@ -552,7 +578,6 @@ export const createMediaSelectionDialog = () => {
                       size="sm"
                       onClick={() =>
                         openScreen(
-                          enableScreen(),
                           enableScreenSpeaker(),
                           enableScreenMicrophone(),
                         )
@@ -581,7 +606,6 @@ export const createMediaSelectionDialog = () => {
                     onClick={() => {
                       closeStream();
                       openScreen(
-                        enableScreen(),
                         enableScreenSpeaker(),
                         enableScreenMicrophone(),
                       );
@@ -722,7 +746,7 @@ export const createMediaSelectionDialog = () => {
                     </SelectItem>
                   )}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger class="border-none transition-colors hover:bg-muted/80">
                     <SelectValue<MediaDeviceInfoType>>
                       {(state) =>
                         state.selectedOption().label
@@ -762,10 +786,10 @@ export const createMediaSelectionDialog = () => {
               </Switch>
 
               <Show when={canUseUserMicrophone()}>
-                <div class="flex w-full gap-2">
+                <div class="flex w-full gap-1">
                   <Button
                     size="icon"
-                    variant="outline"
+                    variant="ghost"
                     onClick={
                       openMicrophoneConstraintsDialog
                     }
@@ -798,7 +822,7 @@ export const createMediaSelectionDialog = () => {
                       </SelectItem>
                     )}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger class="border-none transition-colors hover:bg-muted/80">
                       <SelectValue<MediaDeviceInfoType>>
                         {(state) =>
                           state.selectedOption().label

@@ -50,16 +50,13 @@ const createAboutDialog = () => {
               </a>
             </div>
           </div>
-          <p class="muted text-xs">
-            {__APP_BUILD_TIME__}
-          </p>
+          <p class="muted text-xs">{__APP_BUILD_TIME__}</p>
         </div>
       );
     },
   });
 
   const open = () => {
-    setAppOptions({ showAboutDialog: false });
     openAboutDialog();
   };
 

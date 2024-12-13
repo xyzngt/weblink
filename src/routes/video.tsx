@@ -189,19 +189,22 @@ const LocalToolbar = (props: {
     Component: ApplyConstraintsDialogComponent,
   } = createApplyConstraintsDialog();
 
-  const microphoneAudioTrack = createMemo(() => {
+  const audioTracks = createMemo(() => {
     const stream = localStream();
+    return stream?.getAudioTracks();
+  });
+
+  const microphoneAudioTrack = createMemo(() => {
     return (
-      stream?.getAudioTracks().find((track) => {
+      audioTracks()?.find((track) => {
         return track.contentHint === "speech";
       }) ?? null
     );
   });
 
   const speakerAudioTrack = createMemo(() => {
-    const stream = localStream();
     return (
-      stream?.getAudioTracks().find((track) => {
+      audioTracks()?.find((track) => {
         return track.contentHint === "music";
       }) ?? null
     );
@@ -311,7 +314,7 @@ const LocalToolbar = (props: {
         </Button>
       </Show>
 
-      <Show when={microphoneAudioTrack()}>
+      <Show when={audioTracks()}>
         <Button
           class="h-8 text-nowrap rounded-full p-2 hover:gap-1
             [&:hover>.grid]:grid-cols-[1fr]"
