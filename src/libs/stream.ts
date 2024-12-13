@@ -4,7 +4,6 @@ import {
   createSignal,
   untrack,
 } from "solid-js";
-import { reconcile } from "solid-js/store";
 
 const [streamLocal, setLocalStream] =
   createSignal<MediaStream | null>(null);
@@ -17,17 +16,17 @@ export const [displayStream, setDisplayStream] =
 createRoot(() => {
   createEffect(() => {
     const currentStream = untrack(localStream);
+    const display = displayStream();
+    if (currentStream?.id === display?.id) return;
 
     if (currentStream) {
       currentStream.getTracks().forEach((track) => {
         currentStream.removeTrack(track);
         track.stop();
       });
-
       setLocalStream(null);
     }
 
-    const display = displayStream();
     if (display) {
       display.getTracks().forEach((track) => {
         track.addEventListener("ended", () => {
@@ -37,21 +36,13 @@ createRoot(() => {
           );
           display.removeTrack(track);
 
-          setLocalStream(null);
-          if (display.getTracks().length > 0) {
-            setLocalStream(display);
+          if (display.getTracks().length === 0) {
+            setLocalStream(null);
           }
         });
       });
 
       setLocalStream(display);
     }
-  });
-
-  createEffect(() => {
-    console.log(
-      "displayStream changed",
-      displayStream()?.getTracks(),
-    );
   });
 });

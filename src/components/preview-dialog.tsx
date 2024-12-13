@@ -13,7 +13,6 @@ import { Button } from "./ui/button";
 import { downloadFile } from "@/libs/utils/download-file";
 import { IconDownload, IconShare } from "./icons";
 import { formatBtyeSize } from "@/libs/utils/format-filesize";
-import { toast } from "solid-sonner";
 import { catchErrorAsync } from "@/libs/catch";
 import { canShareFile } from "@/libs/utils/can-share";
 
