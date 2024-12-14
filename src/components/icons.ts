@@ -69,12 +69,14 @@ import IconEdit from "@material-symbols/svg-400/outlined/edit.svg?component-soli
 import IconEditSquare from "@material-symbols/svg-400/outlined/edit_square.svg?component-solid";
 import IconLink from "@material-symbols/svg-400/outlined/link.svg?component-solid";
 import IconPlayArrow from "@material-symbols/svg-400/outlined/play_arrow.svg?component-solid";
+import IconPause from "@material-symbols/svg-400/outlined/pause.svg?component-solid";
 import IconMonitor from "@material-symbols/svg-400/outlined/monitor.svg?component-solid";
 import IconScreenShare from "@material-symbols/svg-400/outlined/screen_share.svg?component-solid";
 import IconStopScreenShare from "@material-symbols/svg-400/outlined/stop_screen_share.svg?component-solid";
 import IconImageFilled from "@material-symbols/svg-400/outlined/image-fill.svg?component-solid";
 import IconFolderZipFilled from "@material-symbols/svg-400/outlined/folder_zip-fill.svg?component-solid";
 import IconVideoCam from "@material-symbols/svg-400/outlined/videocam.svg?component-solid";
+import IconVideoCamOff from "@material-symbols/svg-400/outlined/videocam_off.svg?component-solid";
 import IconWindow from "@material-symbols/svg-700/outlined/window.svg?component-solid";
 import IconCropSquare from "@material-symbols/svg-700/outlined/crop_square.svg?component-solid";
 import IconMic from "@material-symbols/svg-400/outlined/mic.svg?component-solid";
@@ -154,12 +156,14 @@ export {
   IconEditSquare,
   IconLink,
   IconPlayArrow,
+  IconPause,
   IconMonitor,
   IconScreenShare,
   IconStopScreenShare,
   IconImageFilled,
   IconFolderZipFilled,
   IconVideoCam,
+  IconVideoCamOff,
   IconWindow,
   IconCropSquare,
   IconMic,

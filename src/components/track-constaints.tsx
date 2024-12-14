@@ -16,7 +16,6 @@ import {
 } from "./ui/switch";
 import { Label } from "./ui/label";
 import { createDialog } from "./dialogs/dialog";
-import { Button } from "./ui/button";
 import { makePersisted } from "@solid-primitives/storage";
 
 const getSupportedConstraints = () => {
@@ -52,7 +51,7 @@ export const [speakerConstraints, setSpeakerConstraints] =
     createStore({
       suppressLocalAudioPlayback:
         "suppressLocalAudioPlayback" in constraints
-          ? true
+          ? false
           : undefined,
     }),
     {

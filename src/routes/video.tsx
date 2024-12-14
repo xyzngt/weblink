@@ -25,6 +25,8 @@ import {
   IconCropSquare,
   IconMic,
   IconMicOff,
+  IconPause,
+  IconPlayArrow,
   IconScreenShare,
   IconSettings,
   IconStopScreenShare,
@@ -49,6 +51,13 @@ import { createMediaSelectionDialog } from "@/components/media-selection-dialog"
 import { createStore } from "solid-js/store";
 import { clientProfile } from "@/libs/core/store";
 import { createApplyConstraintsDialog } from "@/components/track-constaints";
+import { useAudioPlayer } from "@/components/audio-player";
+import { VideoDisplay } from "../components/video-display";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 export default function Video() {
   if (!("mediaDevices" in navigator)) {
@@ -86,6 +95,8 @@ export default function Video() {
     setTab(isMobile() ? "1" : "2");
   });
 
+  const { setPlay, playState, hasAudio } = useAudioPlayer();
+
   return (
     <>
       <Tabs
@@ -96,7 +107,7 @@ export default function Video() {
       >
         <div
           class="sticky top-[var(--mobile-header-height)] z-10 flex h-12
-            w-full items-center justify-between border-b border-border
+            w-full items-center gap-2 border-b border-border
             bg-background/50 px-4 backdrop-blur sm:top-0"
         >
           <h4 class="h4">
@@ -105,7 +116,36 @@ export default function Video() {
               ? ` - ${roomStatus.roomId}`
               : ""}
           </h4>
-          <TabsList class="w-min">
+          <div class="flex-1"></div>
+          <Show when={hasAudio()}>
+            <Tooltip>
+              <TooltipTrigger
+                as={Button}
+                onClick={() => setPlay(!playState())}
+                size="icon"
+                class="size-8"
+                variant={
+                  playState() ? "secondary" : "default"
+                }
+              >
+                <Dynamic
+                  component={
+                    playState()
+                      ? IconVolumeUp
+                      : IconVolumeOff
+                  }
+                  class="size-4"
+                />
+              </TooltipTrigger>
+              <TooltipContent>
+                {playState()
+                  ? t("common.action.mute")
+                  : t("common.action.unmute")}
+              </TooltipContent>
+            </Tooltip>
+          </Show>
+
+          <TabsList class="h-8 w-min">
             <TabsTrigger value="2">
               <IconWindow class="size-4" />
             </TabsTrigger>
@@ -133,12 +173,18 @@ export default function Video() {
         <div
           class={cn(
             "grid w-full place-content-center gap-2",
-            tab() == "1" ? "grid-cols-1" : "grid-cols-2",
+            tab() == "1"
+              ? "grid-cols-1"
+              : "grid-cols-2 p-2",
           )}
         >
-          <VideoItem
+          <VideoDisplay
+            class="aspect-video
+              max-h-[calc(100vh-3rem-var(--mobile-header-height))] w-full
+              sm:max-h-[calc(100vh-3rem)]"
             stream={localStream()}
             name={`${clientProfile.name} (You)`}
+            avatar={clientProfile.avatar ?? undefined}
             muted={true}
           >
             <LocalToolbar
@@ -150,7 +196,7 @@ export default function Video() {
                   : "left-1/2 -translate-x-1/2",
               )}
             />
-          </VideoItem>
+          </VideoDisplay>
           <For
             each={Object.values(
               sessionService.clientInfo,
@@ -159,9 +205,14 @@ export default function Video() {
             )}
           >
             {(client) => (
-              <VideoItem
+              <VideoDisplay
+                class="aspect-video
+                  max-h-[calc(100vh-3rem-var(--mobile-header-height))] w-full
+                  sm:max-h-[calc(100vh-3rem)]"
                 stream={client.stream}
                 name={client.name}
+                avatar={client.avatar ?? undefined}
+                muted={true}
               />
             )}
           </For>
@@ -352,78 +403,6 @@ const LocalToolbar = (props: {
           </p>
         </Button>
       </Show>
-    </div>
-  );
-};
-
-const VideoItem = (
-  props: {
-    stream: MediaStream | null | undefined;
-    name: string;
-    muted?: boolean;
-  } & ParentProps,
-) => {
-  const [speaking, setSpeaking] = createStore<
-    Array<[string, Accessor<boolean>]>
-  >([]);
-
-  createEffect(() => {
-    const remoteTracks = props.stream
-      ?.getAudioTracks()
-      .map((track) => {
-        return [
-          track.contentHint,
-          createCheckVolume(() => new MediaStream([track])),
-        ] as [string, Accessor<boolean>];
-      });
-    setSpeaking(remoteTracks ?? []);
-  });
-
-  const anySpeaking = createMemo(() => {
-    return speaking.some(([_, speak]) => speak());
-  });
-
-  return (
-    <div
-      class="relative aspect-video
-        max-h-[calc(100vh-3rem-var(--mobile-header-height))] w-full
-        overflow-hidden bg-muted sm:max-h-[calc(100vh-3rem)]"
-    >
-      <Show
-        when={props.stream}
-        fallback={
-          <div class="absolute inset-0 content-center text-center">
-            no stream
-          </div>
-        }
-      >
-        <video
-          autoplay
-          controls
-          muted={props.muted}
-          class="absolute inset-0 size-full bg-black object-contain"
-          ref={(ref) => {
-            createEffect(() => {
-              ref && (ref.srcObject = props.stream ?? null);
-            });
-          }}
-        />
-      </Show>
-      <div class="absolute left-1 top-1 flex gap-1">
-        <Badge
-          variant="secondary"
-          class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"
-        >
-          {props.name}
-          <IconVolumeUpFilled
-            class={cn(
-              "size-4",
-              anySpeaking() ? "block" : "hidden",
-            )}
-          />
-        </Badge>
-      </div>
-      {props.children}
     </div>
   );
 };

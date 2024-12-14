@@ -55,6 +55,8 @@ import {
   videoConstraints,
 } from "./track-constaints";
 import { makePersisted } from "@solid-primitives/storage";
+import { VideoDisplay } from "./video-display";
+import { clientProfile } from "@/libs/core/store";
 
 export type MediaDeviceInfoType = {
   label: string;
@@ -94,6 +96,12 @@ const [enableUserCamera, setEnableUserCamera] =
   });
 
 export const createMediaSelectionDialog = () => {
+  const isMobile = createIsMobile();
+
+  const [selectedTab, setSelectedTab] = createSignal(
+    isMobile() ? "user" : "screen",
+  );
+
   const [stream, setStream] =
     createSignal<MediaStream | null>(null);
   const audioTrack = () => {
@@ -275,7 +283,6 @@ export const createMediaSelectionDialog = () => {
 
     setStream(local);
   };
-  const isMobile = createIsMobile();
 
   const {
     open: openMicrophoneConstraintsDialog,
@@ -292,8 +299,9 @@ export const createMediaSelectionDialog = () => {
       title: () => t("common.media_selection_dialog.title"),
       content: () => (
         <Tabs
+          value={selectedTab()}
+          onChange={(value) => setSelectedTab(value)}
           class="flex flex-col gap-2 overflow-y-auto"
-          defaultValue={isMobile() ? "user" : "screen"}
         >
           <MicrophoneConstraintsDialog />
           <SpeakerConstraintsDialog />
@@ -314,7 +322,31 @@ export const createMediaSelectionDialog = () => {
             </TabsTrigger>
             <TabsIndicator />
           </TabsList>
-          <div
+
+          <Show
+            when={stream()}
+            fallback={
+              <VideoDisplay
+                class="aspect-video w-full"
+                stream={localStream()}
+                name={t(
+                  "common.media_selection_dialog.preview",
+                )}
+                avatar={clientProfile.avatar ?? undefined}
+              />
+            }
+          >
+            <VideoDisplay
+              class="aspect-video w-full"
+              stream={stream()}
+              muted={true}
+              name={t(
+                "common.media_selection_dialog.current",
+              )}
+              avatar={clientProfile.avatar ?? undefined}
+            />
+          </Show>
+          {/* <div
             class="relative aspect-video w-full overflow-hidden rounded-lg
               bg-muted"
           >
@@ -382,7 +414,7 @@ export const createMediaSelectionDialog = () => {
                 </>
               )}
             </Show>
-          </div>
+          </div> */}
           <TabsContent
             value="screen"
             class="flex flex-col gap-2"

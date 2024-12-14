@@ -4,7 +4,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "./ui/avatar";
-import { Client } from "@/libs/core/type";
 import { PolymorphicProps } from "@kobalte/core";
 import { Image } from "@kobalte/core";
 import { splitProps, ValidComponent } from "solid-js";
@@ -15,7 +14,8 @@ type ClientAvatarProps<T extends ValidComponent = "span"> =
     T,
     Image.ImageRootProps<T> & {
       class?: string | undefined;
-      client: Client;
+      name: string;
+      avatar?: string;
     }
   >;
 
@@ -26,13 +26,13 @@ export const ClientAvatar = <
 ) => {
   const [local, rest] = splitProps(
     props as ClientAvatarProps,
-    ["client", "class"],
+    ["name", "avatar", "class"],
   );
   return (
     <Avatar class={cn(local.class)} {...rest}>
-      <AvatarImage src={local.client.avatar ?? undefined} />
+      <AvatarImage src={local.avatar ?? undefined} />
       <AvatarFallback>
-        {getInitials(local.client.name)}
+        {getInitials(local.name)}
       </AvatarFallback>
     </Avatar>
   );

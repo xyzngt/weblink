@@ -73,9 +73,12 @@ import { v4 } from "uuid";
 import { createIsMobile } from "./libs/hooks/create-mobile";
 import { messageStores } from "./libs/core/messge";
 import { sleep } from "./libs/utils/sleep";
-import { makePersisted } from "@solid-primitives/storage";
 import { Label } from "./components/ui/label";
 import { Textarea } from "./components/ui/textarea";
+import {
+  AudioPlayerProvider,
+  useAudioPlayer,
+} from "./components/audio-player";
 
 const createWakeLock = () => {
   const [wakeLock, setWakeLock] =
@@ -322,12 +325,14 @@ const InnerApp = (props: ParentProps) => {
   }
   const { roomStatus } = useWebRTC();
   const isMobile = createIsMobile();
+
   return (
     <>
       <RoomDialogComponent />
       <QRCodeDialogComponent />
       <AboutDialogComponent />
       <ForwardDialogComponent />
+
       <div class="flex h-full min-h-full w-full flex-col md:flex-row">
         <div
           class="sticky top-0 z-50 h-[var(--mobile-header-height)]
@@ -490,7 +495,9 @@ export default function App(props: RouteSectionProps) {
         <Toaster />
         <ColorModeProvider storageManager={storageManager}>
           <ChatProvider>
-            <InnerApp> {props.children}</InnerApp>
+            <AudioPlayerProvider>
+              <InnerApp> {props.children}</InnerApp>
+            </AudioPlayerProvider>
           </ChatProvider>
         </ColorModeProvider>
       </MetaProvider>
