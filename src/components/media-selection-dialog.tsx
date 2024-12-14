@@ -330,7 +330,7 @@ export const createMediaSelectionDialog = () => {
                 class="aspect-video w-full"
                 stream={localStream()}
                 name={t(
-                  "common.media_selection_dialog.preview",
+                  "common.media_selection_dialog.current",
                 )}
                 avatar={clientProfile.avatar ?? undefined}
               />
@@ -341,7 +341,7 @@ export const createMediaSelectionDialog = () => {
               stream={stream()}
               muted={true}
               name={t(
-                "common.media_selection_dialog.current",
+                "common.media_selection_dialog.preview",
               )}
               avatar={clientProfile.avatar ?? undefined}
             />
