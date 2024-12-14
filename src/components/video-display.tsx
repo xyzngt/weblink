@@ -68,7 +68,8 @@ export const VideoDisplay = (
           when={videoTrack()}
           fallback={
             <ClientAvatar
-              class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+              class="absolute left-1/2 top-1/2 size-14 -translate-x-1/2
+                -translate-y-1/2"
               avatar={props.avatar}
               name={props.name}
             />
