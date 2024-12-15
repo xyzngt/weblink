@@ -229,6 +229,10 @@ export const createMediaSelectionDialog = () => {
       track.contentHint = "music";
     });
 
+    local.getVideoTracks().forEach((track) => {
+      track.contentHint = "motion";
+    });
+
     if (enableMicrophone) {
       const [err, microphoneMedia] = await catchErrorAsync(
         navigator.mediaDevices.getUserMedia({
@@ -279,6 +283,10 @@ export const createMediaSelectionDialog = () => {
 
     local.getAudioTracks().forEach((track) => {
       track.contentHint = "speech";
+    });
+
+    local.getVideoTracks().forEach((track) => {
+      track.contentHint = "motion";
     });
 
     setStream(local);
