@@ -84,6 +84,12 @@ import IconMicOff from "@material-symbols/svg-400/outlined/mic_off.svg?component
 import IconVolumeOff from "@material-symbols/svg-400/outlined/volume_off.svg?component-solid";
 import IconVolumeUp from "@material-symbols/svg-400/outlined/volume_up.svg?component-solid";
 import IconVolumeUpFilled from "@material-symbols/svg-400/outlined/volume_up-fill.svg?component-solid";
+import IconFullscreen from "@material-symbols/svg-400/outlined/fullscreen.svg?component-solid";
+import IconFullscreenExit from "@material-symbols/svg-400/outlined/fullscreen_exit.svg?component-solid";
+import IconPictureInPicture from "@material-symbols/svg-400/outlined/picture_in_picture.svg?component-solid";
+import IconPictureInPictureOff from "@material-symbols/svg-400/outlined/picture_in_picture_off.svg?component-solid";
+import IconPip from "@material-symbols/svg-400/outlined/pip.svg?component-solid";
+import IconPipExit from "@material-symbols/svg-400/outlined/pip_exit.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -171,4 +177,10 @@ export {
   IconVolumeOff,
   IconVolumeUp,
   IconVolumeUpFilled,
+  IconFullscreen,
+  IconFullscreenExit,
+  IconPictureInPicture,
+  IconPictureInPictureOff,
+  IconPip,
+  IconPipExit,
 };

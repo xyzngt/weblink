@@ -1,14 +1,19 @@
 import {
   Accessor,
+  ComponentProps,
   createEffect,
   createMemo,
   createSignal,
   For,
+  JSX,
   ParentProps,
   Show,
 } from "solid-js";
 import { useWebRTC } from "@/libs/core/rtc-context";
-import { Button } from "@/components/ui/button";
+import {
+  Button,
+  ButtonProps,
+} from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   localStream,
@@ -23,9 +28,14 @@ import {
 import {
   IconClose,
   IconCropSquare,
+  IconFullscreen,
   IconMic,
   IconMicOff,
   IconPause,
+  IconPictureInPicture,
+  IconPictureInPictureOff,
+  IconPip,
+  IconPipExit,
   IconPlayArrow,
   IconScreenShare,
   IconSettings,
@@ -52,12 +62,18 @@ import { createStore } from "solid-js/store";
 import { clientProfile } from "@/libs/core/store";
 import { createApplyConstraintsDialog } from "@/components/track-constaints";
 import { useAudioPlayer } from "@/components/audio-player";
-import { VideoDisplay } from "../components/video-display";
+import {
+  useVideoDisplay,
+  VideoDisplay,
+} from "../components/video-display";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { createMediaTracks } from "@/libs/hooks/tracks";
+import { createPictureInPicture } from "@/libs/hooks/picture-in-picture";
+import { createFullscreen } from "@/libs/hooks/fullscreen";
 
 export default function Video() {
   if (!("mediaDevices" in navigator)) {
@@ -172,10 +188,8 @@ export default function Video() {
 
         <div
           class={cn(
-            "grid w-full place-content-center gap-2",
-            tab() == "1"
-              ? "grid-cols-1"
-              : "grid-cols-2 p-2",
+            "grid w-full place-content-center gap-2 sm:p-2",
+            tab() == "1" ? "grid-cols-1" : "grid-cols-2",
           )}
         >
           <VideoDisplay
@@ -213,7 +227,17 @@ export default function Video() {
                 name={client.name}
                 avatar={client.avatar ?? undefined}
                 muted={true}
-              />
+              >
+                <RemoteToolbar
+                  class={cn(
+                    "absolute top-1 flex gap-1",
+                    isMobile()
+                      ? "right-1"
+                      : "left-1/2 -translate-x-1/2",
+                  )}
+                  client={client}
+                />
+              </VideoDisplay>
             )}
           </For>
         </div>
@@ -221,6 +245,152 @@ export default function Video() {
     </>
   );
 }
+
+const FlexButton = (
+  props: {
+    icon: JSX.Element;
+    onClick: () => void;
+  } & ButtonProps &
+    ParentProps,
+) => {
+  return (
+    <Button
+      {...props}
+      class="h-8 text-nowrap rounded-full p-2 hover:gap-1
+        [&:hover>.grid]:grid-cols-[1fr]"
+    >
+      {props.icon}
+      <Show when={props.children}>
+        <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
+          <span class="min-w-0">{props.children}</span>
+        </p>
+      </Show>
+    </Button>
+  );
+};
+
+const RemoteToolbar = (props: {
+  client?: ClientInfo;
+  class?: string;
+}) => {
+  const { videoRef, audioTracks } = useVideoDisplay();
+
+  const [muted, setMuted] = createSignal(false);
+
+  const {
+    isInPip,
+    isThisElementInPip,
+    isSupported: isPipSupported,
+    requestPictureInPicture,
+    exitPictureInPicture,
+  } = createPictureInPicture(videoRef);
+
+  createEffect(() => {
+    audioTracks().forEach((track) => {
+      track.enabled = !muted();
+    });
+  });
+
+  const {
+    isSupported: isFullscreenSupported,
+    isFullscreen,
+    requestFullscreen,
+    exitFullscreen,
+    isThisElementFullscreen,
+  } = createFullscreen(videoRef);
+
+  return (
+    <div
+      class={cn(
+        "flex gap-1 rounded-full bg-black/50",
+        props.class,
+      )}
+    >
+      <Show when={audioTracks().length > 0}>
+        <FlexButton
+          size="sm"
+          variant={muted() ? "default" : "secondary"}
+          onClick={() => setMuted(!muted())}
+          icon={
+            <Dynamic
+              component={
+                muted() ? IconVolumeOff : IconVolumeUp
+              }
+              class="size-4"
+            />
+          }
+        >
+          {muted()
+            ? t("common.action.unmute")
+            : t("common.action.mute")}
+        </FlexButton>
+      </Show>
+      <Show when={videoRef()}>
+        {(ref) => (
+          <>
+            <Show when={isFullscreenSupported()}>
+              <FlexButton
+                icon={<IconFullscreen class="size-4" />}
+                onClick={() => {
+                  if (isThisElementFullscreen()) {
+                    exitFullscreen();
+                  } else {
+                    requestFullscreen();
+                  }
+                }}
+                variant={
+                  isThisElementFullscreen()
+                    ? "default"
+                    : "secondary"
+                }
+              >
+                {isThisElementFullscreen()
+                  ? t("common.action.exit_fullscreen")
+                  : isFullscreen()
+                    ? t("common.action.switch_fullscreen")
+                    : t("common.action.fullscreen")}
+              </FlexButton>
+            </Show>
+            <Show when={isPipSupported()}>
+              <FlexButton
+                icon={
+                  <Dynamic
+                    component={
+                      isInPip() ? IconPipExit : IconPip
+                    }
+                    class="size-4"
+                  />
+                }
+                onClick={() => {
+                  if (isThisElementInPip()) {
+                    exitPictureInPicture();
+                  } else {
+                    requestPictureInPicture();
+                  }
+                }}
+                variant={
+                  isThisElementInPip()
+                    ? "default"
+                    : "secondary"
+                }
+              >
+                {isThisElementInPip()
+                  ? t(
+                      "common.action.exit_picture_in_picture",
+                    )
+                  : isInPip()
+                    ? t(
+                        "common.action.switch_picture_in_picture",
+                      )
+                    : t("common.action.picture_in_picture")}
+              </FlexButton>
+            </Show>
+          </>
+        )}
+      </Show>
+    </div>
+  );
+};
 
 const LocalToolbar = (props: {
   client?: ClientInfo;
@@ -240,10 +410,13 @@ const LocalToolbar = (props: {
     Component: ApplyConstraintsDialogComponent,
   } = createApplyConstraintsDialog();
 
-  const audioTracks = createMemo(() => {
-    const stream = localStream();
-    return stream?.getAudioTracks();
-  });
+  const tracks = createMediaTracks(
+    () => localStream() ?? null,
+  );
+
+  const audioTracks = createMemo(() =>
+    tracks().filter((track) => track.kind === "audio"),
+  );
 
   const microphoneAudioTrack = createMemo(() => {
     return (
@@ -289,7 +462,7 @@ const LocalToolbar = (props: {
     >
       <MediaSelectionDialogComponent />
       <ApplyConstraintsDialogComponent />
-      <Button
+      <FlexButton
         size="sm"
         onClick={async () => {
           const { result } = await openMediaSelection();
@@ -297,78 +470,64 @@ const LocalToolbar = (props: {
             setDisplayStream(result);
           }
         }}
+        icon={<IconScreenShare class="size-4" />}
         variant={localStream() ? "secondary" : "default"}
-        class="h-8 text-nowrap rounded-full p-2 hover:gap-1
-          [&:hover>.grid]:grid-cols-[1fr]"
       >
-        <IconScreenShare class="size-4" />
-        <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
-          <span class="min-w-0">
-            {localStream()
-              ? t("common.action.change")
-              : t("common.action.select")}
-          </span>
-        </p>
-      </Button>
+        {localStream()
+          ? t("common.action.change")
+          : t("common.action.select")}
+      </FlexButton>
 
       <Show when={speakerAudioTrack()}>
-        <Button
+        <FlexButton
           size="sm"
-          class="h-8 text-nowrap rounded-full p-2 hover:gap-1
-            [&:hover>.grid]:grid-cols-[1fr]"
           variant={speakerMuted() ? "default" : "secondary"}
           onClick={() => {
             setSpeakerMuted(!speakerMuted());
           }}
+          icon={
+            <Dynamic
+              component={
+                speakerMuted()
+                  ? IconVolumeOff
+                  : IconVolumeUp
+              }
+              class="size-4"
+            />
+          }
         >
-          <Dynamic
-            component={
-              speakerMuted() ? IconVolumeOff : IconVolumeUp
-            }
-            class="size-4"
-          />
-          <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
-            <span class="min-w-0">
-              {speakerMuted()
-                ? t("common.action.unmute")
-                : t("common.action.mute")}
-            </span>
-          </p>
-        </Button>
+          {speakerMuted()
+            ? t("common.action.unmute")
+            : t("common.action.mute")}
+        </FlexButton>
       </Show>
 
       <Show when={microphoneAudioTrack()}>
-        <Button
+        <FlexButton
           size="sm"
-          class="h-8 text-nowrap rounded-full p-2 hover:gap-1
-            [&:hover>.grid]:grid-cols-[1fr]"
           variant={
             microphoneMuted() ? "default" : "secondary"
           }
           onClick={() => {
             setMicrophoneMuted(!microphoneMuted());
           }}
+          icon={
+            <Dynamic
+              component={
+                microphoneMuted() ? IconMicOff : IconMic
+              }
+              class="size-4"
+            />
+          }
         >
-          <Dynamic
-            component={
-              microphoneMuted() ? IconMicOff : IconMic
-            }
-            class="size-4"
-          />
-          <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
-            <span class="min-w-0">
-              {microphoneMuted()
-                ? t("common.action.unmute")
-                : t("common.action.mute")}
-            </span>
-          </p>
-        </Button>
+          {microphoneMuted()
+            ? t("common.action.unmute")
+            : t("common.action.mute")}
+        </FlexButton>
       </Show>
 
-      <Show when={audioTracks()}>
-        <Button
-          class="h-8 text-nowrap rounded-full p-2 hover:gap-1
-            [&:hover>.grid]:grid-cols-[1fr]"
+      <Show when={audioTracks().length > 0}>
+        <FlexButton
           size="sm"
           onClick={() => {
             const stream = localStream();
@@ -377,31 +536,21 @@ const LocalToolbar = (props: {
             }
           }}
           variant="secondary"
+          icon={<IconSettings class="size-4" />}
         >
-          <IconSettings class="size-4" />
-          <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
-            <span class="min-w-0">
-              {t("common.action.settings")}
-            </span>
-          </p>
-        </Button>
+          {t("common.action.settings")}
+        </FlexButton>
       </Show>
 
       <Show when={localStream()}>
-        <Button
+        <FlexButton
           size="sm"
           onClick={() => closeStream()}
           variant="destructive"
-          class="h-8 text-nowrap rounded-full p-2 hover:gap-1
-            [&:hover>.grid]:grid-cols-[1fr]"
+          icon={<IconStopScreenShare class="size-4" />}
         >
-          <IconStopScreenShare class="size-4" />
-          <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
-            <span class="min-w-0">
-              {t("common.action.close")}
-            </span>
-          </p>
-        </Button>
+          {t("common.action.close")}
+        </FlexButton>
       </Show>
     </div>
   );

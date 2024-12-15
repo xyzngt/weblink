@@ -357,7 +357,13 @@
       "mute": "Mute",
       "unmute": "Unmute",
       "select": "Select",
-      "settings": "Settings"
+      "settings": "Settings",
+      "fullscreen": "Fullscreen",
+      "exit_fullscreen": "Exit Fullscreen",
+      "switch_fullscreen": "Switch Fullscreen",
+      "picture_in_picture": "PIP Mode",
+      "exit_picture_in_picture": "Exit PIP Mode",
+      "switch_picture_in_picture": "Switch PIP Mode"
     },
     "notification": {
       "copy_success": "Copy success",

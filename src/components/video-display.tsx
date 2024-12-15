@@ -11,9 +11,29 @@ import {
   createEffect,
   createMemo,
   Show,
+  createContext,
+  useContext,
+  createSignal,
 } from "solid-js";
 import { createStore } from "solid-js/store";
 import { ClientAvatar } from "./client-avatar";
+import { createMediaTracks } from "@/libs/hooks/tracks";
+
+const VideoContext = createContext<{
+  videoRef: Accessor<HTMLVideoElement | null>;
+  videoTrack: Accessor<MediaStreamTrack | null>;
+  audioTracks: Accessor<MediaStreamTrack[]>;
+}>();
+
+export const useVideoDisplay = () => {
+  const context = useContext(VideoContext);
+  if (!context) {
+    throw new Error(
+      "useVideoDisplay must be used within a VideoDisplay",
+    );
+  }
+  return context;
+};
 
 export const VideoDisplay = (
   props: {
@@ -24,85 +44,96 @@ export const VideoDisplay = (
     avatar?: string;
   } & ParentProps,
 ) => {
-  const [speaking, setSpeaking] = createStore<
-    Array<[string, Accessor<boolean>]>
-  >([]);
+  const stream = createMemo(() => props.stream ?? null);
 
-  createEffect(() => {
-    const remoteTracks = props.stream
-      ?.getAudioTracks()
-      .map((track) => {
-        return [
-          track.contentHint,
-          createCheckVolume(() => new MediaStream([track])),
-        ] as [string, Accessor<boolean>];
-      });
-    setSpeaking(remoteTracks ?? []);
+  const tracks = createMediaTracks(stream);
+
+  const audioTracks = createMemo(() =>
+    tracks().filter((track) => track.kind === "audio"),
+  );
+
+  const speaking = createMemo(() => {
+    return audioTracks().map((track) => {
+      return createCheckVolume(
+        () => new MediaStream([track]),
+      );
+    });
   });
 
   const anySpeaking = createMemo(() => {
-    return speaking.some(([_, speak]) => speak());
+    return speaking().some((speak) => speak());
   });
 
-  const videoTrack = createMemo(() => {
-    return props.stream?.getVideoTracks()[0];
+  const videoTrack = createMemo(
+    () =>
+      tracks().find((track) => track.kind === "video") ??
+      null,
+  );
+
+  const [videoRef, setVideoRef] =
+    createSignal<HTMLVideoElement | null>(null);
+
+  createEffect(() => {
+    const video = videoRef();
+    if (video) {
+      video.srcObject = props.stream ?? null;
+    }
   });
 
   return (
-    <div
-      class={cn(
-        "relative overflow-hidden rounded-lg bg-muted",
-        props.class,
-      )}
+    <VideoContext.Provider
+      value={{ videoRef, videoTrack, audioTracks }}
     >
-      <Show
-        when={props.stream}
-        fallback={
-          <IconVideoCamOff
-            class="absolute left-1/2 top-1/2 size-1/2 -translate-x-1/2
-              -translate-y-1/2 text-muted-foreground/10"
-          />
-        }
+      <div
+        class={cn(
+          "relative overflow-hidden rounded-lg bg-muted",
+          props.class,
+        )}
       >
         <Show
-          when={videoTrack()}
+          when={props.stream}
           fallback={
-            <ClientAvatar
-              class="absolute left-1/2 top-1/2 size-14 -translate-x-1/2
-                -translate-y-1/2"
-              avatar={props.avatar}
-              name={props.name}
+            <IconVideoCamOff
+              class="absolute left-1/2 top-1/2 size-1/2 -translate-x-1/2
+                -translate-y-1/2 text-muted-foreground/10"
             />
           }
         >
-          <video
-            autoplay
-            muted={props.muted}
-            class="absolute inset-0 size-full bg-black object-contain"
-            ref={(ref) => {
-              createEffect(() => {
-                ref &&
-                  (ref.srcObject = props.stream ?? null);
-              });
-            }}
-          />
+          <Show
+            when={videoTrack()}
+            fallback={
+              <ClientAvatar
+                class="absolute left-1/2 top-1/2 size-14 -translate-x-1/2
+                  -translate-y-1/2"
+                avatar={props.avatar}
+                name={props.name}
+              />
+            }
+          >
+            <video
+              autoplay
+              muted={props.muted}
+              class="absolute inset-0 size-full bg-black object-contain"
+              ref={setVideoRef}
+            />
+          </Show>
         </Show>
-      </Show>
-      <div class="absolute left-1 top-1 flex gap-1">
-        <Badge
-          variant="secondary"
-          class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"
-        >
-          {props.name}
-          <IconVolumeUpFilled
-            class={cn(
-              "size-4",
-              anySpeaking() ? "block" : "hidden",
-            )}
-          />
-        </Badge>
+        <div class="absolute left-1 top-1 flex gap-1">
+          <Badge
+            variant="secondary"
+            class="gap-1 bg-black/50 text-xs text-white hover:bg-black/80"
+          >
+            {props.name}
+            <IconVolumeUpFilled
+              class={cn(
+                "size-4",
+                anySpeaking() ? "block" : "hidden",
+              )}
+            />
+          </Badge>
+        </div>
+        {props.children}
       </div>
-      {props.children}
-    </div>
+    </VideoContext.Provider>
   );
 };

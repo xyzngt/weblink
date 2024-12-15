@@ -16,6 +16,8 @@ All notable changes to this project will be documented in this file.
 
 - Screen Sharing: Add global audio player 屏幕共享添加全局音频播放器
 
+- Screen Sharing: Add fullscreen and pip mode 屏幕共享添加全屏和画中画模式
+
 ## [0.9.2] - 2024-12-09
 
 ### New Features

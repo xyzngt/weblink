@@ -356,7 +356,13 @@
       "mute": "靜音",
       "unmute": "恢復",
       "select": "選擇",
-      "settings": "設置"
+      "settings": "設置",
+      "fullscreen": "全螢幕",
+      "exit_fullscreen": "退出全螢幕",
+      "switch_fullscreen": "切換全螢幕",
+      "picture_in_picture": "子母畫面",
+      "exit_picture_in_picture": "退出子母畫面",
+      "switch_picture_in_picture": "切換子母畫面"
     },
     "clipboard_history": {
       "title": "剪貼簿歷史"
