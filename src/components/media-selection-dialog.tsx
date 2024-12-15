@@ -210,6 +210,7 @@ export const createMediaSelectionDialog = () => {
         video: {
           deviceId: devices.camera?.deviceId,
           displaySurface: "monitor",
+          ...videoConstraints,
         },
         audio:
           enableSpeaker && speakers().length !== 0
@@ -354,75 +355,6 @@ export const createMediaSelectionDialog = () => {
               avatar={clientProfile.avatar ?? undefined}
             />
           </Show>
-          {/* <div
-            class="relative aspect-video w-full overflow-hidden rounded-lg
-              bg-muted"
-          >
-            <Show
-              when={stream()}
-              fallback={
-                <Show when={localStream()}>
-                  <video
-                    ref={(ref) => {
-                      createEffect(() => {
-                        ref &&
-                          (ref.srcObject = localStream());
-                      });
-                    }}
-                    autoplay
-                    controls
-                    muted
-                    class="absolute inset-0 size-full bg-black object-contain"
-                  >
-                    Your browser does not support the video
-                    tag.
-                  </video>
-
-                  <Badge
-                    variant="secondary"
-                    class="absolute left-2 top-2 bg-black/50 text-white
-                      hover:bg-black/80"
-                  >
-                    {t(
-                      "common.media_selection_dialog.current",
-                    )}
-                  </Badge>
-                </Show>
-              }
-            >
-              {(stream) => (
-                <>
-                  <video
-                    ref={(ref) =>
-                      (ref.srcObject = stream())
-                    }
-                    autoplay
-                    controls
-                    muted
-                    class="absolute inset-0 size-full bg-black object-contain"
-                  >
-                    Your browser does not support the video
-                    tag.
-                  </video>
-                  <Badge
-                    variant="secondary"
-                    class="absolute left-2 top-2 gap-1 bg-black/50 text-white
-                      hover:bg-black/80"
-                  >
-                    {t(
-                      "common.media_selection_dialog.preview",
-                    )}
-                    <Show when={audioTrack()?.length === 0}>
-                      <IconVolumeOff class="size-4" />
-                    </Show>
-                    <Show when={audioTrack()?.length === 2}>
-                      <IconMicFilled class="size-4" />
-                    </Show>
-                  </Badge>
-                </>
-              )}
-            </Show>
-          </div> */}
           <TabsContent
             value="screen"
             class="flex flex-col gap-2"

@@ -59,16 +59,12 @@ import {
 } from "@/components/ui/checkbox";
 import {
   IconAdd,
-  IconAudioFileFilled,
   IconClose,
   IconClose700,
   IconDelete,
   IconDownload,
-  IconDraftFilled,
   IconFolder,
-  IconFolderZipFilled as IconFolderZipFilled,
   IconForward,
-  IconImageFilled as IconImageFilled,
   IconMenu,
   IconMerge,
   IconMoreHoriz,
@@ -76,7 +72,6 @@ import {
   IconPreview,
   IconSearch700,
   IconShare,
-  IconVideoFileFilled,
   IconWallpaper,
 } from "@/components/icons";
 import { t } from "@/i18n";
@@ -599,124 +594,122 @@ export default function File() {
       <DeleteDialogComponent />
       <PreviewDialogComponent />
       <ForwardDialogComponent />
-      <PortableContextMenu
-        menu={(close) => (
-          <>
-            <ContextMenuItem
-              as="label"
-              class="gap-2"
-              onSelect={() => {
-                close();
-              }}
-            >
-              <input
-                class="hidden"
-                type="file"
-                // @ts-expect-error
-                webkitdirectory
-                mozdirectory
-                directory
-                onChange={async (ev) => {
-                  if (!ev.currentTarget.files) return;
-                  const abortController =
-                    new AbortController();
-                  const toastId = toast.loading(
-                    t(
-                      "common.notification.processing_files",
-                    ),
-                    {
-                      duration: Infinity,
-                      action: {
-                        label: t("common.action.cancel"),
-                        onClick: () =>
-                          abortController.abort(
-                            "User cancelled",
-                          ),
-                      },
-                    },
-                  );
-                  const [error, file] =
-                    await catchErrorAsync(
-                      handleSelectFolder(
-                        ev.currentTarget.files,
-                        abortController.signal,
-                      ),
-                    );
-
-                  toast.dismiss(toastId);
-
-                  if (error) {
-                    console.warn(error);
-                    if (
-                      error.message !== "User cancelled"
-                    ) {
-                      toast.error(error.message);
-                    }
-                    return;
-                  }
-
-                  const cache =
-                    await cacheManager.createCache();
-                  cache.setInfo({
-                    fileName: file.name,
-                    fileSize: file.size,
-                    mimetype: file.type,
-                    lastModified: file.lastModified,
-                    chunkSize: appOptions.chunkSize,
-                    createdAt: Date.now(),
-                    file,
-                  });
-                }}
-              />
-              <IconFolder class="size-4" />
-              {t("common.action.add_folder")}
-            </ContextMenuItem>
-          </>
-        )}
-      >
-        {(p) => (
-          <label
-            class="fixed bottom-4 right-4 z-50 flex size-12 items-center
-              justify-center rounded-full bg-muted/80 shadow-md
-              backdrop-blur"
-            style={{
-              right:
-                "calc(1rem + var(--scrollbar-width, 0px))",
-            }}
-            {...p}
-          >
-            <input
-              type="file"
-              class="hidden"
-              multiple
-              onChange={async (ev) => {
-                const files = ev.currentTarget.files;
-                for (const file of files ?? []) {
-                  const cache =
-                    await cacheManager.createCache();
-                  cache.setInfo({
-                    fileName: file.name,
-                    fileSize: file.size,
-                    mimetype: file.type,
-                    lastModified: file.lastModified,
-                    chunkSize: appOptions.chunkSize,
-                    createdAt: Date.now(),
-                    file,
-                  });
-                }
-              }}
-            />
-            <IconAdd class="size-8" />
-          </label>
-        )}
-      </PortableContextMenu>
 
       <div
-        class="container relative z-[10] flex h-full
-          min-h-[calc(100%-3rem)] flex-col gap-4 bg-background/80 px-0
-          pb-20 pt-4
-          sm:max-w-[calc(100vw-var(--desktop-header-width))]"
+        class="container z-[10] flex h-full min-h-[calc(100%-3rem)] w-full
+          flex-col gap-4 bg-background/80 px-0 pt-4"
       >
+        <PortableContextMenu
+          menu={(close) => (
+            <>
+              <ContextMenuItem
+                as="label"
+                class="gap-2"
+                onSelect={() => {
+                  close();
+                }}
+              >
+                <input
+                  class="hidden"
+                  type="file"
+                  // @ts-expect-error
+                  webkitdirectory
+                  mozdirectory
+                  directory
+                  onChange={async (ev) => {
+                    if (!ev.currentTarget.files) return;
+                    const abortController =
+                      new AbortController();
+                    const toastId = toast.loading(
+                      t(
+                        "common.notification.processing_files",
+                      ),
+                      {
+                        duration: Infinity,
+                        action: {
+                          label: t("common.action.cancel"),
+                          onClick: () =>
+                            abortController.abort(
+                              "User cancelled",
+                            ),
+                        },
+                      },
+                    );
+                    const [error, file] =
+                      await catchErrorAsync(
+                        handleSelectFolder(
+                          ev.currentTarget.files,
+                          abortController.signal,
+                        ),
+                      );
+
+                    toast.dismiss(toastId);
+
+                    if (error) {
+                      console.warn(error);
+                      if (
+                        error.message !== "User cancelled"
+                      ) {
+                        toast.error(error.message);
+                      }
+                      return;
+                    }
+
+                    const cache =
+                      await cacheManager.createCache();
+                    cache.setInfo({
+                      fileName: file.name,
+                      fileSize: file.size,
+                      mimetype: file.type,
+                      lastModified: file.lastModified,
+                      chunkSize: appOptions.chunkSize,
+                      createdAt: Date.now(),
+                      file,
+                    });
+                  }}
+                />
+                <IconFolder class="size-4" />
+                {t("common.action.add_folder")}
+              </ContextMenuItem>
+            </>
+          )}
+        >
+          {(p) => (
+            <label
+              class="fixed bottom-4 right-4 z-50 flex size-12 items-center
+                justify-center rounded-full bg-muted/80 shadow-md
+                backdrop-blur hover:cursor-pointer hover:bg-muted/90"
+              style={{
+                right:
+                  "calc(1rem + var(--scrollbar-width, 0px))",
+              }}
+              {...p}
+            >
+              <input
+                type="file"
+                class="hidden"
+                multiple
+                onChange={async (ev) => {
+                  const files = ev.currentTarget.files;
+                  for (const file of files ?? []) {
+                    const cache =
+                      await cacheManager.createCache();
+                    cache.setInfo({
+                      fileName: file.name,
+                      fileSize: file.size,
+                      mimetype: file.type,
+                      lastModified: file.lastModified,
+                      chunkSize: appOptions.chunkSize,
+                      createdAt: Date.now(),
+                      file,
+                    });
+                  }
+                }}
+              />
+              <IconAdd class="size-8" />
+            </label>
+          )}
+        </PortableContextMenu>
         <div class="pointer-events-none absolute inset-0 z-[-1] backdrop-blur" />
         <h2 class="h2 px-2">{t("cache.title")}</h2>
         <StorageStatus class="px-2" />
@@ -861,7 +854,6 @@ export default function File() {
             class="ml-auto"
           />
         </div>
-
         <DropArea
           class="relative flex h-full flex-col-reverse"
           overlay={(ev) => {
@@ -940,12 +932,55 @@ export default function File() {
         >
           <div
             data-sync-scroll="file-table"
-            class="h-full w-full overflow-x-auto scrollbar-none"
+            class="relative flex h-full w-full max-w-full flex-col
+              overflow-x-auto scrollbar-none sm:absolute sm:inset-0
+              sm:scrollbar-thin"
           >
             <Table
-              class="w-full text-nowrap"
+              class="mb-20 text-nowrap"
               ref={setTableBody}
             >
+              <TableHeader
+                class="sticky top-0 z-10 hidden bg-background/50 backdrop-blur
+                  sm:table-header-group"
+              >
+                <For each={table.getHeaderGroups()}>
+                  {(headerGroup) => (
+                    <TableRow>
+                      <For each={headerGroup.headers}>
+                        {(header, index) => (
+                          <TableHead
+                            class={cn(
+                              header.column.getIsPinned() &&
+                                "bg-background/50 transition-colors [tr:hover_&]:bg-muted",
+                            )}
+                            style={{
+                              ...getCommonPinningStyles(
+                                header.column,
+                              ),
+                              width: `${
+                                tableCellSizes[index()]
+                                  ?.width ??
+                                header.column.getSize()
+                              }px`,
+                            }}
+                          >
+                            <Show
+                              when={!header.isPlaceholder}
+                            >
+                              {flexRender(
+                                header.column.columnDef
+                                  .header,
+                                header.getContext(),
+                              )}
+                            </Show>
+                          </TableHead>
+                        )}
+                      </For>
+                    </TableRow>
+                  )}
+                </For>
+              </TableHeader>
               <TableBody>
                 <For
                   each={table.getRowModel().rows}
@@ -1015,12 +1050,13 @@ export default function File() {
           <div
             data-sync-scroll="file-table"
             class="sticky top-[calc(var(--mobile-header-height)+3rem)] z-10
-              h-auto overflow-x-auto overflow-y-hidden bg-background/50
-              backdrop-blur scrollbar-thin sm:top-12"
+              block h-auto overflow-x-auto overflow-y-hidden
+              bg-background/50 backdrop-blur scrollbar-thin sm:top-12
+              sm:hidden"
           >
             <Table
               style={{
-                width: `${size?.width}px`,
+                "max-width": `${size?.width}px`,
               }}
             >
               <TableHeader>
