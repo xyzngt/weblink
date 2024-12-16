@@ -105,7 +105,6 @@ export default function ClientPage(
     const tailIndex =
       totalMessages.length - currentMessages.length - 1;
     if (tailIndex < 0) {
-      console.warn("no more messages");
       return;
     }
     for (let i = tailIndex; i >= 0; i--) {
@@ -123,7 +122,7 @@ export default function ClientPage(
     }
 
     if (messageStores.status() === "ready") {
-      getMoreMessages(10);
+      getMoreMessages(20);
     }
   });
 

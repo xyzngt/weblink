@@ -145,7 +145,7 @@ class SessionService {
   async addClient(client: TransferClient) {
     if (!this.service) {
       throw new Error(
-        `can not add client, client service not found`,
+        `can not add client: ${client.clientId}, client service not found`,
       );
     }
     if (this.sessions[client.clientId]) {
@@ -153,21 +153,14 @@ class SessionService {
         `client ${client.clientId} has already created`,
       );
     }
-
     const polite =
       this.service.info.createdAt < client.createdAt;
-
-    if (!this.service) {
-      throw new Error(
-        `can not add client, client service not found`,
-      );
-    }
     const sender = this.service.createSender(
       client.clientId,
     );
     if (!sender) {
       throw new Error(
-        `can not add client, can not create sender`,
+        `can not create sender for client: ${client.clientId}`,
       );
     }
     const session = new PeerSession(sender, {

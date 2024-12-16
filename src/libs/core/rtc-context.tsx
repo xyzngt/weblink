@@ -8,7 +8,7 @@ import {
   useContext,
 } from "solid-js";
 import { ClientID, FileID, RoomStatus } from "./type";
-import { createStore, reconcile } from "solid-js/store";
+import { createStore } from "solid-js/store";
 import { PeerSession } from "./session";
 import {
   TRANSFER_CHANNEL_PREFIX,
@@ -104,7 +104,6 @@ export interface WebRTCContextProps {
   shareFile: (fileId: FileID, target: ClientID) => void;
   resumeFile: (fileId: FileID, target: ClientID) => void;
   roomStatus: RoomStatus;
-  // remoteStreams: Record<string, MediaStream>;
 }
 
 export interface WebRTCProviderProps extends ParentProps {
@@ -547,13 +546,9 @@ export const WebRTCProvider: Component<
       console.log(`on leave room ${room}`);
     }
 
-    // updateRemoteStreams(null);
-
     sessionService.destoryAllSession();
     setRoomStatus("roomId", null);
     setRoomStatus("profile", null);
-
-    // setRemoteStreams(reconcile({}));
   };
 
   onCleanup(() => {

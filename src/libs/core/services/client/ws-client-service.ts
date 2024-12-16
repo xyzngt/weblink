@@ -348,7 +348,7 @@ export class WebSocketClientService
     }
 
     if (!this.socket) {
-      throw Error("WebSocket not init yet");
+      throw Error("WebSocket not initialized");
     }
     service = new WebSocketSignalingService(
       this.socket,
