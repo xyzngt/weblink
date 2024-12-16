@@ -4,7 +4,7 @@
 
 ## Introduction
 
-Weblink is a pure web-based file transfer and chat application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase and WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
+Weblink is a pure web-based file transfer and text/voice/video chat application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase and WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
 
 The project is deployed on Vercel and using Firebase as backend can be accessed at [https://v.webl.ink](https://v.webl.ink).
 
@@ -14,25 +14,25 @@ Alternatively, you can use the version using self-hosted WebSocket as backend at
 
 Weblink currently supports the following features:
 
-| **Feature**                   | **Description**                                                                         |
-| ----------------------------- | --------------------------------------------------------------------------------------- |
-| 🔄 **File Synchronization**   | Retrieve cached files from the other party seamlessly.                                  |
-| ⏯️ **Resume Transfer**        | Resume file transfer effortlessly if the connection is interrupted.                     |
-| 📂 **File Caching**           | Transferred files are securely cached in IndexedDB.                                     |
-| 🔍 **File Search**            | Quickly search for cached files from you and the other party.                           |
-| 🖥️ **Screen Sharing**         | Share screens and cameras with multiple clients simultaneously.                         |
-| 📋 **Clipboard Transfer**     | Paste clipboard content directly into the chat with `Ctrl + V` or mobile paste actions. |
-| 📁 **Folder Transfer**        | Send folders effortlessly with automatic compression.                                   |
-| 📦 **Compressed Transfer**    | Choose to compress files during transfer for efficient data handling.                   |
-| ⚡ **Multi-Channel Transfer** | Boost transfer performance with parallel data transfers across multiple channels.       |
-| 🔗 **Share and Forward**      | Share text or files via system sharing after installing as a PWA.                       |
-| 💬 **Text Chat**              | Exchange text messages for smooth communication.                                        |
+| **Feature**                   | **Description**                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------------------- |
+| 🔄 **File Synchronization**   | Retrieve cached files from the other party seamlessly.                                    |
+| ⏯️ **Resume Transfer**        | Resume file transfer effortlessly if the connection is interrupted.                       |
+| 📂 **File Caching**           | Transferred files are securely cached in IndexedDB.                                       |
+| 🖥️ **Screen Sharing**         | Share screens, cameras, and audio (include speaker and microphone) with multiple clients. |
+| 🔍 **File Search**            | Quickly search for cached files from you and the other party.                             |
+| 📋 **Clipboard Transfer**     | Paste clipboard content directly into the chat with `Ctrl + V` or mobile paste actions.   |
+| 📁 **Folder Transfer**        | Send folders effortlessly with automatic compression.                                     |
+| 📦 **Compressed Transfer**    | Choose to compress files during transfer for efficient data handling.                     |
+| ⚡ **Multi-Channel Transfer** | Boost transfer performance with parallel data transfers across multiple channels.         |
+| 🔗 **Share and Forward**      | Share text or files via system sharing after installing as a PWA.                         |
+| 💬 **Text Chat**              | Exchange text messages for smooth communication.                                          |
 
 More information can be found in [CHANGELOG](CHANGELOG.md).
 
 ## Usage
 
-### Run Locally
+### Run Locally (Development)
 
 ```bash
 git clone https://github.com/99percentpeople/weblink.git
