@@ -496,7 +496,7 @@ export default function App(props: RouteSectionProps) {
         <ColorModeProvider storageManager={storageManager}>
           <ChatProvider>
             <AudioPlayerProvider>
-              <InnerApp> {props.children}</InnerApp>
+              <InnerApp>{props.children}</InnerApp>
             </AudioPlayerProvider>
           </ChatProvider>
         </ColorModeProvider>

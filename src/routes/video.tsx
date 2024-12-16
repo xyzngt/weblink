@@ -1,6 +1,4 @@
 import {
-  Accessor,
-  ComponentProps,
   createEffect,
   createMemo,
   createSignal,
@@ -14,7 +12,6 @@ import {
   Button,
   ButtonProps,
 } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   localStream,
   setDisplayStream,
@@ -22,30 +19,20 @@ import {
 import { sessionService } from "@/libs/services/session-service";
 import { t } from "@/i18n";
 import {
-  Callout,
-  CalloutContent,
-} from "@/components/ui/callout";
-import {
-  IconClose,
   IconCropSquare,
   IconFullscreen,
+  IconMeetingRoom,
   IconMic,
   IconMicOff,
-  IconPause,
-  IconPictureInPicture,
-  IconPictureInPictureOff,
   IconPip,
   IconPipExit,
-  IconPlayArrow,
   IconScreenShare,
   IconSettings,
   IconStopScreenShare,
   IconVolumeOff,
   IconVolumeUp,
-  IconVolumeUpFilled,
   IconWindow,
 } from "@/components/icons";
-import { makePersisted } from "@solid-primitives/storage";
 import {
   Tabs,
   TabsIndicator,
@@ -56,9 +43,7 @@ import { cn } from "@/libs/cn";
 import { ClientInfo } from "@/libs/core/type";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { Dynamic } from "solid-js/web";
-import { createCheckVolume } from "@/libs/hooks/check-volume";
 import { createMediaSelectionDialog } from "@/components/media-selection-dialog";
-import { createStore } from "solid-js/store";
 import { clientProfile } from "@/libs/core/store";
 import { createApplyConstraintsDialog } from "@/components/track-constaints";
 import { useAudioPlayer } from "@/components/audio-player";
@@ -94,13 +79,6 @@ export default function Video() {
 
   const { roomStatus } = useWebRTC();
 
-  const [showWarning, setShowWarning] = makePersisted(
-    createSignal(true),
-    {
-      name: "video-warning",
-      storage: localStorage,
-    },
-  );
   const isMobile = createIsMobile();
 
   const [tab, setTab] = createSignal(
@@ -127,10 +105,14 @@ export default function Video() {
             bg-background/50 px-4 backdrop-blur sm:top-0"
         >
           <h4 class="h4">
-            {t("video.title")}
-            {roomStatus.roomId
-              ? ` - ${roomStatus.roomId}`
-              : ""}
+            {roomStatus.roomId ? (
+              <p class="space-x-1 [&>*]:align-middle [&>svg]:inline">
+                <IconMeetingRoom class="inline size-6" />
+                <span>{roomStatus.roomId}</span>
+              </p>
+            ) : (
+              t("video.title")
+            )}
           </h4>
           <div class="flex-1"></div>
           <Show when={hasAudio()}>
@@ -171,21 +153,6 @@ export default function Video() {
             <TabsIndicator />
           </TabsList>
         </div>
-        <Show when={showWarning()}>
-          <Callout variant="warning" class="relative">
-            <CalloutContent>
-              The video chat feature is still under
-              development and functionality may be unstable.
-            </CalloutContent>
-            <button
-              class="absolute right-2 top-1/2 -translate-y-1/2"
-              onClick={() => setShowWarning(false)}
-            >
-              <IconClose class="size-4" />
-            </button>
-          </Callout>
-        </Show>
-
         <div
           class={cn(
             "grid w-full place-content-center gap-2 sm:p-2",
@@ -195,7 +162,7 @@ export default function Video() {
           <VideoDisplay
             class="aspect-video
               max-h-[calc(100vh-3rem-var(--mobile-header-height))] w-full
-              sm:max-h-[calc(100vh-3rem)]"
+              sm:max-h-[calc(100vh-4rem)]"
             stream={localStream()}
             name={`${clientProfile.name} (You)`}
             avatar={clientProfile.avatar ?? undefined}
@@ -222,7 +189,7 @@ export default function Video() {
               <VideoDisplay
                 class="aspect-video
                   max-h-[calc(100vh-3rem-var(--mobile-header-height))] w-full
-                  sm:max-h-[calc(100vh-3rem)]"
+                  sm:max-h-[calc(100vh-4rem)]"
                 stream={client.stream}
                 name={client.name}
                 avatar={client.avatar ?? undefined}

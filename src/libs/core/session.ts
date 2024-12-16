@@ -172,19 +172,19 @@ export class PeerSession {
       { signal: this.controller.signal },
     );
 
-    window.addEventListener(
-      "visibilitychange",
-      () => {
-        if (
-          ["connected", "connecting"].includes(
-            pc.connectionState,
-          )
-        )
-          return;
-        this.handleDisconnection();
-      },
-      { signal: this.controller.signal },
-    );
+    // window.addEventListener(
+    //   "visibilitychange",
+    //   () => {
+    //     if (
+    //       ["connected", "connecting"].includes(
+    //         pc.connectionState,
+    //       )
+    //     )
+    //       return;
+    //     this.handleDisconnection();
+    //   },
+    //   { signal: this.controller.signal },
+    // );
 
     pc.addEventListener(
       "icecandidate",
@@ -815,28 +815,34 @@ export class PeerSession {
 
     this.setStatus("reconnecting");
 
+    let timer: number;
+
+    const connectAbortController = new AbortController();
+
     return new Promise<void>(async (resolve, reject) => {
+      timer = window.setTimeout(() => {
+        connectAbortController.abort();
+        this.disconnect();
+        reject(new Error("connect timeout"));
+      }, 10000);
+
       const onConnectionStateChange = () => {
+        window.clearTimeout(timer);
         switch (pc.connectionState) {
           case "connected":
-            pc.removeEventListener(
-              "connectionstatechange",
-              onConnectionStateChange,
-            );
             this.connectable = true;
+            connectAbortController.abort();
             resolve();
             break;
           case "failed":
           case "closed":
           case "disconnected":
-            pc.removeEventListener(
-              "connectionstatechange",
-              onConnectionStateChange,
-            );
             this.dispatchEvent(
               "error",
               Error("reconnect error"),
             );
+            connectAbortController.abort();
+            this.setStatus("disconnected");
             reject(
               new Error(
                 `Connection failed with state: ${pc.connectionState}`,
@@ -854,6 +860,7 @@ export class PeerSession {
       pc.addEventListener(
         "connectionstatechange",
         onConnectionStateChange,
+        { signal: connectAbortController.signal },
       );
 
       pc.restartIce();

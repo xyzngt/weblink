@@ -90,6 +90,7 @@ import IconPictureInPicture from "@material-symbols/svg-400/outlined/picture_in_
 import IconPictureInPictureOff from "@material-symbols/svg-400/outlined/picture_in_picture_off.svg?component-solid";
 import IconPip from "@material-symbols/svg-400/outlined/pip.svg?component-solid";
 import IconPipExit from "@material-symbols/svg-400/outlined/pip_exit.svg?component-solid";
+import IconMeetingRoom from "@material-symbols/svg-400/outlined/meeting_room.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -183,4 +184,5 @@ export {
   IconPictureInPictureOff,
   IconPip,
   IconPipExit,
+  IconMeetingRoom,
 };

@@ -104,12 +104,9 @@ const Title = (
       {" "}
       <div
         class="absolute inset-0 space-x-1 overflow-hidden text-ellipsis
-          whitespace-nowrap [&>*]:align-middle"
+          whitespace-nowrap [&>*]:align-middle [&>svg]:inline"
       >
-        <IconFile
-          mimetype={local.type}
-          class="inline size-4"
-        />
+        <IconFile mimetype={local.type} class="size-4" />
         <span>{local.name}</span>
       </div>
     </div>
