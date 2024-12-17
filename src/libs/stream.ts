@@ -28,6 +28,7 @@ createRoot(() => {
     }
 
     if (display) {
+      
       display.getTracks().forEach((track) => {
         track.addEventListener("ended", () => {
           console.log(

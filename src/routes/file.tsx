@@ -958,11 +958,6 @@ export default function File() {
                               ...getCommonPinningStyles(
                                 header.column,
                               ),
-                              width: `${
-                                tableCellSizes[index()]
-                                  ?.width ??
-                                header.column.getSize()
-                              }px`,
                             }}
                           >
                             <Show
@@ -1056,7 +1051,7 @@ export default function File() {
           >
             <Table
               style={{
-                "max-width": `${size?.width}px`,
+                width: `${size?.width ?? 0}px`,
               }}
             >
               <TableHeader>

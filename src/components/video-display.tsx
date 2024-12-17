@@ -70,13 +70,19 @@ export const VideoDisplay = (
       null,
   );
 
+  const videoStream = createMemo(() => {
+    const track = videoTrack();
+    if (!track) return null;
+    return new MediaStream([track]);
+  });
+
   const [videoRef, setVideoRef] =
     createSignal<HTMLVideoElement | null>(null);
 
   createEffect(() => {
     const video = videoRef();
     if (video) {
-      video.srcObject = props.stream ?? null;
+      video.srcObject = videoStream() ?? null;
     }
   });
 
@@ -100,7 +106,7 @@ export const VideoDisplay = (
           }
         >
           <Show
-            when={videoTrack()}
+            when={videoStream()}
             fallback={
               <ClientAvatar
                 class="absolute left-1/2 top-1/2 size-14 -translate-x-1/2

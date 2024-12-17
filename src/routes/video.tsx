@@ -102,7 +102,7 @@ export default function Video() {
         <div
           class="sticky top-[var(--mobile-header-height)] z-10 flex h-12
             w-full items-center gap-2 border-b border-border
-            bg-background/50 px-4 backdrop-blur sm:top-0"
+            bg-background/80 px-4 backdrop-blur sm:top-0"
         >
           <h4 class="h4">
             {roomStatus.roomId ? (
