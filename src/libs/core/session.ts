@@ -199,10 +199,18 @@ export class PeerSession {
           `client ${this.targetClientId} add track ${ev.track.id} stream ${ev.streams[0]?.id}`,
         );
 
-        const stream = ev.streams[0];
+        const stream = ev.streams.at(0);
         if (!stream) return;
 
-        ev.track.addEventListener(
+        const receiver = ev.receiver;
+
+        if ("jitterBufferTarget" in receiver)
+          receiver.jitterBufferTarget = 1;
+        if ("playoutDelayHint" in receiver)
+          receiver.playoutDelayHint = 1;
+
+        const track = ev.track;
+        track.addEventListener(
           "ended",
           () => {
             if (this.remoteStream) {

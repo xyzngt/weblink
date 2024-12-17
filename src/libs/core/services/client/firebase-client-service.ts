@@ -148,7 +148,7 @@ export class FirebaseClientService
   }
 
   async createClient() {
-    this.dispatchEvent("status-change", "connecting");
+    this.dispatchEvent("statuschange", "connecting");
 
     const roomData = await this.setupRoom();
 
@@ -187,7 +187,7 @@ export class FirebaseClientService
       onDisconnect(clientRef).remove();
       this.clientRef = clientRef;
     }
-    this.dispatchEvent("status-change", "connected");
+    this.dispatchEvent("statuschange", "connected");
   }
 
   async updateClient(options: UpdateClientOptions) {
@@ -302,6 +302,6 @@ export class FirebaseClientService
         remove(childSnapshot.ref);
     });
 
-    this.dispatchEvent("status-change", "disconnected");
+    this.dispatchEvent("statuschange", "disconnected");
   }
 }

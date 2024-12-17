@@ -104,7 +104,7 @@ class SessionService {
     }
     this.service = cs;
 
-    cs.addEventListener("status-change", (ev) => {
+    cs.addEventListener("statuschange", (ev) => {
       this.setClientServiceStatus(ev.detail);
     });
   }

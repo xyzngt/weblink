@@ -155,11 +155,10 @@ export class WebSocketClientService
     document.addEventListener(
       "visibilitychange",
       () => {
-        if (document.visibilityState !== "visible") return;
         if (this.socket?.readyState === WebSocket.OPEN)
           return;
 
-        this.dispatchEvent("status-change", "disconnected");
+        this.dispatchEvent("statuschange", "disconnected");
         this.reconnect();
       },
       { signal: controller.signal },
@@ -175,7 +174,6 @@ export class WebSocketClientService
           console.error(
             `WebSocket message error: ${error.message}`,
           );
-          this.destroy();
           return;
         }
         switch (signal.type) {
@@ -193,6 +191,7 @@ export class WebSocketClientService
             break;
           case "ping":
             socket.send(JSON.stringify({ type: "pong" }));
+            break;
           default:
             break;
         }
@@ -211,7 +210,7 @@ export class WebSocketClientService
     socket.addEventListener(
       "close",
       () => {
-        this.dispatchEvent("status-change", "disconnected");
+        this.dispatchEvent("statuschange", "disconnected");
         this.reconnect();
       },
       {
@@ -222,7 +221,7 @@ export class WebSocketClientService
     this.socket = socket;
 
     return new Promise<WebSocket>((resolve, reject) => {
-      this.dispatchEvent("status-change", "connecting");
+      this.dispatchEvent("statuschange", "connecting");
       let timer = window.setTimeout(() => {
         reject(new Error("WebSocket connection timeout"));
         this.destroy();
@@ -288,7 +287,7 @@ export class WebSocketClientService
               }),
             );
             this.dispatchEvent(
-              "status-change",
+              "statuschange",
               "connected",
             );
             resolve(socket);
@@ -400,7 +399,7 @@ export class WebSocketClientService
     if (this.controller) {
       this.controller.abort();
       this.controller = null;
-      this.dispatchEvent("status-change", "disconnected");
+      this.dispatchEvent("statuschange", "disconnected");
     }
   }
   private emit(event: string, data: any) {
