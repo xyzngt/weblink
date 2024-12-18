@@ -674,6 +674,20 @@ export class PeerSession {
         `failed to create channel, peer connection is null`,
       );
     }
+
+    if (
+      this.channels.find(
+        (channel) =>
+          channel.label === label &&
+          channel.protocol === protocol,
+      )
+    ) {
+      console.warn(
+        `channel ${label} with protocol ${protocol} already exists`,
+      );
+      return;
+    }
+
     const channel = this.peerConnection.createDataChannel(
       label,
       {
@@ -850,6 +864,12 @@ export class PeerSession {
     const connectAbortController = new AbortController();
 
     return new Promise<void>(async (resolve, reject) => {
+      this.createChannel("message", "message").catch(
+        (err) => {
+          connectAbortController.abort();
+          reject(err);
+        },
+      );
       timer = window.setTimeout(() => {
         connectAbortController.abort();
         this.disconnect();
@@ -909,7 +929,8 @@ export class PeerSession {
         this.makingOffer = false;
         if (err) {
           console.error("Error during ICE restart:", err);
-          this.setStatus("disconnected");
+          connectAbortController.abort();
+          this.disconnect();
           reject(err);
         }
       } else {
@@ -950,7 +971,12 @@ export class PeerSession {
     const connectAbortController = new AbortController();
 
     return new Promise<void>(async (resolve, reject) => {
-      this.createChannel("message", "message");
+      this.createChannel("message", "message").catch(
+        (err) => {
+          connectAbortController.abort();
+          reject(err);
+        },
+      );
       const timer = window.setTimeout(() => {
         connectAbortController.abort();
         this.disconnect();
@@ -1008,8 +1034,10 @@ export class PeerSession {
         }
         this.makingOffer = false;
       } else {
-        console.warn(
-          `session ${this.clientId} already making offer`,
+        reject(
+          new Error(
+            `session ${this.clientId} already making offer`,
+          ),
         );
       }
     });
