@@ -45,6 +45,11 @@ export class WebSocketClientService
   private reconnectAttempts = 0;
   private reconnectInterval = 3000;
   private websocketUrl: string;
+  private status:
+    | "created"
+    | "connecting"
+    | "connected"
+    | "disconnected" = "created";
 
   get info() {
     return this.client;
@@ -61,6 +66,14 @@ export class WebSocketClientService
     this.client = { ...client, createdAt: Date.now() };
     this.websocketUrl =
       websocketUrl ?? import.meta.env.VITE_WEBSOCKET_URL;
+  }
+
+  private setStatus(
+    status: "connecting" | "connected" | "disconnected",
+  ) {
+    if (this.status === status) return;
+    this.status = status;
+    this.dispatchEvent("statuschange", status);
   }
 
   private dispatchEvent<
@@ -134,111 +147,128 @@ export class WebSocketClientService
         wsUrl.searchParams.append("pwd", hash);
       }
     }
+
     const socket = new WebSocket(wsUrl);
-    const controller = new AbortController();
-    this.controller = controller;
+    const setupListeners = (socket: WebSocket) => {
+      if (this.controller) {
+        this.controller.abort();
+      }
+      const controller = new AbortController();
 
-    window.addEventListener(
-      "beforeunload",
-      () => {
-        this.destroy();
-      },
-      { signal: controller.signal },
-    );
-    window.addEventListener(
-      "unload",
-      () => {
-        this.destroy();
-      },
-      { signal: controller.signal },
-    );
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (this.socket?.readyState === WebSocket.OPEN)
-          return;
+      this.controller = controller;
 
-        this.dispatchEvent("statuschange", "disconnected");
-        this.reconnect();
-      },
-      { signal: controller.signal },
-    );
+      window.addEventListener(
+        "beforeunload",
+        () => {
+          this.destroy();
+        },
+        { signal: controller.signal },
+      );
+      window.addEventListener(
+        "unload",
+        () => {
+          this.destroy();
+        },
+        { signal: controller.signal },
+      );
+      document.addEventListener(
+        "visibilitychange",
+        () => {
+          if (this.socket?.readyState === WebSocket.OPEN)
+            return;
+          this.setStatus("disconnected");
+          this.reconnect();
+        },
+        { signal: controller.signal },
+      );
 
-    socket.addEventListener(
-      "message",
-      (ev) => {
-        const [error, signal] = catchErrorSync(
-          () => JSON.parse(ev.data) as RawSignal,
-        );
-        if (error) {
-          console.error(
-            `WebSocket message error: ${error.message}`,
-          );
-          return;
-        }
-        switch (signal.type) {
-          case "join":
-            this.emit(
-              "join",
-              signal.data as TransferClient,
-            );
-            break;
-          case "leave":
-            this.emit(
-              "leave",
-              signal.data as TransferClient,
-            );
-            break;
-          case "ping":
-            socket.send(JSON.stringify({ type: "pong" }));
-            break;
-          default:
-            break;
-        }
-      },
-      { signal: controller.signal },
-    );
-
-    socket.addEventListener(
-      "error",
-      (ev) => {
-        console.warn(`WebSocket error:`, ev);
-      },
-      { signal: controller.signal },
-    );
-
-    socket.addEventListener(
-      "close",
-      () => {
-        this.dispatchEvent("statuschange", "disconnected");
-        this.reconnect();
-      },
-      {
-        signal: controller.signal,
-      },
-    );
-
-    this.socket = socket;
-
-    return new Promise<WebSocket>((resolve, reject) => {
-      this.dispatchEvent("statuschange", "connecting");
-      let timer = window.setTimeout(() => {
-        reject(new Error("WebSocket connection timeout"));
-        this.destroy();
-      }, 10000);
       socket.addEventListener(
-        "open",
-        () => clearTimeout(timer),
-        { once: true },
+        "message",
+        (ev) => {
+          const [error, signal] = catchErrorSync(
+            () => JSON.parse(ev.data) as RawSignal,
+          );
+          if (error) {
+            console.error(
+              `WebSocket message error: ${error.message}`,
+            );
+            return;
+          }
+          switch (signal.type) {
+            case "join":
+              this.emit(
+                "join",
+                signal.data as TransferClient,
+              );
+              break;
+            case "leave":
+              this.emit(
+                "leave",
+                signal.data as TransferClient,
+              );
+              break;
+            case "ping":
+              socket.send(JSON.stringify({ type: "pong" }));
+              break;
+            default:
+              break;
+          }
+        },
+        { signal: controller.signal },
       );
 
       socket.addEventListener(
         "error",
         (ev) => {
-          reject(new Error(`WebSocket error: ${ev}`));
+          console.warn(`WebSocket error:`, ev);
+        },
+        { signal: controller.signal },
+      );
+
+      socket.addEventListener(
+        "close",
+        () => {
+          this.setStatus("disconnected");
+          this.reconnect();
+        },
+        {
+          signal: controller.signal,
+        },
+      );
+      this.socket = socket;
+      return socket;
+    };
+
+    const connectController = new AbortController();
+
+    return new Promise<WebSocket>((resolve, reject) => {
+      this.setStatus("connecting");
+      let timer = window.setTimeout(() => {
+        reject(new Error("WebSocket connection timeout"));
+        this.setStatus("disconnected");
+        this.destroy();
+      }, 10000);
+
+      connectController.signal.addEventListener(
+        "abort",
+        () => {
+          window.clearTimeout(timer);
+        },
+      );
+
+      socket.addEventListener(
+        "close",
+        (ev) => {
+          reject(
+            new Error(
+              `WebSocket error ${ev.code} ${ev.reason}`,
+            ),
+          );
+          connectController.abort();
+          this.setStatus("disconnected");
           this.destroy();
         },
-        { once: true, signal: controller.signal },
+        { once: true, signal: connectController.signal },
       );
       socket.addEventListener(
         "message",
@@ -286,19 +316,17 @@ export class WebSocketClientService
                 data: { ...this.client, resume },
               }),
             );
-            this.dispatchEvent(
-              "statuschange",
-              "connected",
-            );
+            this.setStatus("connected");
             resolve(socket);
           } else if (message.type === "error") {
             this.destroy();
             reject(new Error(message.data));
           }
+          connectController.abort();
         },
-        { once: true, signal: controller.signal },
+        { once: true, signal: connectController.signal },
       );
-    });
+    }).then((socket) => setupListeners(socket));
   }
 
   private async reconnect() {
@@ -399,8 +427,8 @@ export class WebSocketClientService
     if (this.controller) {
       this.controller.abort();
       this.controller = null;
-      this.dispatchEvent("statuschange", "disconnected");
     }
+    this.setStatus("disconnected");
   }
   private emit(event: string, data: any) {
     const listeners = this.eventListeners.get(event) || [];

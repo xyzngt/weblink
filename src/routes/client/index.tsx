@@ -13,6 +13,7 @@ import {
   IconShare,
 } from "@/components/icons";
 import { createQRCodeDialog } from "@/components/create-qrcode-dialog";
+import { toast } from "solid-sonner";
 const Client: Component = (props) => {
   const { joinRoom, roomStatus, leaveRoom } = useWebRTC();
   const {
@@ -113,10 +114,12 @@ const Client: Component = (props) => {
               class="gap-2"
               variant="outline"
               onClick={async () => {
-                const result = (await openRoomDialog())
-                  .result;
+                const { result } = await openRoomDialog();
                 if (result) {
-                  joinRoom();
+                  joinRoom().catch((e) => {
+                    console.error(e);
+                    toast.error(e.message);
+                  });
                 }
               }}
             >
@@ -128,7 +131,12 @@ const Client: Component = (props) => {
             <Show when={!clientProfile.initalJoin}>
               <Button
                 class="gap-2"
-                onClick={() => joinRoom()}
+                onClick={() =>
+                  joinRoom().catch((e) => {
+                    console.error(e);
+                    toast.error(e.message);
+                  })
+                }
               >
                 <IconLogin class="size-6" />
                 <span class="w-full text-center">

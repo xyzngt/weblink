@@ -214,7 +214,7 @@ export class PeerSession {
           "ended",
           () => {
             if (this.remoteStream) {
-              this.remoteStream.removeTrack(ev.track);
+              this.remoteStream.removeTrack(track);
               this.dispatchEvent(
                 "remotestreamchange",
                 this.remoteStream,
@@ -226,7 +226,6 @@ export class PeerSession {
 
         if (this.remoteStream) {
           if (stream.id === this.remoteStream.id) {
-            const track = ev.track;
             this.remoteStream.addTrack(track);
             this.dispatchEvent(
               "remotestreamchange",
@@ -237,9 +236,9 @@ export class PeerSession {
 
           const remoteStream = this.remoteStream;
 
-          remoteStream.getTracks().forEach((track) => {
-            remoteStream.removeTrack(track);
-            track.stop();
+          remoteStream.getTracks().forEach((t) => {
+            remoteStream.removeTrack(t);
+            t.stop();
           });
 
           this.remoteStream = null;
@@ -857,10 +856,16 @@ export class PeerSession {
         reject(new Error("connect timeout"));
       }, 10000);
 
+      connectAbortController.signal.addEventListener(
+        "abort",
+        () => {
+          window.clearTimeout(timer);
+        },
+      );
+
       const onConnectionStateChange = () => {
         switch (pc.connectionState) {
           case "connected":
-            window.clearTimeout(timer);
             this.connectable = true;
             connectAbortController.abort();
             resolve();
@@ -868,13 +873,12 @@ export class PeerSession {
           case "failed":
           case "closed":
           case "disconnected":
-            window.clearTimeout(timer);
             this.dispatchEvent(
               "error",
               Error("reconnect error"),
             );
-            connectAbortController.abort();
             this.setStatus("disconnected");
+            connectAbortController.abort();
             reject(
               new Error(
                 `Connection failed with state: ${pc.connectionState}`,
@@ -902,14 +906,17 @@ export class PeerSession {
         const [err] = await catchErrorAsync(
           handleOffer(pc, this.sender),
         );
+        this.makingOffer = false;
         if (err) {
           console.error("Error during ICE restart:", err);
-          return;
+          this.setStatus("disconnected");
+          reject(err);
         }
-        this.makingOffer = false;
       } else {
-        console.warn(
-          `session ${this.clientId} already making offer`,
+        reject(
+          new Error(
+            `session ${this.clientId} already making offer`,
+          ),
         );
       }
     });
@@ -950,12 +957,18 @@ export class PeerSession {
         reject(new Error("connect timeout"));
       }, 10000);
 
+      connectAbortController.signal.addEventListener(
+        "abort",
+        () => {
+          window.clearTimeout(timer);
+        },
+      );
+
       pc.addEventListener(
         "connectionstatechange",
         () => {
           switch (pc.connectionState) {
             case "connected":
-              window.clearTimeout(timer);
               console.log(
                 `connection established, session ${this.clientId}, connectable: ${this.connectable}`,
               );
@@ -966,7 +979,6 @@ export class PeerSession {
             case "failed":
             case "closed":
             case "disconnected":
-              window.clearTimeout(timer);
               connectAbortController.abort();
               this.disconnect();
               reject(
@@ -987,6 +999,7 @@ export class PeerSession {
           handleOffer(pc, this.sender),
         );
         if (err) {
+          connectAbortController.abort();
           reject(
             new Error(
               `Failed to create and send offer: ${err.message}`,

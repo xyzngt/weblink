@@ -711,7 +711,7 @@ export default function File() {
           )}
         </PortableContextMenu>
         <div class="pointer-events-none absolute inset-0 z-[-1] backdrop-blur" />
-        <h2 class="h2 px-2">{t("cache.title")}</h2>
+        <h3 class="h3 px-2">{t("cache.title")}</h3>
         <StorageStatus class="px-2" />
         <div
           class="sticky top-[var(--mobile-header-height)] z-10 flex gap-2 p-2
