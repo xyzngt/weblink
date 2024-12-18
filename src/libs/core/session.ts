@@ -205,9 +205,9 @@ export class PeerSession {
         const receiver = ev.receiver;
 
         if ("jitterBufferTarget" in receiver)
-          receiver.jitterBufferTarget = 1;
+          receiver.jitterBufferTarget = 0;
         if ("playoutDelayHint" in receiver)
-          receiver.playoutDelayHint = 1;
+          receiver.playoutDelayHint = 0;
 
         const track = ev.track;
         track.addEventListener(
