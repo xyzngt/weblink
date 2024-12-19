@@ -98,18 +98,6 @@ export type FileTransfererEventMap = {
   close: void;
 };
 
-// export class FileSender {
-//   private eventEmitter: MultiEventEmitter<FileTransmitterEventMap> =
-//     new MultiEventEmitter();
-//   private blockSize = 128 * 1024;
-//   private bufferedAmountLowThreshold = 1024 * 1024;
-//   private sendData:SendData
-
-//   constructor() {
-
-//   }
-// }
-
 export class FileTransferer {
   private eventEmitter: MultiEventEmitter<FileTransfererEventMap> =
     new MultiEventEmitter();

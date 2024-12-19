@@ -65,6 +65,22 @@ export class PeerSession {
     this.polite = polite;
     this.iceServers = iceServers ?? [];
     this.relayOnly = relayOnly;
+
+    window.addEventListener("beforeunload", () => {
+      this.close();
+    });
+
+    document.addEventListener("resume", () => {
+      if (
+        this.peerConnection?.connectionState !== "connected"
+      ) {
+        this.disconnect();
+      }
+    });
+
+    document.addEventListener("freeze", () => {
+      this.disconnect();
+    });
   }
 
   get clientId() {
@@ -162,14 +178,6 @@ export class PeerSession {
     }
 
     this.setStatus("created");
-
-    window.addEventListener(
-      "beforeunload",
-      () => {
-        this.close();
-      },
-      { signal: this.controller.signal },
-    );
 
     pc.addEventListener(
       "icecandidate",
@@ -446,10 +454,10 @@ export class PeerSession {
             Math.random() * (500 + reconnectAttempts * 500),
           );
         } else {
-          console.error(
-            `reconnect attempt ${reconnectAttempts} failed`,
-          );
           this.disconnect();
+          console.error(
+            `reconnect failed, reach max reconnect attempts`,
+          );
         }
       }
     };
@@ -675,17 +683,16 @@ export class PeerSession {
       );
     }
 
-    if (
-      this.channels.find(
-        (channel) =>
-          channel.label === label &&
-          channel.protocol === protocol,
-      )
-    ) {
+    const existChannel = this.channels.find(
+      (channel) =>
+        channel.label === label &&
+        channel.protocol === protocol,
+    );
+    if (existChannel) {
       console.warn(
         `channel ${label} with protocol ${protocol} already exists`,
       );
-      return;
+      return existChannel;
     }
 
     const channel = this.peerConnection.createDataChannel(
@@ -832,6 +839,7 @@ export class PeerSession {
       console.log(
         `peer connection ${this.targetClientId} is null, new connection`,
       );
+      this.disconnect();
       let err: Error | undefined;
       [err] = catchErrorSync(() =>
         this.initializeConnection(),
@@ -840,7 +848,6 @@ export class PeerSession {
       this.setStatus("reconnecting");
       [err] = await catchErrorAsync(this.connect());
       if (err) {
-        this.setStatus("disconnected");
         throw err;
       }
       return;
@@ -876,11 +883,20 @@ export class PeerSession {
         reject(new Error("connect timeout"));
       }, 10000);
 
+      this.controller?.signal.addEventListener(
+        "abort",
+        () => {
+          connectAbortController.abort();
+        },
+        { once: true },
+      );
+
       connectAbortController.signal.addEventListener(
         "abort",
         () => {
           window.clearTimeout(timer);
         },
+        { once: true },
       );
 
       const onConnectionStateChange = () => {
@@ -934,6 +950,7 @@ export class PeerSession {
           reject(err);
         }
       } else {
+        this.disconnect();
         reject(
           new Error(
             `session ${this.clientId} already making offer`,
@@ -977,17 +994,27 @@ export class PeerSession {
           reject(err);
         },
       );
+
       const timer = window.setTimeout(() => {
         connectAbortController.abort();
         this.disconnect();
         reject(new Error("connect timeout"));
       }, 10000);
 
+      this.controller?.signal.addEventListener(
+        "abort",
+        () => {
+          connectAbortController.abort();
+        },
+        { once: true },
+      );
+
       connectAbortController.signal.addEventListener(
         "abort",
         () => {
           window.clearTimeout(timer);
         },
+        { once: true },
       );
 
       pc.addEventListener(
@@ -1019,13 +1046,14 @@ export class PeerSession {
         },
         { signal: connectAbortController.signal },
       );
-      if (!this.makingOffer && !this.polite) {
+      if (!this.makingOffer) {
         this.makingOffer = true;
         const [err] = await catchErrorAsync(
           handleOffer(pc, this.sender),
         );
         if (err) {
           connectAbortController.abort();
+          this.disconnect();
           reject(
             new Error(
               `Failed to create and send offer: ${err.message}`,
@@ -1034,6 +1062,7 @@ export class PeerSession {
         }
         this.makingOffer = false;
       } else {
+        this.disconnect();
         reject(
           new Error(
             `session ${this.clientId} already making offer`,
@@ -1059,7 +1088,6 @@ export class PeerSession {
     if (this.peerConnection) {
       this.peerConnection.close();
       this.peerConnection = null;
-      this.setStatus("disconnected");
     }
     if (this.remoteStream) {
       this.remoteStream.getTracks().forEach((track) => {
