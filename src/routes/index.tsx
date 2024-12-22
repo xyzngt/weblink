@@ -47,9 +47,12 @@ export default function Home(props: RouteSectionProps) {
       name: "resizable-sizes",
     },
   );
+  const path = createMemo<string | undefined>(() => {
+    return matches()[matches().length - 1]?.path;
+  });
   createEffect(() => {
     if (isMobile()) {
-      if (matches()[matches().length - 1].path === "/") {
+      if (path() === "/") {
         setSize([1, 0]);
       } else {
         setSize([1]);
@@ -87,7 +90,8 @@ export default function Home(props: RouteSectionProps) {
           ] as ClientInfo | undefined,
         };
       })
-      .toSorted((c1, c2) => {
+      .slice()
+      .sort((c1, c2) => {
         const c1Online =
           c1.clientInfo?.onlineStatus === "online";
         const c2Online =
@@ -107,12 +111,7 @@ export default function Home(props: RouteSectionProps) {
       sizes={size()}
       onSizesChange={(sizes) => setSize(sizes)}
     >
-      <Show
-        when={
-          !isMobile() ||
-          matches()[matches().length - 1].path === "/"
-        }
-      >
+      <Show when={!isMobile() || path() === "/"}>
         <ResizablePanel
           class={cn(
             `bg-background/80 backdrop-blur
@@ -125,10 +124,7 @@ export default function Home(props: RouteSectionProps) {
         >
           {(props) => {
             createEffect(() => {
-              if (
-                props.collapsed &&
-                matches()[matches().length - 1].path === "/"
-              ) {
+              if (props.collapsed && path() === "/") {
                 props.expand();
               }
             });
@@ -179,12 +175,7 @@ export default function Home(props: RouteSectionProps) {
         <ResizableHandle />
       </Show>
 
-      <Show
-        when={
-          !isMobile() ||
-          matches()[matches().length - 1].path !== "/"
-        }
-      >
+      <Show when={!isMobile() || path() !== "/"}>
         <ResizablePanel
           class="relative"
           minSize={0.7}
