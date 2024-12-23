@@ -73,6 +73,14 @@ const [devices, setDevices] = createStore<{
   speaker: null,
 });
 
+const canGetDisplayMedia =
+  "mediaDevices" in navigator &&
+  "getDisplayMedia" in navigator.mediaDevices;
+
+const canGetUserMedia =
+  "mediaDevices" in navigator &&
+  "getUserMedia" in navigator.mediaDevices;
+
 const [enableScreenSpeaker, setEnableScreenSpeaker] =
   makePersisted(createSignal(true), {
     name: "enableScreenSpeaker",
@@ -104,9 +112,6 @@ export const createMediaSelectionDialog = () => {
 
   const [stream, setStream] =
     createSignal<MediaStream | null>(null);
-  const audioTrack = () => {
-    return stream()?.getAudioTracks();
-  };
 
   const cameras = createCameras();
   const microphones = createMicrophones();
@@ -175,20 +180,6 @@ export const createMediaSelectionDialog = () => {
       enableUserCamera() &&
       availableCameras().length !== 0 &&
       cameraPermission() === "granted"
-    );
-  });
-
-  const canGetUserMedia = createMemo(() => {
-    return (
-      "mediaDevices" in navigator &&
-      "getUserMedia" in navigator.mediaDevices
-    );
-  });
-
-  const canGetDisplayMedia = createMemo(() => {
-    return (
-      "mediaDevices" in navigator &&
-      "getDisplayMedia" in navigator.mediaDevices
     );
   });
 
@@ -289,9 +280,22 @@ export const createMediaSelectionDialog = () => {
     local.getVideoTracks().forEach((track) => {
       track.contentHint = "motion";
     });
-
     setStream(local);
   };
+
+  createEffect(() => {
+    stream()
+      ?.getTracks()
+      .forEach((track) => {
+        track.addEventListener("ended", () => {
+          track.stop();
+          stream()?.removeTrack(track);
+          if (stream()?.getTracks().length === 0) {
+            setStream(null);
+          }
+        });
+      });
+  });
 
   const {
     open: openMicrophoneConstraintsDialog,
@@ -302,6 +306,50 @@ export const createMediaSelectionDialog = () => {
     open: openSpeakerConstraintsDialog,
     Component: SpeakerConstraintsDialog,
   } = createPresetSpeakerTrackConstraintsDialog();
+
+  const requestMicrophonePermission = async () => {
+    if (!("mediaDevices" in navigator)) {
+      toast.error(
+        "Your browser does not support media devices",
+      );
+      return;
+    }
+    const [err, local] = await catchErrorAsync(
+      navigator.mediaDevices.getUserMedia({
+        audio: true,
+      }),
+    );
+    if (err) {
+      toast.error(err.message);
+      return;
+    }
+    local.getTracks().forEach((track) => {
+      track.stop();
+      local?.removeTrack(track);
+    });
+  };
+
+  const requestCameraPermission = async () => {
+    if (!("mediaDevices" in navigator)) {
+      toast.error(
+        "Your browser does not support media devices",
+      );
+      return;
+    }
+    const [err, local] = await catchErrorAsync(
+      navigator.mediaDevices.getUserMedia({
+        video: true,
+      }),
+    );
+    if (err) {
+      toast.error(err.message);
+      return;
+    }
+    local.getTracks().forEach((track) => {
+      track.stop();
+      local?.removeTrack(track);
+    });
+  };
 
   const { open, close, Component, submit } =
     createDialog<MediaStream>({
@@ -369,24 +417,7 @@ export const createMediaSelectionDialog = () => {
                 <Button
                   size="sm"
                   class="w-full"
-                  onClick={async () => {
-                    const [err, local] =
-                      await catchErrorAsync(
-                        navigator.mediaDevices.getUserMedia(
-                          {
-                            audio: true,
-                          },
-                        ),
-                      );
-                    if (err) {
-                      toast.error(err.message);
-                      return;
-                    }
-                    local.getTracks().forEach((track) => {
-                      track.stop();
-                      local?.removeTrack(track);
-                    });
-                  }}
+                  onClick={requestMicrophonePermission}
                 >
                   {t(
                     "common.media_selection_dialog.request_microphone_permission",
@@ -545,7 +576,16 @@ export const createMediaSelectionDialog = () => {
               <Show
                 when={stream()}
                 fallback={
-                  <Show when={canGetDisplayMedia()}>
+                  <Show
+                    when={canGetDisplayMedia}
+                    fallback={
+                      <p class="text-sm text-muted-foreground">
+                        {t(
+                          "common.media_selection_dialog.not_support_display_media",
+                        )}
+                      </p>
+                    }
+                  >
                     <Button
                       size="sm"
                       onClick={() =>
@@ -569,9 +609,9 @@ export const createMediaSelectionDialog = () => {
                   onClick={closeStream}
                   class="w-full"
                 >
-                  {t("common.media_selection_dialog.close")}
+                  {t("common.action.close")}
                 </Button>
-                <Show when={canGetDisplayMedia()}>
+                <Show when={canGetDisplayMedia}>
                   <Button
                     size="sm"
                     variant="outline"
@@ -584,9 +624,7 @@ export const createMediaSelectionDialog = () => {
                     }}
                     class="w-full"
                   >
-                    {t(
-                      "common.media_selection_dialog.change",
-                    )}
+                    {t("common.action.change")}
                   </Button>
                 </Show>
               </Show>
@@ -606,24 +644,7 @@ export const createMediaSelectionDialog = () => {
                 <Button
                   size="sm"
                   class="w-full"
-                  onClick={async () => {
-                    const [err, local] =
-                      await catchErrorAsync(
-                        navigator.mediaDevices.getUserMedia(
-                          {
-                            video: true,
-                          },
-                        ),
-                      );
-                    if (err) {
-                      toast.error(err.message);
-                      return;
-                    }
-                    local.getTracks().forEach((track) => {
-                      track.stop();
-                      local?.removeTrack(track);
-                    });
-                  }}
+                  onClick={requestCameraPermission}
                 >
                   {t(
                     "common.media_selection_dialog.request_camera_permission",
@@ -639,24 +660,7 @@ export const createMediaSelectionDialog = () => {
                 <Button
                   size="sm"
                   class="w-full"
-                  onClick={async () => {
-                    const [err, local] =
-                      await catchErrorAsync(
-                        navigator.mediaDevices.getUserMedia(
-                          {
-                            audio: true,
-                          },
-                        ),
-                      );
-                    if (err) {
-                      toast.error(err.message);
-                      return;
-                    }
-                    local.getTracks().forEach((track) => {
-                      track.stop();
-                      local?.removeTrack(track);
-                    });
-                  }}
+                  onClick={requestMicrophonePermission}
                 >
                   {t(
                     "common.media_selection_dialog.request_microphone_permission",
@@ -818,7 +822,16 @@ export const createMediaSelectionDialog = () => {
                 <Show
                   when={stream()}
                   fallback={
-                    <Show when={canGetUserMedia()}>
+                    <Show
+                      when={canGetUserMedia}
+                      fallback={
+                        <p class="text-sm text-muted-foreground">
+                          {t(
+                            "common.media_selection_dialog.not_support_user_media",
+                          )}
+                        </p>
+                      }
+                    >
                       <Button
                         size="sm"
                         class="w-full"
@@ -842,11 +855,9 @@ export const createMediaSelectionDialog = () => {
                     onClick={closeStream}
                     class="w-full"
                   >
-                    {t(
-                      "common.media_selection_dialog.close",
-                    )}
+                    {t("common.action.close")}
                   </Button>
-                  <Show when={canGetUserMedia()}>
+                  <Show when={canGetUserMedia}>
                     <Button
                       size="sm"
                       variant="outline"
@@ -856,9 +867,7 @@ export const createMediaSelectionDialog = () => {
                       }}
                       class="w-full"
                     >
-                      {t(
-                        "common.media_selection_dialog.change",
-                      )}
+                      {t("common.action.change")}
                     </Button>
                   </Show>
                 </Show>

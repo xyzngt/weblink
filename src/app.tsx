@@ -62,9 +62,11 @@ import {
   HoverCardTrigger,
 } from "./components/ui/hover-card";
 import {
+  IconContentCopy,
   IconHome,
   IconLink,
   IconPermContactCalendar,
+  IconResetWrench,
 } from "./components/icons";
 import { getInitials } from "./libs/utils/name";
 import { Button } from "./components/ui/button";
@@ -443,7 +445,7 @@ const InnerApp = (props: ParentProps) => {
             fallback={(err: Error, reset) => (
               <div
                 class="flex size-full max-w-[100vw] flex-col justify-center gap-2
-                  px-2 py-4"
+                  bg-background/80 px-2 py-4 backdrop-blur"
               >
                 <h3 class="h3 mb-4">
                   {t("common.error_boundary.title")}
@@ -461,9 +463,41 @@ const InnerApp = (props: ParentProps) => {
                     value={err.stack}
                   />
                 </div>
-                <Button onClick={() => reset()}>
-                  {t("common.error_boundary.reset")}
-                </Button>
+                <div class="flex gap-2 self-end">
+                  <Show when={err.stack}>
+                    {(stack) => (
+                      <Button
+                        class="gap-2"
+                        onClick={() =>
+                          navigator.clipboard
+                            .writeText(stack())
+                            .then(() => {
+                              toast.success(
+                                t(
+                                  "common.notification.copy_success",
+                                ),
+                              );
+                            })
+                        }
+                        variant="outline"
+                      >
+                        <IconContentCopy class="size-4" />
+                        {t("common.action.copy")}
+                      </Button>
+                    )}
+                  </Show>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      reset();
+                      location.reload();
+                    }}
+                    class="gap-2"
+                  >
+                    <IconResetWrench class="size-4" />
+                    {t("common.error_boundary.reset")}
+                  </Button>
+                </div>
               </div>
             )}
           >

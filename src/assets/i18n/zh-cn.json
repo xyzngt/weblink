@@ -405,8 +405,6 @@
       "select_camera": "选择摄像头 (自动)",
       "open_screen": "打开屏幕",
       "open_media_device": "打开媒体设备",
-      "close": "关闭",
-      "change": "更改",
       "current": "当前",
       "preview": "预览",
       "apply_constraints": "应用媒体约束",
@@ -414,6 +412,8 @@
       "preset_constraints": "预设媒体约束",
       "microphone_constraints": "麦克风约束",
       "speaker_constraints": "扬声器约束",
+      "not_support_display_media": "您的浏览器不支持屏幕共享",
+      "not_support_user_media": "您的浏览器不支持媒体设备",
       "constraints": {
         "noise_suppression": "噪音抑制",
         "echo_cancellation": "回声消除",

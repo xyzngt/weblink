@@ -405,8 +405,6 @@
       "select_camera": "選擇攝影機 (自動)",
       "open_screen": "打開螢幕",
       "open_media_device": "打開媒體設備",
-      "close": "關閉",
-      "change": "更改",
       "current": "當前",
       "preview": "預覽",
       "apply_constraints": "應用媒體約束",
@@ -414,6 +412,8 @@
       "preset_constraints": "預設媒體約束",
       "microphone_constraints": "麥克風約束",
       "speaker_constraints": "揚聲器約束",
+      "not_support_display_media": "您的瀏覽器不支持螢幕共享",
+      "not_support_user_media": "您的瀏覽器不支持媒體設備",
       "constraints": {
         "noise_suppression": "噪音抑制",
         "echo_cancellation": "回聲消除",

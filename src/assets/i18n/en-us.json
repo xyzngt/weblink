@@ -415,8 +415,6 @@
       "select_camera": "Select Camera (Auto)",
       "open_screen": "Open Screen",
       "open_media_device": "Open Media Device",
-      "close": "Close",
-      "change": "Change",
       "current": "Current",
       "preview": "Preview",
       "apply_constraints": "Apply Media Constraints",
@@ -424,6 +422,8 @@
       "preset_constraints": "Preset Media Constraints",
       "microphone_constraints": "Microphone Constraints",
       "speaker_constraints": "Speaker Constraints",
+      "not_support_display_media": "Your browser does not support display media",
+      "not_support_user_media": "Your browser does not support user media",
       "constraints": {
         "noise_suppression": "Noise Suppression",
         "echo_cancellation": "Echo Cancellation",
