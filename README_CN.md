@@ -6,7 +6,7 @@
 
 Weblink 是一款基于 WebRTC 的纯网页**文件传输**和**文字/语音/视频聊天**应用，无需下载或安装，直接在浏览器中即可使用。它采用了无服务器的 P2P 架构，支持多种后端，包括 Firebase 和 WebSocket，实现高效的点对点连接。此外，Weblink 通过端到端加密，保障信令消息的隐私和安全。
 
-该项目已通过 Vercel + Firebase 部署，请访问 [https://v.webl.ink](https://v.webl.ink)。
+该项目已通过 Cloudflare Pages + Firebase 部署，请访问 [https://v.webl.ink](https://v.webl.ink)。
 
 或者使用自建的 WebSocket 后端部署在阿里云上的 [https://webl.ink](https://webl.ink) 。
 

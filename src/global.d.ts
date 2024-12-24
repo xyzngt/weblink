@@ -10,8 +10,9 @@ interface ImportMetaEnv {
   readonly VITE_FIREBASE_MEASUREMENT_ID: string;
   readonly VITE_FIREBASE_DATABASE_URL: string;
   readonly VITE_WEBSOCKET_URL: string;
-
   readonly VITE_BACKEND: string;
+  readonly VITE_STUN_SERVERS?: string;
+  readonly VITE_TURN_SERVERS?: string;
 }
 
 interface ImportMeta {

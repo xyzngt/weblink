@@ -21,16 +21,20 @@ export async function checkIceServerAvailability(
 
     const pc = new RTCPeerConnection(configuration);
 
-    let isTurnAvailable = false;
+    let isIceAvailable = false;
     let isCompleted = false; // prevent multiple calls to resolve or reject
 
-    const triggerCompleted = () => {
+    const triggerCompleted = (errMsg?: string) => {
       if (isCompleted) return;
       isCompleted = true;
       clearTimeout(timer);
       pc.close();
-      if (!isTurnAvailable) {
-        reject(new Error("check turn server timeout"));
+      if (!isIceAvailable) {
+        reject(
+          new Error(
+            errMsg || "ice server is not available",
+          ),
+        );
       } else {
         resolve(true);
       }
@@ -38,7 +42,7 @@ export async function checkIceServerAvailability(
 
     // set timeout handler
     const timer = setTimeout(() => {
-      triggerCompleted();
+      triggerCompleted("check ice server timeout");
     }, timeout);
 
     pc.onicecandidate = (event) => {
@@ -54,10 +58,9 @@ export async function checkIceServerAvailability(
         ) {
           return;
         }
-        isTurnAvailable = true;
+        isIceAvailable = true;
       }
-      // ICE candidate collection completed
-      triggerCompleted();
+      triggerCompleted("ice candidate collection completed");
     };
 
     // Modify the error handler to not reject immediately

@@ -64,6 +64,54 @@ export type AppOption = {
   audioMaxBitrate: number;
 };
 
+export function parseTurnServers(
+  input: string,
+): TurnServerOptions[] {
+  if (input.trim() === "") return [];
+
+  return input
+    .split("\n")
+    .map((line, index) => {
+      if (line.trim() === "") return null;
+      const parts = line.split("|");
+      if (parts.length !== 4)
+        throw Error(
+          `config error, line ${index + 1} should be 4 parts`,
+        );
+      const [url, username, password, authMethod] =
+        parts.map((part) => part.trim());
+      const validAuthMethods = [
+        "longterm",
+        "hmac",
+        "cloudflare",
+      ];
+      if (!validAuthMethods.includes(authMethod)) {
+        throw Error(
+          `auth method error, line ${index + 1} given ${authMethod} expected ${validAuthMethods.join(
+            " or ",
+          )}`,
+        );
+      }
+      return {
+        url,
+        username,
+        password,
+        authMethod,
+      } satisfies TurnServerOptions;
+    })
+    .filter((turn) => turn !== null);
+}
+
+export function stringifyTurnServers(
+  turnServers: TurnServerOptions[],
+): string {
+  return turnServers
+    .map((turn) => {
+      return `${turn.url}|${turn.username}|${turn.password}|${turn.authMethod}`;
+    })
+    .join("\n");
+}
+
 export const defaultWebsocketUrl =
   import.meta.env.VITE_WEBSOCKET_URL ??
   window.env.VITE_WEBSOCKET_URL;
@@ -96,8 +144,11 @@ export const getDefaultAppOptions = () => {
     videoMaxBitrate: 128 * 1024 * 1024,
     audioMaxBitrate: 512 * 1024,
     servers: {
-      stuns: ["stun:stun.l.google.com:19302"],
-      turns: [],
+      stuns:
+        import.meta.env.VITE_STUN_SERVERS?.split(",") ?? [],
+      turns: parseTurnServers(
+        import.meta.env.VITE_TURN_SERVERS ?? "",
+      ),
     },
     relayOnly: false,
     compressionLevel: 6,
@@ -149,6 +200,32 @@ createEffect(async () => {
   if (!file) return;
   const url = URL.createObjectURL(file);
   setBackgroundImage(url);
+});
+
+createEffect(() => {
+  if (
+    import.meta.env.VITE_STUN_SERVERS &&
+    appOptions.servers.stuns.length === 0
+  ) {
+    const servers = import.meta.env.VITE_STUN_SERVERS.split(
+      ",",
+    );
+    setAppOptions("servers", "stuns", servers);
+  }
+});
+
+createEffect(() => {
+  if (
+    import.meta.env.VITE_TURN_SERVERS &&
+    appOptions.servers.turns.length === 0
+  ) {
+    const serverValue =
+      import.meta.env.VITE_TURN_SERVERS.split(",").join(
+        "\n",
+      );
+    const servers = parseTurnServers(serverValue);
+    setAppOptions("servers", "turns", servers);
+  }
 });
 
 createEffect(() => {

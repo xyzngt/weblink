@@ -43,6 +43,8 @@ import {
   getDefaultAppOptions,
   backgroundImage,
   defaultWebsocketUrl,
+  parseTurnServers,
+  stringifyTurnServers,
 } from "@/options";
 import createAboutDialog from "@/components/about-dialog";
 import { Button } from "@/components/ui/button";
@@ -69,54 +71,7 @@ import { checkIceServerAvailability } from "@/libs/core/utils/turn";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import DropArea from "@/components/drop-area";
 import { catchErrorAsync } from "@/libs/catch";
-
-function parseTurnServers(
-  input: string,
-): TurnServerOptions[] {
-  if (input.trim() === "") return [];
-
-  return input
-    .split("\n")
-    .map((line, index) => {
-      if (line.trim() === "") return null;
-      const parts = line.split("|");
-      if (parts.length !== 4)
-        throw Error(
-          `config error, line ${index + 1} should be 4 parts`,
-        );
-      const [url, username, password, authMethod] =
-        parts.map((part) => part.trim());
-      const validAuthMethods = [
-        "longterm",
-        "hmac",
-        "cloudflare",
-      ];
-      if (!validAuthMethods.includes(authMethod)) {
-        throw Error(
-          `auth method error, line ${index + 1} given ${authMethod} expected ${validAuthMethods.join(
-            " or ",
-          )}`,
-        );
-      }
-      return {
-        url,
-        username,
-        password,
-        authMethod,
-      } satisfies TurnServerOptions;
-    })
-    .filter((turn) => turn !== null);
-}
-
-function stringifyTurnServers(
-  turnServers: TurnServerOptions[],
-): string {
-  return turnServers
-    .map((turn) => {
-      return `${turn.url}|${turn.username}|${turn.password}|${turn.authMethod}`;
-    })
-    .join("\n");
-}
+import { cn } from "@/libs/cn";
 
 export default function Settings() {
   const { open, Component: AboutDialogComponent } =
@@ -137,6 +92,10 @@ export default function Settings() {
     return getComputedStyle(
       document.querySelector(":root") as Element,
     ).getPropertyValue("--radius");
+  });
+
+  const turnServersValue = createMemo(() => {
+    return stringifyTurnServers(appOptions.servers.turns);
   });
 
   return (
@@ -404,38 +363,52 @@ export default function Settings() {
               }}
               value={
                 appOptions.servers.stuns.join("\n") +
-                (appOptions.servers.stuns.length > 0
-                  ? "\n"
-                  : "")
+                (appOptions.servers.stuns ? "\n" : "")
               }
-              onChange={(ev) =>
-                setAppOptions(
-                  "servers",
-                  "stuns",
-                  reconcile(
-                    ev.currentTarget.value
-                      .trim()
-                      .split("\n"),
-                  ),
-                )
-              }
+              onChange={(ev) => {
+                const value = ev.currentTarget.value
+                  .trim()
+                  .split("\n")
+                  .filter((v) => v.trim() !== "");
+                setAppOptions("servers", "stuns", value);
+              }}
             />
             <p class="muted">
               {t(
                 "setting.connection.stun_servers.description",
               )}
             </p>
-            <Show
-              when={
-                appOptions.servers.stuns.length > 0 &&
-                appOptions.servers.stuns
-              }
-            >
-              {(stuns) => {
-                const [disabled, setDisabled] =
-                  createSignal(false);
-                return (
-                  <div class="self-end">
+            <div class="flex gap-2 self-end">
+              <Show
+                when={
+                  import.meta.env.VITE_STUN_SERVERS &&
+                  import.meta.env.VITE_STUN_SERVERS !==
+                    appOptions.servers.stuns.join(",")
+                }
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAppOptions(
+                      "servers",
+                      "stuns",
+                      getDefaultAppOptions().servers.stuns,
+                    );
+                  }}
+                >
+                  {t("common.action.reset")}
+                </Button>
+              </Show>
+              <Show
+                when={
+                  appOptions.servers.stuns.length > 0 &&
+                  appOptions.servers.stuns
+                }
+              >
+                {(stuns) => {
+                  const [disabled, setDisabled] =
+                    createSignal(false);
+                  return (
                     <Button
                       variant="outline"
                       disabled={disabled()}
@@ -443,7 +416,7 @@ export default function Settings() {
                         setDisabled(true);
                         const results: {
                           server: string;
-                          isAvailable: string;
+                          msg: string;
                         }[] = [];
 
                         const promises: Promise<void>[] =
@@ -463,7 +436,7 @@ export default function Settings() {
                               .then((isAvailable) => {
                                 results.push({
                                   server: stun,
-                                  isAvailable: isAvailable
+                                  msg: isAvailable
                                     ? "available"
                                     : "unavailable",
                                 });
@@ -471,7 +444,7 @@ export default function Settings() {
                               .catch((err) => {
                                 results.push({
                                   server: stun,
-                                  isAvailable: err.message,
+                                  msg: err.message,
                                 });
                               }),
                           );
@@ -482,9 +455,19 @@ export default function Settings() {
                           <div class="flex flex-col gap-2 text-xs">
                             <For each={results}>
                               {(result) => (
-                                <p>
-                                  {result.server}:
-                                  {result.isAvailable}
+                                <p
+                                  class={cn(
+                                    "space-x-1",
+                                    result.msg ===
+                                      "available"
+                                      ? "text-success-foreground"
+                                      : "text-error-foreground",
+                                  )}
+                                >
+                                  <span>
+                                    {result.server}:
+                                  </span>
+                                  <span>{result.msg}</span>
                                 </p>
                               )}
                             </For>
@@ -497,10 +480,10 @@ export default function Settings() {
                         "common.action.check_availability",
                       )}
                     </Button>
-                  </div>
-                );
-              }}
-            </Show>
+                  );
+                }}
+              </Show>
+            </div>
           </label>
           <label class="flex flex-col gap-2">
             <Label>
@@ -522,12 +505,8 @@ export default function Settings() {
                 "turn:turn1.example.com:3478|user1|pass1|longterm\nturns:turn2.example.com:5349|user2|pass2|hmac\nname|TURN_TOKEN_ID|API_TOKEN|cloudflare"
               }
               value={
-                stringifyTurnServers(
-                  appOptions.servers.turns,
-                ) +
-                (appOptions.servers.turns.length > 0
-                  ? "\n"
-                  : "")
+                turnServersValue() +
+                (turnServersValue() ? "\n" : "")
               }
               onChange={(ev) => {
                 try {
@@ -554,18 +533,38 @@ export default function Settings() {
                 "setting.connection.turn_servers.description",
               )}
             </p>
-            <Show
-              when={
-                appOptions.servers.turns.length > 0 &&
-                appOptions.servers.turns
-              }
-            >
-              {(turns) => {
-                const [disabled, setDisabled] =
-                  createSignal(false);
-                return (
-                  <Show when={turns().length > 0}>
-                    <div class="self-end">
+            <div class="flex gap-2 self-end">
+              <Show
+                when={
+                  import.meta.env.VITE_TURN_SERVERS &&
+                  import.meta.env.VITE_TURN_SERVERS !==
+                    turnServersValue().split("\n").join(",")
+                }
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAppOptions(
+                      "servers",
+                      "turns",
+                      getDefaultAppOptions().servers.turns,
+                    );
+                  }}
+                >
+                  {t("common.action.reset")}
+                </Button>
+              </Show>
+              <Show
+                when={
+                  appOptions.servers.turns.length > 0 &&
+                  appOptions.servers.turns
+                }
+              >
+                {(turns) => {
+                  const [disabled, setDisabled] =
+                    createSignal(false);
+                  return (
+                    <Show when={turns().length > 0}>
                       <Button
                         variant="outline"
                         disabled={disabled()}
@@ -573,7 +572,7 @@ export default function Settings() {
                           setDisabled(true);
                           const results: {
                             server: string;
-                            isAvailable: string;
+                            msg: string;
                           }[] = [];
 
                           const promises: Promise<void>[] =
@@ -587,7 +586,7 @@ export default function Settings() {
                             if (error) {
                               results.push({
                                 server: turn.url,
-                                isAvailable: error.message,
+                                msg: error.message,
                               });
                               continue;
                             }
@@ -603,7 +602,7 @@ export default function Settings() {
                                 .then((isAvailable) => {
                                   results.push({
                                     server: turn.url,
-                                    isAvailable: isAvailable
+                                    msg: isAvailable
                                       ? "available"
                                       : "unavailable",
                                   });
@@ -611,8 +610,7 @@ export default function Settings() {
                                 .catch((error) => {
                                   results.push({
                                     server: turn.url,
-                                    isAvailable:
-                                      error.message,
+                                    msg: error.message,
                                   });
                                 }),
                             );
@@ -628,9 +626,21 @@ export default function Settings() {
                             <div class="flex flex-col gap-2 text-xs">
                               <For each={results}>
                                 {(result) => (
-                                  <p>
-                                    {result.server}:
-                                    {result.isAvailable}
+                                  <p
+                                    class={cn(
+                                      "space-x-1",
+                                      result.msg ===
+                                        "available"
+                                        ? "text-success-foreground"
+                                        : "text-error-foreground",
+                                    )}
+                                  >
+                                    <span>
+                                      {result.server}:
+                                    </span>
+                                    <span>
+                                      {result.msg}
+                                    </span>
                                   </p>
                                 )}
                               </For>
@@ -642,11 +652,11 @@ export default function Settings() {
                           "common.action.check_availability",
                         )}
                       </Button>
-                    </div>
-                  </Show>
-                );
-              }}
-            </Show>
+                    </Show>
+                  );
+                }}
+              </Show>
+            </div>
           </label>
           <div class="flex flex-col gap-2">
             <Switch

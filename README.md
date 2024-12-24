@@ -6,7 +6,7 @@
 
 Weblink is a pure web-based file transfer and text/voice/video chat application built on WebRTC. It requires no downloads and works directly in your browser. Utilizing a serverless P2P architecture, it supports multiple backends including Firebase and WebSocket for efficient peer-to-peer connections. Additionally, Weblink ensures the privacy and security of signaling messages through end-to-end encryption.
 
-The project is deployed on Vercel and using Firebase as backend can be accessed at [https://v.webl.ink](https://v.webl.ink).
+The project is deployed on Cloudflare Pages and using Firebase as backend can be accessed at [https://v.webl.ink](https://v.webl.ink).
 
 Alternatively, you can use the version using self-hosted WebSocket as backend at [https://webl.ink](https://webl.ink).
 
