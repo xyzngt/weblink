@@ -137,6 +137,14 @@ VITE_WEBSOCKET_URL=your-websocket-url
 
 ### STUN and TURN Server Configuration
 
+You can configure multiple default STUN and TURN servers for this application, and users do not need to manually configure them. The configuration is as follows in the .env.local file:
+
+```env
+# Multiple STUN and TURN servers, separated by commas
+VITE_STUN_SERVERS=stun:stun.l.google.com,stun:stun1.l.google.com
+VITE_TURN_SERVERS=turn:turn1.example.com:3478|user1|pass1|longterm,turn:turn2.example.com:5349|user2|pass2|hmac
+```
+
 If you are using P2P connections outside a local area network (in a NAT environment), you may need to configure a TURN server to ensure connections are established. In the settings page, you can configure the TURN server with the following format, support coturn and Cloudflare TURN server, and separate multiple configurations with newline characters:
 
 **TURN Configuration Format:**

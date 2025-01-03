@@ -363,7 +363,9 @@
       "switch_fullscreen": "Switch Fullscreen",
       "picture_in_picture": "PIP Mode",
       "exit_picture_in_picture": "Exit PIP Mode",
-      "switch_picture_in_picture": "Switch PIP Mode"
+      "switch_picture_in_picture": "Switch PIP Mode",
+      "stop": "Stop",
+      "continue": "Continue"
     },
     "notification": {
       "copy_success": "Copy success",

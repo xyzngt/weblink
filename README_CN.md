@@ -19,7 +19,7 @@ Weblink 目前支持以下功能：
 | 🔄 **文件同步**   | 无缝检索对方缓存的文件。                                           |
 | ⏯️ **续传功能**   | 如果连接中断，可轻松恢复文件传输。                                 |
 | 📂 **文件缓存**   | 传输的文件会安全地缓存到 IndexedDB 中。                            |
-| 🖥️ **屏幕共享**   | 支持多个客户端互相共享屏幕、摄像头和音频（包括扬声器和麦克风）。     |
+| 🖥️ **屏幕共享**   | 支持多个客户端互相共享屏幕、摄像头和音频（包括扬声器和麦克风）。   |
 | 🔍 **文件搜索**   | 快速搜索您和对方缓存的文件。                                       |
 | 📋 **剪贴板传输** | 使用 `Ctrl + V` 或移动设备粘贴操作直接将剪贴板内容发送到聊天窗口。 |
 | 📁 **文件夹传输** | 轻松发送文件夹，支持自动压缩。                                     |
@@ -135,6 +135,14 @@ VITE_WEBSOCKET_URL=your-websocket-url
 ## 注意事项
 
 ### STUN 和 TURN 服务器配置
+
+你可以给应用配置多个默认的 STUN 和 TURN 服务器，用户使用时不需要手动配置，在.env.local 文件中配置方式如下：
+
+```env
+#  多个 STUN 和 TURN 服务器，用逗号分隔
+VITE_STUN_SERVERS=stun:stun.l.google.com,stun:stun1.l.google.com
+VITE_TURN_SERVERS=turn:turn1.example.com:3478|user1|pass1|longterm,turn:turn2.example.com:5349|user2|pass2|hmac
+```
 
 如果你在非局域网（NAT 环境）下使用 P2P 连接，可能需要配置 TURN 服务器以确保能够建立连接。在设置页面中，你可以根据以下格式配置 TURN 服务器，支持 coturn 和 Cloudflare 提供的 TURN 服务，配置项之间用换行符分隔：
 

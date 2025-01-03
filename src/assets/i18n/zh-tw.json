@@ -362,7 +362,9 @@
       "switch_fullscreen": "切換全螢幕",
       "picture_in_picture": "子母畫面",
       "exit_picture_in_picture": "退出子母畫面",
-      "switch_picture_in_picture": "切換子母畫面"
+      "switch_picture_in_picture": "切換子母畫面",
+      "stop": "停止",
+      "continue": "繼續"
     },
     "clipboard_history": {
       "title": "剪貼簿歷史"

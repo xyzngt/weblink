@@ -3,15 +3,10 @@ import {
   createMemo,
   createSignal,
   For,
-  JSX,
-  ParentProps,
   Show,
 } from "solid-js";
 import { useWebRTC } from "@/libs/core/rtc-context";
-import {
-  Button,
-  ButtonProps,
-} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   localStream,
   setDisplayStream,
@@ -29,6 +24,8 @@ import {
   IconScreenShare,
   IconSettings,
   IconStopScreenShare,
+  IconVideoCam,
+  IconVideoCamOff,
   IconVolumeOff,
   IconVolumeUp,
   IconWindow,
@@ -50,7 +47,7 @@ import { useAudioPlayer } from "@/components/audio-player";
 import {
   useVideoDisplay,
   VideoDisplay,
-} from "../components/video-display";
+} from "../../components/video-display";
 import {
   Tooltip,
   TooltipContent,
@@ -59,6 +56,7 @@ import {
 import { createMediaTracks } from "@/libs/hooks/tracks";
 import { createPictureInPicture } from "@/libs/hooks/picture-in-picture";
 import { createFullscreen } from "@/libs/hooks/fullscreen";
+import { FlexButton } from "./components/flex-button";
 
 export default function Video() {
   if (!("mediaDevices" in navigator)) {
@@ -213,29 +211,6 @@ export default function Video() {
   );
 }
 
-const FlexButton = (
-  props: {
-    icon: JSX.Element;
-    onClick: () => void;
-  } & ButtonProps &
-    ParentProps,
-) => {
-  return (
-    <Button
-      {...props}
-      class="h-8 text-nowrap rounded-full p-2 hover:gap-1
-        [&:hover>.grid]:grid-cols-[1fr]"
-    >
-      {props.icon}
-      <Show when={props.children}>
-        <p class="grid grid-cols-[0fr] overflow-hidden transition-all">
-          <span class="min-w-0">{props.children}</span>
-        </p>
-      </Show>
-    </Button>
-  );
-};
-
 const RemoteToolbar = (props: {
   client?: ClientInfo;
   class?: string;
@@ -385,6 +360,10 @@ const LocalToolbar = (props: {
     tracks().filter((track) => track.kind === "audio"),
   );
 
+  const videoTrack = createMemo(() =>
+    tracks().find((track) => track.kind === "video"),
+  );
+
   const microphoneAudioTrack = createMemo(() => {
     return (
       audioTracks()?.find((track) => {
@@ -403,9 +382,6 @@ const LocalToolbar = (props: {
 
   const [microphoneMuted, setMicrophoneMuted] =
     createSignal(false);
-  const [speakerMuted, setSpeakerMuted] =
-    createSignal(false);
-
   createEffect(() => {
     const track = microphoneAudioTrack();
     if (track) {
@@ -413,10 +389,20 @@ const LocalToolbar = (props: {
     }
   });
 
+  const [speakerMuted, setSpeakerMuted] =
+    createSignal(false);
   createEffect(() => {
     const track = speakerAudioTrack();
     if (track) {
       track.enabled = !speakerMuted();
+    }
+  });
+
+  const [videoStop, setVideoStop] = createSignal(false);
+  createEffect(() => {
+    const track = videoTrack();
+    if (track) {
+      track.enabled = !videoStop();
     }
   });
 
@@ -493,7 +479,27 @@ const LocalToolbar = (props: {
         </FlexButton>
       </Show>
 
-      <Show when={audioTracks().length > 0}>
+      <Show when={videoTrack()}>
+        <FlexButton
+          size="sm"
+          onClick={() => setVideoStop(!videoStop())}
+          variant={videoStop() ? "default" : "secondary"}
+          icon={
+            <Dynamic
+              component={
+                videoStop() ? IconVideoCamOff : IconVideoCam
+              }
+              class="size-4"
+            />
+          }
+        >
+          {videoStop()
+            ? t("common.action.continue")
+            : t("common.action.stop")}
+        </FlexButton>
+      </Show>
+
+      <Show when={audioTracks().length > 0 || videoTrack()}>
         <FlexButton
           size="sm"
           onClick={() => {

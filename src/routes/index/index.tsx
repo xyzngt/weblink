@@ -6,26 +6,23 @@ import {
   createSignal,
   ComponentProps,
 } from "solid-js";
-import { cn } from "@/libs/cn";
-
 import {
   RouteSectionProps,
   useCurrentMatches,
   useNavigate,
 } from "@solidjs/router";
-import { ClientID, ClientInfo } from "@/libs/core/type";
-
 import {
   Resizable,
   ResizableHandle,
   ResizablePanel,
 } from "@/components/ui/resizable";
-
+import { ClientID, ClientInfo } from "@/libs/core/type";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { makePersisted } from "@solid-primitives/storage";
 import { IconPerson } from "@/components/icons";
 import { messageStores } from "@/libs/core/messge";
 import { t } from "@/i18n";
+import { cn } from "@/libs/cn";
 import { sessionService } from "@/libs/services/session-service";
 import { appOptions } from "@/options";
 import { UserItem } from "./components/client-list-item";
