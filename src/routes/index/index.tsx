@@ -1,41 +1,28 @@
 import {
-  Avatar,
-  AvatarFallback,
-} from "@/components/ui/avatar";
-import {
-  Component,
   For,
   createMemo,
-  Switch,
-  Match,
   createEffect,
   Show,
   createSignal,
   ComponentProps,
-  splitProps,
-  Suspense,
 } from "solid-js";
-import { cn } from "@/libs/cn";
-
 import {
-  A,
   RouteSectionProps,
   useCurrentMatches,
   useNavigate,
 } from "@solidjs/router";
-import { ClientID, ClientInfo } from "@/libs/core/type";
-
 import {
   Resizable,
   ResizableHandle,
   ResizablePanel,
 } from "@/components/ui/resizable";
-
+import { ClientID, ClientInfo } from "@/libs/core/type";
 import { createIsMobile } from "@/libs/hooks/create-mobile";
 import { makePersisted } from "@solid-primitives/storage";
 import { IconPerson } from "@/components/icons";
 import { messageStores } from "@/libs/core/messge";
 import { t } from "@/i18n";
+import { cn } from "@/libs/cn";
 import { sessionService } from "@/libs/services/session-service";
 import { appOptions } from "@/options";
 import { UserItem } from "./components/client-list-item";
@@ -57,9 +44,12 @@ export default function Home(props: RouteSectionProps) {
       name: "resizable-sizes",
     },
   );
+  const path = createMemo<string | undefined>(() => {
+    return matches()[matches().length - 1]?.path;
+  });
   createEffect(() => {
     if (isMobile()) {
-      if (matches()[matches().length - 1].path === "/") {
+      if (path() === "/") {
         setSize([1, 0]);
       } else {
         setSize([1]);
@@ -97,7 +87,8 @@ export default function Home(props: RouteSectionProps) {
           ] as ClientInfo | undefined,
         };
       })
-      .toSorted((c1, c2) => {
+      .slice()
+      .sort((c1, c2) => {
         const c1Online =
           c1.clientInfo?.onlineStatus === "online";
         const c2Online =
@@ -117,12 +108,7 @@ export default function Home(props: RouteSectionProps) {
       sizes={size()}
       onSizesChange={(sizes) => setSize(sizes)}
     >
-      <Show
-        when={
-          !isMobile() ||
-          matches()[matches().length - 1].path === "/"
-        }
-      >
+      <Show when={!isMobile() || path() === "/"}>
         <ResizablePanel
           class={cn(
             `bg-background/80 backdrop-blur
@@ -135,10 +121,7 @@ export default function Home(props: RouteSectionProps) {
         >
           {(props) => {
             createEffect(() => {
-              if (
-                props.collapsed &&
-                matches()[matches().length - 1].path === "/"
-              ) {
+              if (props.collapsed && path() === "/") {
                 props.expand();
               }
             });
@@ -186,15 +169,10 @@ export default function Home(props: RouteSectionProps) {
         </ResizablePanel>
       </Show>
       <Show when={!isMobile()}>
-        <ResizableHandle withHandle />
+        <ResizableHandle />
       </Show>
 
-      <Show
-        when={
-          !isMobile() ||
-          matches()[matches().length - 1].path !== "/"
-        }
-      >
+      <Show when={!isMobile() || path() !== "/"}>
         <ResizablePanel
           class="relative"
           minSize={0.7}

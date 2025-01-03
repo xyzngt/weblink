@@ -5,6 +5,7 @@ import {
 } from "@solid-primitives/i18n";
 import {
   createEffect,
+  createMemo,
   createResource,
   onMount,
 } from "solid-js";
@@ -43,6 +44,10 @@ const [dict] = createResource(
   importDictionary,
 );
 
+export const isDictLoaded = createMemo(() => {
+  return !dict.loading;
+});
+
 const translate = translator(dict, resolveTemplate);
 
 const fallback = translator(
@@ -53,15 +58,6 @@ const fallback = translator(
 const t = (path: string, ...args: any[]): string =>
   // @ts-ignore
   translate(path, ...args) ?? fallback(path, ...args);
-
-onMount(() => {
-  if (!localeOptionsMap[appOptions.locale]) {
-    setAppOptions(
-      "locale",
-      localFromLanguage(navigator.language),
-    );
-  }
-});
 
 const LocaleSelector = () => {
   return (

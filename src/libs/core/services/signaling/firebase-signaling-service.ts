@@ -1,18 +1,14 @@
 import {
-  equalTo,
   get,
   getDatabase,
   onChildAdded,
   onDisconnect,
-  orderByChild,
   push,
-  query,
   ref,
   remove,
 } from "firebase/database";
 
 import { app } from "@/libs/firebase";
-import { v4 } from "uuid";
 import {
   RawSignal,
   ClientSignal,

@@ -5,20 +5,20 @@
       "title": "外觀",
       "theme": {
         "title": "主題",
-        "description": "更改應用程式的主題"
+        "description": "變更應用程式的主題"
       },
       "language": {
         "title": "語言",
-        "description": "更改應用程式的語言"
+        "description": "變更應用程式的語言"
       },
       "background_image": {
         "title": "背景圖片",
-        "description": "更改應用程式的背景圖片，也可以在檔案快取中選擇",
+        "description": "變更應用程式的背景圖片，也可以在檔案快取中選擇",
         "click_to_select": "點擊選擇"
       },
       "background_image_opacity": {
         "title": "背景圖片透明度",
-        "description": "更改背景圖片的透明度"
+        "description": "變更背景圖片的透明度"
       }
     },
     "connection": {
@@ -33,7 +33,7 @@
       },
       "turn_servers": {
         "title": "TURN 伺服器",
-        "description": "如果你希望在 NAT 環境下使用此應用程式，你可能需要設定 TURN 伺服器，並在對方客戶端中設定相同的 TURN 伺服器"
+        "description": "如果您希望在 NAT 環境下使用此應用程式，可能需要設定 TURN 伺服器，並在對方客戶端中設定相同的 TURN 伺服器"
       },
       "share_servers_with_others": {
         "title": "分享伺服器給他人",
@@ -108,7 +108,10 @@
         "description": "更改應用程式的揚聲器"
       },
       "request_permission": {
-        "title": "請求媒體權限",
+        "camera_title": "請求攝影機權限",
+        "microphone_title": "請求麥克風權限",
+        "camera_success": "攝影機權限已授予",
+        "microphone_success": "麥克風權限已授予",
         "description": "請求媒體權限以使用媒體設定，如果請求權限後無法選擇媒體裝置，請嘗試重新整理頁面",
         "fallback_description": "請允許瀏覽器使用攝影機和麥克風"
       }
@@ -142,7 +145,8 @@
     },
     "about": {
       "title": "關於",
-      "reset_options": "重置選項"
+      "reset_options": "重置選項",
+      "clear_service_worker_cache": "清除 Service Worker 快取"
     }
   },
   "cache": {
@@ -199,7 +203,7 @@
     "message_error": "發生錯誤"
   },
   "video": {
-    "title": "視訊通話",
+    "title": "螢幕共享",
     "device": {
       "screen": "螢幕",
       "camera": "攝影機"
@@ -243,7 +247,7 @@
       "avatar_url": "頭像 URL",
       "password": {
         "title": "房間密碼",
-        "description": "可選，房間的密碼，用於加密客戶端之間的信令訊息，防止其他人加入，你可以點擊按鈕生成一個強密碼"
+        "description": "可選，房間的密碼，用於加密客戶端之間的信令訊息，防止其他人加入，你可以點擊按鈕生成個強密碼"
       },
       "auto_join": "下次自動加入"
     },
@@ -263,7 +267,13 @@
     "reset_options_dialog": {
       "title": "重置選項",
       "description": "重置後將無法恢復，請謹慎操作",
-      "content": "確認重置選項？"
+      "content": "這個操作會重置所有選項，但不會清除使用者資料"
+    },
+    "clear_service_worker_cache_dialog": {
+      "title": "清除 Service Worker 快取",
+      "description": "這個操作會清除 Service Worker 快取",
+      "content": "如果你在頁面更新後遇到問題，可以清除快取後重試",
+      "reload": "清除後重新加載頁面"
     },
     "file_table": {
       "columns": {
@@ -280,8 +290,8 @@
         "stopped": "已停止",
         "transferring": "傳輸中",
         "merging": "合併中",
-        "completed": "已完成",
-        "incompleted": "未完成"
+        "complete": "已完成",
+        "incomplete": "未完成"
       },
       "filter": {
         "clear_filters": "清空過濾器",
@@ -312,6 +322,7 @@
       "leave": "離開"
     },
     "action": {
+      "apply": "應用",
       "copy": "複製",
       "copy_link": "複製連結",
       "copy_file_name": "複製檔案名",
@@ -323,9 +334,9 @@
       "cancel": "取消",
       "confirm": "確定",
       "actions": "操作",
-      "close": "關閉",
-      "change": "更改",
       "open": "打開",
+      "change": "更改",
+      "close": "關閉",
       "preview": "預覽",
       "send": "傳送",
       "view": "查看",
@@ -341,7 +352,19 @@
       "resume": "恢復",
       "add_folder": "添加資料夾",
       "check_availability": "檢查可用性",
-      "reload": "重新加載"
+      "reload": "重新加載",
+      "mute": "靜音",
+      "unmute": "恢復",
+      "select": "選擇",
+      "settings": "設置",
+      "fullscreen": "全螢幕",
+      "exit_fullscreen": "退出全螢幕",
+      "switch_fullscreen": "切換全螢幕",
+      "picture_in_picture": "子母畫面",
+      "exit_picture_in_picture": "退出子母畫面",
+      "switch_picture_in_picture": "切換子母畫面",
+      "stop": "停止",
+      "continue": "繼續"
     },
     "clipboard_history": {
       "title": "剪貼簿歷史"
@@ -353,15 +376,53 @@
     },
     "about_dialog": {
       "title": "關於 Weblink",
-      "description1": "Weblink 是一款基於 WebRTC 的 P2P 聊天和檔案傳輸工具，它可以幫助你快速、安全地傳輸檔案。",
-      "description2": "提供檔案同步、進度顯示、斷點續傳、資料夾傳輸、剪貼簿傳輸、檔案快取、視訊通話等多種功能。",
-      "description3": "此專案是純 Web 應用，無需安裝。功能較多實現比較複雜，如果遇到不穩定的情況，請嘗試重新整理頁面，資訊不會丟失。",
-      "disclaimer": "免責聲明：此應用使用 P2P 技術，所有資料儲存在使用者客戶端（瀏覽器）中，伺服器不儲存任何使用者資料，只負責轉發信令。使用者應自行承擔使用風險，開發者不對任何資料丟失或隱私洩露負責。",
-      "star_repo": "如果您喜歡這個專案，歡迎在 GitHub 上給我一個 ⭐！",
+      "description1": "Weblink 是一款基於瀏覽器的P2P聊天、檔案傳輸、檔案同步和螢幕共享工具。",
+      "description2": "它提供傳輸進度顯示、斷點續傳、資料夾傳輸、剪貼簿傳輸、檔案快取、視訊通話等多種功能。",
+      "description3": "此專案是純網頁應用程式，無需安裝。如遇到任何不穩定情況，請嘗試重新整理頁面。資訊不會遺失。",
+      "disclaimer": "免責聲明：此應用程式採用點對點（P2P）技術，所有資料儲存於使用者端（瀏覽器）中，伺服器不儲存任何使用者資料，僅負責轉送訊號。使用者應自行承擔使用風險，開發者不對任何資料遺失或隱私洩露負責。",
+      "star_repo": "如果您喜歡這個專案，歡迎在 GitHub 上給我一顆 ⭐！",
       "version": "版本",
       "author": "作者",
-      "license": "許可證",
+      "license": "授權條款",
       "github": "GitHub 儲存庫"
+    },
+    "media_selection_dialog": {
+      "title": "媒體選擇",
+      "screen": "螢幕",
+      "media_device": "媒體設備",
+      "camera": "攝影機",
+      "microphone": "麥克風",
+      "speaker": "揚聲器",
+      "enable_screen": "啟用螢幕",
+      "enable_camera": "啟用攝影機",
+      "enable_microphone": "啟用麥克風",
+      "enable_speaker": "啟用揚聲器",
+      "no_camera_available": "沒有攝影機可用",
+      "no_microphone_available": "沒有麥克風可用",
+      "no_speaker_available": "沒有揚聲器可用",
+      "request_camera_permission": "請求攝影機權限",
+      "request_microphone_permission": "請求麥克風權限",
+      "select_speaker": "選擇揚聲器 (自動)",
+      "select_microphone": "選擇麥克風 (自動)",
+      "select_camera": "選擇攝影機 (自動)",
+      "open_screen": "打開螢幕",
+      "open_media_device": "打開媒體設備",
+      "current": "當前",
+      "preview": "預覽",
+      "apply_constraints": "應用媒體約束",
+      "apply_constraints_description": "某些約束可能不支持動態更改，請選擇新的流以應用",
+      "preset_constraints": "預設媒體約束",
+      "microphone_constraints": "麥克風約束",
+      "speaker_constraints": "揚聲器約束",
+      "not_support_display_media": "您的瀏覽器不支持螢幕共享",
+      "not_support_user_media": "您的瀏覽器不支持媒體設備",
+      "constraints": {
+        "noise_suppression": "噪音抑制",
+        "echo_cancellation": "回聲消除",
+        "auto_gain_control": "自動增益控制",
+        "voice_isolation": "語音隔離",
+        "suppress_local_audio_playback": "抑制本地音訊播放"
+      }
     },
     "notification": {
       "copy_success": "複製成功",
@@ -370,13 +431,15 @@
       "reset_options_success": "選項重置成功",
       "unknown_error": "未知錯誤",
       "processing_files": "處理檔案中...",
-      "new_version_available": "新版本可用，點擊重新加載",
-      "share_failed": "分享失敗，錯誤: {{error}}"
+      "new_version_available": "新版本可用",
+      "share_failed": "分享失敗，錯誤: {{error}}",
+      "clear_cache_success": "Cache Storage 和 Service Worker 清除成功",
+      "clear_cache_failed": "清除 Cache Storage 和 Service Worker 失敗，錯誤: {{error}}"
     },
     "nav": {
       "chat": "聊天",
       "file_cache": "檔案快取",
-      "video_conference": "視訊會議",
+      "screen_sharing": "螢幕共享",
       "settings": "設定",
       "join_room": "加入房間",
       "leave_room": "離開房間",
@@ -384,6 +447,17 @@
     },
     "timeago": {
       "just_now": "剛剛"
+    },
+    "starter": {
+      "starter_name": "歡迎",
+      "welcome": "歡迎使用 Weblink，這是一個可以直接在瀏覽器中運行的聊天、檔案傳輸、檔案同步和螢幕共享工具。",
+      "tip1": "請按照以下步驟開始：\n 1. 設定您的名稱和頭像。\n 2. 設定房間 ID 和密碼以加密客戶端之間的信令訊息，防止他人加入。\n 3. 分享房間資訊，邀請其他人加入房間。",
+      "tip2": "如果遇到任何問題或有任何建議，請在 GitHub 上提交 issue, 或加入 QQ 群反饋：762463759"
+    },
+    "error_boundary": {
+      "title": "發生錯誤",
+      "description": "請嘗試刷新頁面或聯繫開發者，錯誤信息如下：",
+      "reset": "重置"
     }
   }
 }

@@ -53,18 +53,30 @@ export const ResizableHandle = <
   return (
     <ResizablePrimitive.Handle
       class={cn(
-        `flex w-px items-center justify-center bg-border
-        transition-shadow focus-visible:outline-none
-        focus-visible:ring-[1.5px] focus-visible:ring-ring
-        focus-visible:ring-offset-1 data-[orientation=vertical]:h-px
-        data-[orientation=vertical]:w-full`,
+        `relative flex w-px items-center justify-center
+        overflow-visible transition-shadow
+        data-[orientation=vertical]:h-px
+        data-[orientation=vertical]:w-full
+        focus-visible:outline-none focus-visible:ring-[1.5px]
+        focus-visible:ring-ring focus-visible:ring-offset-1
+        [&:not([data-active])]:bg-border
+        [&[data-active]_#resizable-handle]:bg-muted-foreground/50
+        [&[data-dragging]_#resizable-handle]:bg-muted-foreground/80
+        [&[data-orientation=horizontal][data-active]_#resizable-handle]:w-2
+        [&[data-orientation=horizontal]_#resizable-handle]:h-full
+        [&[data-orientation=vertical][data-active]_#resizable-handle]:h-2
+        [&[data-orientation=vertical]_#resizable-handle]:w-full`,
         local.class,
       )}
       {...rest}
     >
+      <div
+        id="resizable-handle"
+        class="absolute z-50 transition-all"
+      ></div>
       <Show when={local.withHandle}>
         <div
-          class="fixed top-1/2 z-10 flex h-4 w-3 items-center justify-center
+          class="fixed top-1/2 z-50 flex h-4 w-3 items-center justify-center
             rounded-sm border bg-border"
         >
           <svg

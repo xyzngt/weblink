@@ -109,14 +109,18 @@
         "description": "Change the speaker of the media"
       },
       "request_permission": {
-        "title": "Request Media Permission",
+        "camera_title": "Request Camera Permission",
+        "microphone_title": "Request Microphone Permission",
+        "camera_success": "Camera permission granted",
+        "microphone_success": "Microphone permission granted",
         "description": "Request media permission to use the media settings, if you can't select the media devices after requesting permission, please try to refresh the page",
         "fallback_description": "Please allow the browser to use the camera and microphone"
       }
     },
     "about": {
       "title": "About",
-      "reset_options": "Reset Options"
+      "reset_options": "Reset Options",
+      "clear_service_worker_cache": "Clear Service Worker Cache"
     },
     "advanced_settings": {
       "title": "Advanced Settings",
@@ -200,6 +204,7 @@
     }
   },
   "video": {
+    "title": "Screen Sharing",
     "device": {
       "screen": "Screen",
       "camera": "Camera"
@@ -256,8 +261,8 @@
         "stopped": "Stopped",
         "transferring": "Transferring",
         "merging": "Merging",
-        "completed": "Completed",
-        "incompleted": "Incompleted"
+        "complete": "Complete",
+        "incomplete": "Incomplete"
       },
       "filter": {
         "clear_filters": "Clear Filters",
@@ -286,8 +291,14 @@
     },
     "reset_options_dialog": {
       "title": "Reset Options",
-      "description": "This operation resets the options to default values",
+      "description": "This operation resets the options to default values, but will not clear user data",
       "content": "Are you really sure you want to reset the options?"
+    },
+    "clear_service_worker_cache_dialog": {
+      "title": "Clear Service Worker Cache",
+      "description": "This operation clears the Service Worker cache",
+      "content": "If you encounter problems after page updates, you can clear the cache and try again",
+      "reload": "Reload the page after clearing"
     },
     "preview_dialog": {
       "title": "Preview",
@@ -312,6 +323,7 @@
       "invite": "Invite you to join the room {{room}}"
     },
     "action": {
+      "apply": "Apply",
       "copy": "Copy",
       "copy_link": "Copy Link",
       "copy_file_name": "Copy File Name",
@@ -323,6 +335,7 @@
       "cancel": "Cancel",
       "confirm": "Confirm",
       "actions": "Actions",
+      "open": "Open",
       "close": "Close",
       "change": "Change",
       "preview": "Preview",
@@ -340,7 +353,19 @@
       "resume": "Resume",
       "add_folder": "Add Folder",
       "check_availability": "Check Availability",
-      "reload": "Reload"
+      "reload": "Reload",
+      "mute": "Mute",
+      "unmute": "Unmute",
+      "select": "Select",
+      "settings": "Settings",
+      "fullscreen": "Fullscreen",
+      "exit_fullscreen": "Exit Fullscreen",
+      "switch_fullscreen": "Switch Fullscreen",
+      "picture_in_picture": "PIP Mode",
+      "exit_picture_in_picture": "Exit PIP Mode",
+      "switch_picture_in_picture": "Switch PIP Mode",
+      "stop": "Stop",
+      "continue": "Continue"
     },
     "notification": {
       "copy_success": "Copy success",
@@ -349,8 +374,10 @@
       "reset_options_success": "Options reset successfully",
       "unknown_error": "Unknown error",
       "processing_files": "Processing files...",
-      "new_version_available": "New version available, click to reload",
-      "share_failed": "Share failed, error: {{error}}"
+      "new_version_available": "New version available",
+      "share_failed": "Share failed, error: {{error}}",
+      "clear_cache_success": "Cache Storage and Service Worker cleared successfully",
+      "clear_cache_failed": "Failed to clear Cache Storage and Service Worker, error: {{error}}"
     },
     "forward_dialog": {
       "title": "Forward items",
@@ -359,8 +386,8 @@
     },
     "about_dialog": {
       "title": "About Weblink",
-      "description1": "Weblink is a WebRTC-based P2P chat and file transfer tool. It helps you quickly and securely transfer files.",
-      "description2": "It provides progress display, resume, folder transfer, clipboard transfer, file cache, video calls, and other features.",
+      "description1": "Weblink is a browser-based P2P chat, file transfer, file synchronization and screen sharing tool.",
+      "description2": "It provides progress display, resume, folder transfer, clipboard transfer, file cache, screen sharing, and other features.",
       "description3": "This project is a pure Web application, no installation is required. If you encounter any instability, please try to refresh the page. Information will not be lost.",
       "disclaimer": "Disclaimer: This application uses P2P technology, all data is stored in the user's client (browser), the server does not store any user data, only responsible for forwarding signaling. Users should bear the risks of using it at their own risk, and the developers are not responsible for any data loss or privacy breaches.",
       "star_repo": "If you like this project, please give me a ⭐ on GitHub!",
@@ -369,10 +396,48 @@
       "license": "License",
       "github": "GitHub Repository"
     },
+    "media_selection_dialog": {
+      "title": "Media Selection",
+      "screen": "Screen",
+      "media_device": "Media Device",
+      "camera": "Camera",
+      "microphone": "Microphone",
+      "speaker": "Speaker",
+      "enable_screen": "Enable Screen",
+      "enable_camera": "Enable Camera",
+      "enable_microphone": "Enable Microphone",
+      "enable_speaker": "Enable Speaker",
+      "no_camera_available": "No camera available",
+      "no_microphone_available": "No microphone available",
+      "no_speaker_available": "No speaker available",
+      "request_camera_permission": "Request Camera Permission",
+      "request_microphone_permission": "Request Microphone Permission",
+      "select_speaker": "Select Speaker (Auto)",
+      "select_microphone": "Select Microphone (Auto)",
+      "select_camera": "Select Camera (Auto)",
+      "open_screen": "Open Screen",
+      "open_media_device": "Open Media Device",
+      "current": "Current",
+      "preview": "Preview",
+      "apply_constraints": "Apply Media Constraints",
+      "apply_constraints_description": "Some constraints may not be supported to change dynamically, please select a new stream to apply",
+      "preset_constraints": "Preset Media Constraints",
+      "microphone_constraints": "Microphone Constraints",
+      "speaker_constraints": "Speaker Constraints",
+      "not_support_display_media": "Your browser does not support display media",
+      "not_support_user_media": "Your browser does not support user media",
+      "constraints": {
+        "noise_suppression": "Noise Suppression",
+        "echo_cancellation": "Echo Cancellation",
+        "auto_gain_control": "Auto Gain Control",
+        "voice_isolation": "Voice Isolation",
+        "suppress_local_audio_playback": "Suppress Local Audio Playback"
+      }
+    },
     "nav": {
       "chat": "Chat",
       "file_cache": "File Cache",
-      "video_conference": "Video Conference",
+      "screen_sharing": "Screen Sharing",
       "settings": "Settings",
       "join_room": "Join Room",
       "leave_room": "Leave Room",
@@ -380,6 +445,17 @@
     },
     "timeago": {
       "just_now": "Just Now"
+    },
+    "starter": {
+      "starter_name": "Starter",
+      "welcome": "Welcome to weblink, a chat, file transfer, file synchronization and screen sharing tool that can be run directly in the browser.",
+      "tip1": "Please follow these steps to start:\n 1. Set your name and avatar.\n 2. Set the room ID and password to encrypt the signaling messages between clients, preventing others from joining.\n 3. Share the room profile to invite others to join the room.",
+      "tip2": "If you encounter any problems or have any suggestions, please submit an issue on GitHub."
+    },
+    "error_boundary": {
+      "title": "Error Occurred",
+      "description": "Please try to refresh the page or contact the developer, the error message is:",
+      "reset": "Reset"
     }
   }
 }

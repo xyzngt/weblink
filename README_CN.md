@@ -4,35 +4,37 @@
 
 ## 简介
 
-Weblink 是一款基于 WebRTC 的纯网页文件传输和聊天应用，无需下载或安装，直接在浏览器中即可使用。它采用了无服务器的 P2P 架构，支持多种后端，包括 Firebase 和 WebSocket，实现高效的点对点连接。此外，Weblink 通过端到端加密，保障信令消息的隐私和安全。
+Weblink 是一款基于 WebRTC 的纯网页**文件传输**和**文字/语音/视频聊天**应用，无需下载或安装，直接在浏览器中即可使用。它采用了无服务器的 P2P 架构，支持多种后端，包括 Firebase 和 WebSocket，实现高效的点对点连接。此外，Weblink 通过端到端加密，保障信令消息的隐私和安全。
 
-该项目已通过vercel部署，请访问 [https://web1ink.vercel.app](https://web1ink.vercel.app)。
+该项目已通过 Cloudflare Pages + Firebase 部署，请访问 [https://v.webl.ink](https://v.webl.ink)。
 
-或者使用部署在阿里云上的 [https://webl.ink](https://webl.ink) 。
+或者使用自建的 WebSocket 后端部署在阿里云上的 [https://webl.ink](https://webl.ink) 。
 
-## 功能
+## ✨功能
 
 Weblink 目前支持以下功能：
 
-| 功能          | 描述                                                            |
-| ------------- | --------------------------------------------------------------- |
-| ✅ 文件同步   | 获取对方缓存的文件，并获取文件                                  |
-| ✅ 断点续传   | 文件传输过程中，如果连接中断，可以续传                          |
-| ✅ 文件缓存   | 传输的文件会被缓存到 IndexedDB                                  |
-| ✅ 文件搜索   | 可以搜索自己和对方在缓存中的文件                                |
-| ✅ 视频通话   | 可进行视频通话                                                  |
-| ✅ 剪贴板传输 | 对聊天窗口按 `Ctrl + V`，或在移动端输入框粘贴，可发送剪贴板内容 |
-| ✅ 文件夹传输 | 可发送文件夹，并自动压缩                                        |
-| ✅ 压缩传输   | 传输文件时，可选择压缩，文件将以区块为单位进行压缩并发送        |
-| ✅ 多通道传输 | 通过多个 DataChannel 实现并行数据传输，提升传输性能             |
-| ✅ 分享转发   | PWA 安装后，可通过系统分享发送文字或文件                        |
-| ✅ 文字聊天   | 可发送文字进行聊天                                              |
+| **功能**          | **描述**                                                           |
+| ----------------- | ------------------------------------------------------------------ |
+| 🔄 **文件同步**   | 无缝检索对方缓存的文件。                                           |
+| ⏯️ **续传功能**   | 如果连接中断，可轻松恢复文件传输。                                 |
+| 📂 **文件缓存**   | 传输的文件会安全地缓存到 IndexedDB 中。                            |
+| 🖥️ **屏幕共享**   | 支持多个客户端互相共享屏幕、摄像头和音频（包括扬声器和麦克风）。   |
+| 🔍 **文件搜索**   | 快速搜索您和对方缓存的文件。                                       |
+| 📋 **剪贴板传输** | 使用 `Ctrl + V` 或移动设备粘贴操作直接将剪贴板内容发送到聊天窗口。 |
+| 📁 **文件夹传输** | 轻松发送文件夹，支持自动压缩。                                     |
+| 📦 **压缩传输**   | 在传输文件时选择压缩功能，实现高效数据处理。                       |
+| ⚡ **多通道传输** | 通过多数据通道并行传输，提高传输性能。                             |
+| 🔗 **分享与转发** | 安装为 PWA 后，可通过系统分享功能发送文本或文件。                  |
+| 💬 **文字聊天**   | 发送文字消息，实现流畅沟通。                                       |
 
 更多信息请查看 [CHANGELOG](CHANGELOG.md) 了解最新更新。
 
+如果遇到使用上的问题，欢迎加入QQ群进行提问或者反馈：[762463759 ](https://qm.qq.com/cgi-bin/qm/qr?_wv=1027&k=5MRpXPQN4vGtiLnTzCUb-NlAK9txeEoE&authKey=Gm3OmhI6g3ccmNx8rXVcPsbmEzsoBcj%2FpF%2FOlq7edcbMxTlhPLipZ6i9fwsPCsLt&noverify=0&group_code=762463759)
+
 ## 使用方法
 
-### 本地运行
+### 本地运行（开发）
 
 ```bash
 git clone https://github.com/99percentpeople/weblink.git
@@ -133,6 +135,14 @@ VITE_WEBSOCKET_URL=your-websocket-url
 ## 注意事项
 
 ### STUN 和 TURN 服务器配置
+
+你可以给应用配置多个默认的 STUN 和 TURN 服务器，用户使用时不需要手动配置，在.env.local 文件中配置方式如下：
+
+```env
+#  多个 STUN 和 TURN 服务器，用逗号分隔
+VITE_STUN_SERVERS=stun:stun.l.google.com,stun:stun1.l.google.com
+VITE_TURN_SERVERS=turn:turn1.example.com:3478|user1|pass1|longterm,turn:turn2.example.com:5349|user2|pass2|hmac
+```
 
 如果你在非局域网（NAT 环境）下使用 P2P 连接，可能需要配置 TURN 服务器以确保能够建立连接。在设置页面中，你可以根据以下格式配置 TURN 服务器，支持 coturn 和 Cloudflare 提供的 TURN 服务，配置项之间用换行符分隔：
 

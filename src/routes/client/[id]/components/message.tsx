@@ -50,6 +50,7 @@ import {
   IconFileCopy,
   IconFileUpload,
   IconInsertDriveFile,
+  IconPlayArrow,
   IconPreview,
   IconRestore,
   IconResume,
@@ -61,7 +62,6 @@ import { t } from "@/i18n";
 import { Dynamic } from "solid-js/web";
 import { createTimeAgo } from "@/libs/utils/timeago";
 import { FileMetaData } from "@/libs/cache";
-import { FileMessageTitle } from "@/components/message-title";
 import {
   Tooltip,
   TooltipContent,
@@ -74,6 +74,7 @@ import { createPreviewDialog } from "@/components/preview-dialog";
 import { downloadFile } from "@/libs/utils/download-file";
 import { FileID } from "@/libs/core/type";
 import { canShareFile } from "@/libs/utils/can-share";
+import { IconFile } from "@/components/icon-file";
 
 export interface MessageCardProps
   extends ComponentProps<"li"> {
@@ -86,6 +87,31 @@ export interface FileMessageCardProps {
   message: FileTransferMessage;
   onLoad?: () => void;
 }
+
+const Title = (
+  props: {
+    name: string;
+    type?: string;
+  } & ComponentProps<"div">,
+) => {
+  const [local, other] = splitProps(props, [
+    "name",
+    "type",
+    "class",
+  ]);
+  return (
+    <div class={cn("relative", local.class)} {...other}>
+      {" "}
+      <div
+        class="absolute inset-0 space-x-1 overflow-hidden text-ellipsis
+          whitespace-nowrap [&>*]:align-middle [&>svg]:inline"
+      >
+        <IconFile mimetype={local.type} class="size-4" />
+        <span>{local.name}</span>
+      </div>
+    </div>
+  );
+};
 
 const FileMessageCard: Component<FileMessageCardProps> = (
   props,
@@ -176,7 +202,8 @@ const FileMessageCard: Component<FileMessageCardProps> = (
       <Show
         when={cacheData()}
         fallback={
-          <FileMessageTitle
+          <Title
+            class="w-full max-w-[calc(100vw*0.5)]"
             type="default"
             name={props.message.fileName}
           />
@@ -227,7 +254,6 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         <div>
                           <IconInsertDriveFile class="size-8" />
                         </div>
-
                         <p>{cache().fileName}</p>
                       </div>
                     }
@@ -237,13 +263,12 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         "image/",
                       )}
                     >
-                      <FileMessageTitle
-                        type="image"
+                      <Title
                         name={props.message.fileName}
+                        type={cache().mimetype}
                       />
-
                       <a
-                        id="image"
+                        id="pswp-item"
                         href={url}
                         target="_blank"
                         class={cn(
@@ -255,6 +280,7 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         )}
                       >
                         <img
+                          class="object-cover"
                           src={url}
                           alt={cache().fileName}
                           onload={(ev) => {
@@ -286,32 +312,72 @@ const FileMessageCard: Component<FileMessageCardProps> = (
                         "video/",
                       )}
                     >
-                      <FileMessageTitle
-                        type="video"
+                      <Title
                         name={props.message.fileName}
+                        type={cache().mimetype}
                       />
-
-                      <video
-                        class="aspect-video h-full max-h-72 object-contain"
-                        controls
-                        src={url}
-                        onCanPlay={() => props.onLoad?.()}
-                      />
+                      <a
+                        id="pswp-item"
+                        href={url}
+                        data-pswp-type="video"
+                        data-pswp-video-type={
+                          cache().mimetype
+                        }
+                        target="_blank"
+                        class={cn(
+                          `relative aspect-video h-full max-h-64 overflow-hidden
+                          rounded-sm`,
+                          isLong()
+                            ? "aspect-square"
+                            : "aspect-video",
+                        )}
+                        data-pswp-video-src={url}
+                      >
+                        <video
+                          class="h-full w-full object-cover"
+                          src={url}
+                          onLoadedMetadata={(ev) => {
+                            props.onLoad?.();
+                            const parent =
+                              ev.currentTarget
+                                .parentElement!;
+                            parent.dataset.pswpWidth =
+                              ev.currentTarget.videoWidth.toString();
+                            parent.dataset.pswpHeight =
+                              ev.currentTarget.videoHeight.toString();
+                            parent.dataset.download =
+                              cache().fileName;
+                            const diff =
+                              ev.currentTarget.videoWidth -
+                              ev.currentTarget.videoHeight;
+                            if (diff <= 0) {
+                              setIsLong(true);
+                            }
+                          }}
+                        ></video>
+                        <div
+                          class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2
+                            rounded-lg bg-black/50 p-1 text-white/80"
+                        >
+                          <IconPlayArrow class="size-8" />
+                        </div>
+                      </a>
                     </Match>
                     <Match
                       when={cache().mimetype?.startsWith(
                         "audio/",
                       )}
                     >
-                      <FileMessageTitle
-                        type="audio"
+                      <Title
                         name={props.message.fileName}
+                        type={cache().mimetype}
                       />
                       <audio
-                        class=""
                         controls
                         src={url}
-                        onCanPlay={() => props.onLoad?.()}
+                        onLoadedMetadata={() =>
+                          props.onLoad?.()
+                        }
                       />
                     </Match>
                   </Switch>

@@ -14,11 +14,11 @@ import {
   ModalOptions,
 } from "./base";
 
-const BaseDialog: Component<BaseModalProps> = (props) => {
+const BaseDialog: Component<BaseModalProps<any>> = (props) => {
   return (
     <Dialog
       open={props.isOpen}
-      onOpenChange={() => props.onClose()}
+      onOpenChange={() => props.onCancel?.()}
     >
       <DialogContent
         class={cn(

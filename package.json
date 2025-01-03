@@ -1,7 +1,8 @@
 {
   "name": "weblink",
   "type": "module",
-  "version": "0.9.0",
+  "description": "A P2P web chat and file transfer, file synchronization application using WebRTC",
+  "version": "0.10.3",
   "license": "MIT",
   "author": {
     "name": "99percentpeople",
@@ -27,7 +28,6 @@
     "@material-symbols/svg-400": "^0.24.0",
     "@material-symbols/svg-700": "^0.24.0",
     "@solid-primitives/date": "^2.0.24",
-    "@solid-primitives/devices": "^1.2.6",
     "@solid-primitives/i18n": "^2.1.1",
     "@solid-primitives/permission": "^1.2.6",
     "@solid-primitives/resize-observer": "^2.0.26",
@@ -44,6 +44,7 @@
     "fflate": "^0.8.2",
     "firebase": "^10.13.2",
     "photoswipe": "^5.4.4",
+    "photoswipe-video-plugin": "^1.0.2",
     "postcss": "^8.4.49",
     "qrcode": "^1.5.4",
     "solid-js": "^1.9.3",

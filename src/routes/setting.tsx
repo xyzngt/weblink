@@ -6,8 +6,6 @@ import {
   For,
   Show,
 } from "solid-js";
-
-import { optional } from "@/libs/core/utils/optional";
 import {
   Switch,
   SwitchControl,
@@ -19,23 +17,6 @@ import {
   parseTurnServer,
   setClientProfile,
 } from "@/libs/core/store";
-import {
-  createCameras,
-  createMicrophones,
-  createSpeakers,
-} from "@solid-primitives/devices";
-
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  localStream,
-  setDisplayStream,
-} from "@/libs/stream";
 import { ThemeToggle } from "@/components/theme-toggle";
 import {
   Slider,
@@ -52,7 +33,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { textareaAutoResize } from "@/libs/hooks/input-resize";
-import { createStore, reconcile } from "solid-js/store";
+import { reconcile } from "solid-js/store";
 import { LocaleSelector, t } from "@/i18n";
 import {
   TurnServerOptions,
@@ -62,6 +43,8 @@ import {
   getDefaultAppOptions,
   backgroundImage,
   defaultWebsocketUrl,
+  parseTurnServers,
+  stringifyTurnServers,
 } from "@/options";
 import createAboutDialog from "@/components/about-dialog";
 import { Button } from "@/components/ui/button";
@@ -78,8 +61,6 @@ import { toast } from "solid-sonner";
 import { Input } from "@/components/ui/input";
 import { cacheManager } from "@/libs/services/cache-serivce";
 import { v4 } from "uuid";
-import { makePersisted } from "@solid-primitives/storage";
-import { createPermission } from "@solid-primitives/permission";
 import {
   Collapsible,
   CollapsibleContent,
@@ -90,71 +71,7 @@ import { checkIceServerAvailability } from "@/libs/core/utils/turn";
 import { createElementSize } from "@solid-primitives/resize-observer";
 import DropArea from "@/components/drop-area";
 import { catchErrorAsync } from "@/libs/catch";
-type MediaDeviceInfoType = Omit<MediaDeviceInfo, "toJSON">;
-
-export const [devices, setDevices] = makePersisted(
-  createStore<{
-    camera: MediaDeviceInfoType | null;
-    microphone: MediaDeviceInfoType | null;
-    speaker: MediaDeviceInfoType | null;
-  }>({
-    camera: null,
-    microphone: null,
-    speaker: null,
-  }),
-  {
-    storage: localStorage,
-    name: "devices",
-  },
-);
-
-function parseTurnServers(
-  input: string,
-): TurnServerOptions[] {
-  if (input.trim() === "") return [];
-
-  return input
-    .split("\n")
-    .map((line, index) => {
-      if (line.trim() === "") return null;
-      const parts = line.split("|");
-      if (parts.length !== 4)
-        throw Error(
-          `config error, line ${index + 1} should be 4 parts`,
-        );
-      const [url, username, password, authMethod] =
-        parts.map((part) => part.trim());
-      const validAuthMethods = [
-        "longterm",
-        "hmac",
-        "cloudflare",
-      ];
-      if (!validAuthMethods.includes(authMethod)) {
-        throw Error(
-          `auth method error, line ${index + 1} given ${authMethod} expected ${validAuthMethods.join(
-            " or ",
-          )}`,
-        );
-      }
-      return {
-        url,
-        username,
-        password,
-        authMethod,
-      } satisfies TurnServerOptions;
-    })
-    .filter((turn) => turn !== null);
-}
-
-function stringifyTurnServers(
-  turnServers: TurnServerOptions[],
-): string {
-  return turnServers
-    .map((turn) => {
-      return `${turn.url}|${turn.username}|${turn.password}|${turn.authMethod}`;
-    })
-    .join("\n");
-}
+import { cn } from "@/libs/cn";
 
 export default function Settings() {
   const { open, Component: AboutDialogComponent } =
@@ -163,6 +80,10 @@ export default function Settings() {
     open: openResetOptionsDialog,
     Component: ResetOptionsDialogComponent,
   } = createResetOptionsDialog();
+  const {
+    open: openClearServiceWorkerCacheDialog,
+    Component: ClearServiceWorkerCacheDialogComponent,
+  } = createClearServiceWorkerCacheDialog();
   const [imageHole, setImageHole] =
     createSignal<HTMLElement | null>(null);
   const size = createElementSize(imageHole);
@@ -173,10 +94,15 @@ export default function Settings() {
     ).getPropertyValue("--radius");
   });
 
+  const turnServersValue = createMemo(() => {
+    return stringifyTurnServers(appOptions.servers.turns);
+  });
+
   return (
     <>
       <AboutDialogComponent />
       <ResetOptionsDialogComponent />
+      <ClearServiceWorkerCacheDialogComponent />
       <div
         class="container relative bg-background/80 backdrop-blur
           [mask:url(#bg-image-mask)]"
@@ -401,7 +327,7 @@ export default function Settings() {
 
           <div class="flex flex-col gap-2">
             <Switch
-              disabled={clientProfile.firstTime}
+              disabled={clientProfile.initalJoin}
               class="flex items-center justify-between"
               checked={clientProfile.autoJoin}
               onChange={(isChecked) =>
@@ -437,38 +363,52 @@ export default function Settings() {
               }}
               value={
                 appOptions.servers.stuns.join("\n") +
-                (appOptions.servers.stuns.length > 0
-                  ? "\n"
-                  : "")
+                (appOptions.servers.stuns ? "\n" : "")
               }
-              onChange={(ev) =>
-                setAppOptions(
-                  "servers",
-                  "stuns",
-                  reconcile(
-                    ev.currentTarget.value
-                      .trim()
-                      .split("\n"),
-                  ),
-                )
-              }
+              onChange={(ev) => {
+                const value = ev.currentTarget.value
+                  .trim()
+                  .split("\n")
+                  .filter((v) => v.trim() !== "");
+                setAppOptions("servers", "stuns", value);
+              }}
             />
             <p class="muted">
               {t(
                 "setting.connection.stun_servers.description",
               )}
             </p>
-            <Show
-              when={
-                appOptions.servers.stuns.length > 0 &&
-                appOptions.servers.stuns
-              }
-            >
-              {(stuns) => {
-                const [disabled, setDisabled] =
-                  createSignal(false);
-                return (
-                  <div class="self-end">
+            <div class="flex gap-2 self-end">
+              <Show
+                when={
+                  import.meta.env.VITE_STUN_SERVERS &&
+                  import.meta.env.VITE_STUN_SERVERS !==
+                    appOptions.servers.stuns.join(",")
+                }
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAppOptions(
+                      "servers",
+                      "stuns",
+                      getDefaultAppOptions().servers.stuns,
+                    );
+                  }}
+                >
+                  {t("common.action.reset")}
+                </Button>
+              </Show>
+              <Show
+                when={
+                  appOptions.servers.stuns.length > 0 &&
+                  appOptions.servers.stuns
+                }
+              >
+                {(stuns) => {
+                  const [disabled, setDisabled] =
+                    createSignal(false);
+                  return (
                     <Button
                       variant="outline"
                       disabled={disabled()}
@@ -476,7 +416,7 @@ export default function Settings() {
                         setDisabled(true);
                         const results: {
                           server: string;
-                          isAvailable: string;
+                          msg: string;
                         }[] = [];
 
                         const promises: Promise<void>[] =
@@ -496,7 +436,7 @@ export default function Settings() {
                               .then((isAvailable) => {
                                 results.push({
                                   server: stun,
-                                  isAvailable: isAvailable
+                                  msg: isAvailable
                                     ? "available"
                                     : "unavailable",
                                 });
@@ -504,7 +444,7 @@ export default function Settings() {
                               .catch((err) => {
                                 results.push({
                                   server: stun,
-                                  isAvailable: err.message,
+                                  msg: err.message,
                                 });
                               }),
                           );
@@ -515,9 +455,19 @@ export default function Settings() {
                           <div class="flex flex-col gap-2 text-xs">
                             <For each={results}>
                               {(result) => (
-                                <p>
-                                  {result.server}:
-                                  {result.isAvailable}
+                                <p
+                                  class={cn(
+                                    "space-x-1",
+                                    result.msg ===
+                                      "available"
+                                      ? "text-success-foreground"
+                                      : "text-error-foreground",
+                                  )}
+                                >
+                                  <span>
+                                    {result.server}:
+                                  </span>
+                                  <span>{result.msg}</span>
                                 </p>
                               )}
                             </For>
@@ -530,10 +480,10 @@ export default function Settings() {
                         "common.action.check_availability",
                       )}
                     </Button>
-                  </div>
-                );
-              }}
-            </Show>
+                  );
+                }}
+              </Show>
+            </div>
           </label>
           <label class="flex flex-col gap-2">
             <Label>
@@ -555,12 +505,8 @@ export default function Settings() {
                 "turn:turn1.example.com:3478|user1|pass1|longterm\nturns:turn2.example.com:5349|user2|pass2|hmac\nname|TURN_TOKEN_ID|API_TOKEN|cloudflare"
               }
               value={
-                stringifyTurnServers(
-                  appOptions.servers.turns,
-                ) +
-                (appOptions.servers.turns.length > 0
-                  ? "\n"
-                  : "")
+                turnServersValue() +
+                (turnServersValue() ? "\n" : "")
               }
               onChange={(ev) => {
                 try {
@@ -587,18 +533,38 @@ export default function Settings() {
                 "setting.connection.turn_servers.description",
               )}
             </p>
-            <Show
-              when={
-                appOptions.servers.turns.length > 0 &&
-                appOptions.servers.turns
-              }
-            >
-              {(turns) => {
-                const [disabled, setDisabled] =
-                  createSignal(false);
-                return (
-                  <Show when={turns().length > 0}>
-                    <div class="self-end">
+            <div class="flex gap-2 self-end">
+              <Show
+                when={
+                  import.meta.env.VITE_TURN_SERVERS &&
+                  import.meta.env.VITE_TURN_SERVERS !==
+                    turnServersValue().split("\n").join(",")
+                }
+              >
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAppOptions(
+                      "servers",
+                      "turns",
+                      getDefaultAppOptions().servers.turns,
+                    );
+                  }}
+                >
+                  {t("common.action.reset")}
+                </Button>
+              </Show>
+              <Show
+                when={
+                  appOptions.servers.turns.length > 0 &&
+                  appOptions.servers.turns
+                }
+              >
+                {(turns) => {
+                  const [disabled, setDisabled] =
+                    createSignal(false);
+                  return (
+                    <Show when={turns().length > 0}>
                       <Button
                         variant="outline"
                         disabled={disabled()}
@@ -606,7 +572,7 @@ export default function Settings() {
                           setDisabled(true);
                           const results: {
                             server: string;
-                            isAvailable: string;
+                            msg: string;
                           }[] = [];
 
                           const promises: Promise<void>[] =
@@ -620,7 +586,7 @@ export default function Settings() {
                             if (error) {
                               results.push({
                                 server: turn.url,
-                                isAvailable: error.message,
+                                msg: error.message,
                               });
                               continue;
                             }
@@ -636,7 +602,7 @@ export default function Settings() {
                                 .then((isAvailable) => {
                                   results.push({
                                     server: turn.url,
-                                    isAvailable: isAvailable
+                                    msg: isAvailable
                                       ? "available"
                                       : "unavailable",
                                   });
@@ -644,8 +610,7 @@ export default function Settings() {
                                 .catch((error) => {
                                   results.push({
                                     server: turn.url,
-                                    isAvailable:
-                                      error.message,
+                                    msg: error.message,
                                   });
                                 }),
                             );
@@ -661,9 +626,21 @@ export default function Settings() {
                             <div class="flex flex-col gap-2 text-xs">
                               <For each={results}>
                                 {(result) => (
-                                  <p>
-                                    {result.server}:
-                                    {result.isAvailable}
+                                  <p
+                                    class={cn(
+                                      "space-x-1",
+                                      result.msg ===
+                                        "available"
+                                        ? "text-success-foreground"
+                                        : "text-error-foreground",
+                                    )}
+                                  >
+                                    <span>
+                                      {result.server}:
+                                    </span>
+                                    <span>
+                                      {result.msg}
+                                    </span>
                                   </p>
                                 )}
                               </For>
@@ -675,11 +652,11 @@ export default function Settings() {
                           "common.action.check_availability",
                         )}
                       </Button>
-                    </div>
-                  </Show>
-                );
-              }}
-            </Show>
+                    </Show>
+                  );
+                }}
+              </Show>
+            </div>
           </label>
           <div class="flex flex-col gap-2">
             <Switch
@@ -929,7 +906,7 @@ export default function Settings() {
             </p>
           </div>
 
-          <MediaSetting />
+          {/* <MediaSetting /> */}
           <Collapsible>
             <CollapsibleTrigger
               as={(props: ComponentProps<"div">) => (
@@ -1257,22 +1234,96 @@ export default function Settings() {
             <Button
               variant="destructive"
               onClick={async () => {
-                if (
-                  (await openResetOptionsDialog()).result
-                ) {
-                  setAppOptions(getDefaultAppOptions());
-                  toast.success(
-                    t(
-                      "common.notification.reset_options_success",
-                    ),
-                  );
+                const { result } =
+                  await openResetOptionsDialog();
+                if (!result) {
+                  return;
                 }
+                setAppOptions(getDefaultAppOptions());
+                toast.success(
+                  t(
+                    "common.notification.reset_options_success",
+                  ),
+                );
               }}
               class="gap-1"
             >
               <IconDelete class="size-4" />
               {t("setting.about.reset_options")}
             </Button>
+
+            <Show
+              when={
+                typeof window !== "undefined" &&
+                "caches" in window &&
+                "serviceWorker" in navigator
+              }
+            >
+              <Button
+                variant="destructive"
+                class="gap-1"
+                onClick={async () => {
+                  const { result } =
+                    await openClearServiceWorkerCacheDialog();
+                  if (!result) {
+                    return;
+                  }
+
+                  try {
+                    await window.caches
+                      .keys()
+                      .then((keys) => {
+                        return Promise.all(
+                          keys.map((key) => {
+                            return window.caches.delete(
+                              key,
+                            );
+                          }),
+                        );
+                      });
+                    await navigator.serviceWorker
+                      .getRegistrations()
+                      .then((registrations) => {
+                        return Promise.all(
+                          registrations.map(
+                            (registration) => {
+                              return registration.unregister();
+                            },
+                          ),
+                        );
+                      });
+                    toast.success(
+                      t(
+                        "common.notification.clear_cache_success",
+                      ),
+                    );
+                    if (result.reload) {
+                      window.location.reload();
+                    }
+                  } catch (error) {
+                    if (error instanceof Error) {
+                      toast.error(
+                        t(
+                          "common.notification.clear_cache_failed",
+                          { error: error.message },
+                        ),
+                      );
+                    } else {
+                      toast.error(
+                        t(
+                          "common.notification.unknown_error",
+                        ),
+                      );
+                    }
+                  }
+                }}
+              >
+                <IconDelete class="size-4" />
+                {t(
+                  "setting.about.clear_service_worker_cache",
+                )}
+              </Button>
+            </Show>
 
             <Button onClick={() => open()} class="gap-1">
               <IconInfo class="size-4" />
@@ -1313,204 +1364,62 @@ const createResetOptionsDialog = () => {
   };
 };
 
-const MediaSetting: Component = () => {
-  if (!navigator.mediaDevices) {
-    return <></>;
-  }
-  const cameras = createCameras();
-  const microphones = createMicrophones();
-  const speakers = createSpeakers();
-
-  const availableCameras = createMemo(() =>
-    cameras().filter((cam) => cam.deviceId !== ""),
-  );
-  const availableMicrophones = createMemo(() =>
-    microphones().filter((mic) => mic.deviceId !== ""),
-  );
-  const availableSpeakers = createMemo(() =>
-    speakers().filter((speaker) => speaker.deviceId !== ""),
-  );
-
-  createEffect(() => {
-    if (
-      !availableCameras().find(
-        (cam) => cam.deviceId === devices.camera?.deviceId,
-      )
-    ) {
-      setDevices("camera", availableCameras()[0] ?? null);
-    }
-    if (
-      !availableMicrophones().find(
-        (mic) =>
-          mic.deviceId === devices.microphone?.deviceId,
-      )
-    ) {
-      setDevices(
-        "microphone",
-        availableMicrophones()[0] ?? null,
-      );
-    }
-    if (
-      !availableSpeakers().find(
-        (speaker) =>
-          speaker.deviceId === devices.speaker?.deviceId,
-      )
-    ) {
-      setDevices("speaker", availableSpeakers()[0] ?? null);
-    }
+const createClearServiceWorkerCacheDialog = () => {
+  const [reload, setReload] = createSignal(true);
+  const { open, close, submit, Component } = createDialog<{
+    reload: boolean;
+  }>({
+    title: () =>
+      t("common.clear_service_worker_cache_dialog.title"),
+    description: () =>
+      t(
+        "common.clear_service_worker_cache_dialog.description",
+      ),
+    content: () => (
+      <>
+        <p>
+          {t(
+            "common.clear_service_worker_cache_dialog.content",
+          )}
+        </p>
+        <p>
+          <Switch
+            class="flex items-center justify-between text-sm"
+            checked={reload()}
+            onChange={(isChecked) => setReload(isChecked)}
+          >
+            <SwitchLabel>
+              {t(
+                "common.clear_service_worker_cache_dialog.reload",
+              )}
+            </SwitchLabel>
+            <SwitchControl>
+              <SwitchThumb />
+            </SwitchControl>
+          </Switch>
+        </p>
+      </>
+    ),
+    cancel: (
+      <Button onClick={() => close()}>
+        {t("common.action.cancel")}
+      </Button>
+    ),
+    confirm: (
+      <Button
+        variant="destructive"
+        onClick={() =>
+          submit({
+            reload: reload(),
+          })
+        }
+      >
+        {t("common.action.confirm")}
+      </Button>
+    ),
   });
-  const cameraPermission = createPermission("camera");
-  const microphonePermission =
-    createPermission("microphone");
-
-  return (
-    <>
-      <h3 id="media" class="h3">
-        {t("setting.media.title")}
-      </h3>
-      <div class="flex flex-col gap-2">
-        <Show
-          when={
-            cameraPermission() === "prompt" ||
-            microphonePermission() === "prompt"
-          }
-          fallback={
-            <Show
-              when={
-                cameraPermission() === "denied" ||
-                microphonePermission() === "denied"
-              }
-            >
-              <p class="text-sm text-destructive">
-                {t(
-                  "setting.media.request_permission.fallback_description",
-                )}
-              </p>
-            </Show>
-          }
-        >
-          <Button
-            onClick={() => {
-              navigator.mediaDevices
-                .getUserMedia({
-                  video: true,
-                  audio: true,
-                })
-                .then((stream) => {
-                  setDisplayStream(stream);
-                })
-                .catch((error) => {
-                  console.error(error);
-                  toast.error(error.message);
-                });
-            }}
-          >
-            {t("setting.media.request_permission.title")}
-          </Button>
-          <p class="muted">
-            {t(
-              "setting.media.request_permission.description",
-            )}
-          </p>
-        </Show>
-      </div>
-      <Show when={availableCameras().length !== 0}>
-        <label class="flex flex-col gap-2">
-          <Label>{t("setting.media.camera.title")}</Label>
-          <Select
-            defaultValue={devices.camera}
-            value={devices.camera}
-            onChange={(value) => {
-              setDevices("camera", value);
-            }}
-            options={cameras()}
-            optionTextValue="label"
-            optionValue="deviceId"
-            itemComponent={(props) => (
-              <SelectItem
-                item={props.item}
-                value={props.item.rawValue?.deviceId}
-              >
-                {props.item.rawValue?.label}
-              </SelectItem>
-            )}
-          >
-            <SelectTrigger>
-              <SelectValue<MediaDeviceInfoType>>
-                {(state) => state.selectedOption().label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent />
-          </Select>
-        </label>
-      </Show>
-      <Show when={availableMicrophones().length !== 0}>
-        <label class="flex flex-col gap-2">
-          <Label>
-            {t("setting.media.microphone.title")}
-          </Label>
-          <Select
-            value={devices.microphone}
-            onChange={(value) => {
-              setDevices("microphone", value);
-            }}
-            options={microphones()}
-            optionTextValue="label"
-            optionValue="deviceId"
-            itemComponent={(props) => (
-              <SelectItem item={props.item}>
-                {props.item.rawValue?.label}
-              </SelectItem>
-            )}
-          >
-            <SelectTrigger>
-              <SelectValue<MediaDeviceInfoType>>
-                {(state) => state.selectedOption().label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent />
-          </Select>
-        </label>
-      </Show>
-      <Show when={availableSpeakers().length !== 0}>
-        <label class="flex flex-col gap-2">
-          <Label>{t("setting.media.speaker.title")}</Label>
-          <Select
-            value={devices.speaker}
-            onChange={(value) => {
-              setDevices("speaker", value);
-            }}
-            options={speakers()}
-            optionTextValue="label"
-            optionValue="deviceId"
-            itemComponent={(props) => (
-              <SelectItem item={props.item}>
-                {props.item.rawValue?.label}
-              </SelectItem>
-            )}
-          >
-            <SelectTrigger>
-              <SelectValue<MediaDeviceInfoType>>
-                {(state) => state.selectedOption().label}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent />
-          </Select>
-        </label>
-      </Show>
-      <Show when={localStream()}>
-        <video
-          class="max-h-64 w-full object-contain"
-          muted
-          autoplay
-          controls
-          ref={(ref) => {
-            createEffect(() => {
-              ref.srcObject = localStream();
-            });
-          }}
-        />
-      </Show>
-    </>
-  );
+  return {
+    open,
+    Component,
+  };
 };

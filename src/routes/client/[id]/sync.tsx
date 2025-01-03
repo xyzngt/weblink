@@ -40,7 +40,6 @@ import { t } from "@/i18n";
 import {
   ChunkCacheInfo,
   ChunkMetaData,
-  FileMetaData,
   getTotalChunkCount,
 } from "@/libs/cache";
 import { cn } from "@/libs/cn";
@@ -89,16 +88,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { toast } from "solid-sonner";
 import { catchErrorAsync } from "@/libs/catch";
 import { canShareFile } from "@/libs/utils/can-share";
+import { IconFile } from "@/components/icon-file";
 
 type ChunkStatus =
   | "not_started"
   | "stopped"
   | "transferring"
   | "merging"
-  | "completed";
+  | "complete";
 
 const Sync = (props: RouteSectionProps) => {
   const { requestFile } = useWebRTC();
@@ -148,8 +147,15 @@ const Sync = (props: RouteSectionProps) => {
         />
       ),
       cell: (info) => (
-        <p class="max-w-xs overflow-hidden text-ellipsis">
-          {info.getValue()}
+        <p
+          class="max-w-xs space-x-1 overflow-hidden text-ellipsis
+            [&>*]:align-middle"
+        >
+          <IconFile
+            mimetype={info.row.original.mimetype}
+            class="inline size-4"
+          />
+          <span>{info.getValue()}</span>
         </p>
       ),
     }),
@@ -543,7 +549,7 @@ const Sync = (props: RouteSectionProps) => {
         if (info.isMerging) {
           setStatus("merging");
         } else if (info.isComplete) {
-          setStatus("completed");
+          setStatus("complete");
         } else if (transfer()) {
           setStatus("transferring");
         } else {
@@ -679,9 +685,9 @@ const Sync = (props: RouteSectionProps) => {
               },
               {
                 label: t(
-                  "common.file_table.status.completed",
+                  "common.file_table.status.complete",
                 ),
-                value: "completed",
+                value: "complete",
               },
             ]}
           />
@@ -740,7 +746,7 @@ const Sync = (props: RouteSectionProps) => {
                   <TableRow
                     onDblClick={() => {
                       const status = statuses()[row.index];
-                      if (status() === "completed") {
+                      if (status() === "complete") {
                         const file =
                           cacheManager.cacheInfo[
                             row.original.id

@@ -1,6 +1,6 @@
 @import "@fontsource-variable/inter";
 @import "@fontsource-variable/roboto-mono";
-
+@import "./styles/pswp.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

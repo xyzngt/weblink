@@ -42,6 +42,8 @@ const Spinner: Component<SpinnerProps> = (props) => {
     return filteredClasses;
   });
 
+  const leafNumber = 8;
+
   return (
     <span
       class={cn(
@@ -52,13 +54,13 @@ const Spinner: Component<SpinnerProps> = (props) => {
       )}
       {...rest}
     >
-      {Array.from({ length: 8 }).map((_, i) => (
+      {Array.from({ length: leafNumber }).map((_, i) => (
         <span
-          class="animate-spinner-leaf-fade absolute left-1/2 top-0 h-full
-            w-[12.5%]"
+          class="absolute left-1/2 top-0 h-full animate-spinner-leaf-fade"
           style={{
-            transform: `rotate(${i * 45}deg)`,
-            "animation-delay": `${-(7 - i) * 100}ms`,
+            transform: `rotate(${i * (360 / leafNumber)}deg)`,
+            "animation-delay": `${-(leafNumber - 1 - i) * 100}ms`,
+            width: `${100 / leafNumber}%`,
           }}
         >
           <span

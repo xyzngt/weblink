@@ -1,24 +1,19 @@
 import { Component, Match, Show, Switch } from "solid-js";
 import { t } from "@/i18n";
 import { sessionService } from "@/libs/services/session-service";
-import Logo from "../../../public/favicon.svg?component-solid";
-import {
-  createRoomDialog,
-  JoinRoomButton,
-} from "@/components/join-dialog";
+import { createRoomDialog } from "@/components/join-dialog";
 import { useWebRTC } from "@/libs/core/rtc-context";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/spinner";
-import { appOptions } from "@/options";
 import { clientProfile } from "@/libs/core/store";
 import {
-  IconEdit,
   IconEditSquare,
   IconLogin,
   IconLogout,
   IconShare,
 } from "@/components/icons";
 import { createQRCodeDialog } from "@/components/create-qrcode-dialog";
+import { toast } from "solid-sonner";
 const Client: Component = (props) => {
   const { joinRoom, roomStatus, leaveRoom } = useWebRTC();
   const {
@@ -35,12 +30,12 @@ const Client: Component = (props) => {
       <QRCodeDialogComponent />
 
       <div
-        class="absolute left-1/2 top-1/2 flex w-full max-w-xs
+        class="absolute left-1/2 top-1/2 flex max-h-[100vh] w-full max-w-xs
           -translate-x-1/2 -translate-y-1/2 flex-col items-stretch
-          gap-2 rounded-lg border border-border/50 bg-background/50
-          p-4 text-center backdrop-blur overflow-hidden max-h-[100vh]"
+          gap-2 overflow-hidden rounded-lg border border-border/50
+          bg-background/50 p-4 backdrop-blur"
       >
-        <Switch fallback>
+        <Switch>
           <Match
             when={
               sessionService.clientServiceStatus() ===
@@ -119,10 +114,12 @@ const Client: Component = (props) => {
               class="gap-2"
               variant="outline"
               onClick={async () => {
-                const result = (await openRoomDialog())
-                  .result;
+                const { result } = await openRoomDialog();
                 if (result) {
-                  joinRoom();
+                  joinRoom().catch((e) => {
+                    console.error(e);
+                    toast.error(e.message);
+                  });
                 }
               }}
             >
@@ -131,10 +128,15 @@ const Client: Component = (props) => {
                 {t("client.index.edit_profile")}
               </span>
             </Button>
-            <Show when={!clientProfile.firstTime}>
+            <Show when={!clientProfile.initalJoin}>
               <Button
                 class="gap-2"
-                onClick={() => joinRoom()}
+                onClick={() =>
+                  joinRoom().catch((e) => {
+                    console.error(e);
+                    toast.error(e.message);
+                  })
+                }
               >
                 <IconLogin class="size-6" />
                 <span class="w-full text-center">

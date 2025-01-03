@@ -21,7 +21,6 @@ import IconDelete from "@material-design-icons/svg/outlined/delete.svg?component
 import IconPersonOff from "@material-symbols/svg-400/outlined/person_off.svg?component-solid";
 import IconPerson from "@material-symbols/svg-400/outlined/person.svg?component-solid";
 import IconForum from "@material-symbols/svg-400/outlined/forum.svg?component-solid";
-import IconMeetingRoom from "@material-symbols/svg-400/outlined/meeting_room.svg?component-solid";
 import IconSettings from "@material-symbols/svg-400/outlined/settings.svg?component-solid";
 import IconFolder from "@material-symbols/svg-400/outlined/folder.svg?component-solid";
 import IconLogin from "@material-symbols/svg-400/outlined/login.svg?component-solid";
@@ -69,6 +68,30 @@ import IconPermContactCalendar from "@material-symbols/svg-400/outlined/perm_con
 import IconEdit from "@material-symbols/svg-400/outlined/edit.svg?component-solid";
 import IconEditSquare from "@material-symbols/svg-400/outlined/edit_square.svg?component-solid";
 import IconLink from "@material-symbols/svg-400/outlined/link.svg?component-solid";
+import IconPlayArrow from "@material-symbols/svg-400/outlined/play_arrow.svg?component-solid";
+import IconPause from "@material-symbols/svg-400/outlined/pause.svg?component-solid";
+import IconMonitor from "@material-symbols/svg-400/outlined/monitor.svg?component-solid";
+import IconScreenShare from "@material-symbols/svg-400/outlined/screen_share.svg?component-solid";
+import IconStopScreenShare from "@material-symbols/svg-400/outlined/stop_screen_share.svg?component-solid";
+import IconImageFilled from "@material-symbols/svg-400/outlined/image-fill.svg?component-solid";
+import IconFolderZipFilled from "@material-symbols/svg-400/outlined/folder_zip-fill.svg?component-solid";
+import IconVideoCam from "@material-symbols/svg-400/outlined/videocam.svg?component-solid";
+import IconVideoCamOff from "@material-symbols/svg-400/outlined/videocam_off.svg?component-solid";
+import IconWindow from "@material-symbols/svg-700/outlined/window.svg?component-solid";
+import IconCropSquare from "@material-symbols/svg-700/outlined/crop_square.svg?component-solid";
+import IconMic from "@material-symbols/svg-400/outlined/mic.svg?component-solid";
+import IconMicOff from "@material-symbols/svg-400/outlined/mic_off.svg?component-solid";
+import IconVolumeOff from "@material-symbols/svg-400/outlined/volume_off.svg?component-solid";
+import IconVolumeUp from "@material-symbols/svg-400/outlined/volume_up.svg?component-solid";
+import IconVolumeUpFilled from "@material-symbols/svg-400/outlined/volume_up-fill.svg?component-solid";
+import IconFullscreen from "@material-symbols/svg-400/outlined/fullscreen.svg?component-solid";
+import IconFullscreenExit from "@material-symbols/svg-400/outlined/fullscreen_exit.svg?component-solid";
+import IconPictureInPicture from "@material-symbols/svg-400/outlined/picture_in_picture.svg?component-solid";
+import IconPictureInPictureOff from "@material-symbols/svg-400/outlined/picture_in_picture_off.svg?component-solid";
+import IconPip from "@material-symbols/svg-400/outlined/pip.svg?component-solid";
+import IconPipExit from "@material-symbols/svg-400/outlined/pip_exit.svg?component-solid";
+import IconMeetingRoom from "@material-symbols/svg-400/outlined/meeting_room.svg?component-solid";
+import IconResetWrench from "@material-symbols/svg-400/outlined/reset_wrench.svg?component-solid";
 export {
   IconDownload,
   IconDelete,
@@ -93,7 +116,6 @@ export {
   IconPersonOff,
   IconPerson,
   IconForum,
-  IconMeetingRoom,
   IconSettings,
   IconFolder,
   IconLogin,
@@ -141,4 +163,28 @@ export {
   IconEdit,
   IconEditSquare,
   IconLink,
+  IconPlayArrow,
+  IconPause,
+  IconMonitor,
+  IconScreenShare,
+  IconStopScreenShare,
+  IconImageFilled,
+  IconFolderZipFilled,
+  IconVideoCam,
+  IconVideoCamOff,
+  IconWindow,
+  IconCropSquare,
+  IconMic,
+  IconMicOff,
+  IconVolumeOff,
+  IconVolumeUp,
+  IconVolumeUpFilled,
+  IconFullscreen,
+  IconFullscreenExit,
+  IconPictureInPicture,
+  IconPictureInPictureOff,
+  IconPip,
+  IconPipExit,
+  IconMeetingRoom,
+  IconResetWrench,
 };

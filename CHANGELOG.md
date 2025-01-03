@@ -2,11 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.9.0] - 2024-12-04
+## [0.10.3] - 2024-12-14
+
+### New Features
+
+- Screen Sharing: Add volume indicator 屏幕共享添加音量指示器
+
+- Screen Sharing: Add Mute button 屏幕共享添加静音按钮
+
+- Screen Sharing: Add media selection dialog 屏幕共享添加媒体选择对话框
+
+- Screen Sharing: Add media constraints control 屏幕共享添加媒体约束控制
+
+- Screen Sharing: Add global audio player 屏幕共享添加全局音频播放器
+
+- Screen Sharing: Add fullscreen and pip mode 屏幕共享添加全屏和画中画模式
+
+## [0.9.2] - 2024-12-09
+
+### New Features
+
+- Add starter message 添加开始指引
 
 ### Improvements
 
 - Improve the UI of the client page 优化客户端页面 UI
+
+- Improve the video message UI 优化视频消息 UI
 
 ## [0.8.0] - 2024-11-29
 

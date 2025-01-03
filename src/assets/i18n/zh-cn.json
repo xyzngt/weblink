@@ -108,7 +108,10 @@
         "description": "更改应用程序的扬声器"
       },
       "request_permission": {
-        "title": "请求媒体权限",
+        "camera_title": "请求摄像头权限",
+        "microphone_title": "请求麦克风权限",
+        "camera_success": "摄像头权限已授予",
+        "microphone_success": "麦克风权限已授予",
         "description": "请求媒体权限以使用媒体设置，如果请求权限后无法选择媒体设备，请尝试刷新页面",
         "fallback_description": "请允许浏览器使用摄像头和麦克风"
       }
@@ -142,7 +145,8 @@
     },
     "about": {
       "title": "关于",
-      "reset_options": "重置选项"
+      "reset_options": "重置选项",
+      "clear_service_worker_cache": "清除 Service Worker 缓存"
     }
   },
   "cache": {
@@ -199,7 +203,7 @@
     "message_error": "发生错误"
   },
   "video": {
-    "title": "视频通话",
+    "title": "屏幕共享",
     "device": {
       "screen": "屏幕",
       "camera": "摄像头"
@@ -243,7 +247,7 @@
       "avatar_url": "头像 URL",
       "password": {
         "title": "房间密码",
-        "description": "可选，房间的密码，用于加密客户端之间的信令消息，防止其他人加入，你可以点击按钮生成一个强密码"
+        "description": "可选，房间的密码，用于加密客户端之间的信令消息，防止其他人加入，你可以点击按钮生成一个墙密码"
       },
       "auto_join": "下次自动加入"
     },
@@ -263,7 +267,13 @@
     "reset_options_dialog": {
       "title": "重置选项",
       "description": "重置后将无法恢复，请谨慎操作",
-      "content": "确认重置选项？"
+      "content": "这个操作会重置所有选项，但不会清除用户数据"
+    },
+    "clear_service_worker_cache_dialog": {
+      "title": "清除 Service Worker 缓存",
+      "description": "这个操作会清除 Service Worker 缓存",
+      "content": "如果你在页面更新后遇到问题，可以清除缓存后重试",
+      "reload": "清除后重新加载页面"
     },
     "file_table": {
       "columns": {
@@ -280,8 +290,8 @@
         "stopped": "已停止",
         "transferring": "传输中",
         "merging": "合并中",
-        "completed": "已完成",
-        "incompleted": "未完成"
+        "complete": "已完成",
+        "incomplete": "未完成"
       },
       "filter": {
         "clear_filters": "清空过滤器",
@@ -312,6 +322,7 @@
       "leave": "离开"
     },
     "action": {
+      "apply": "应用",
       "copy": "复制",
       "copy_link": "复制链接",
       "copy_file_name": "复制文件名",
@@ -323,9 +334,9 @@
       "cancel": "取消",
       "confirm": "确定",
       "actions": "操作",
-      "close": "关闭",
-      "change": "更改",
       "open": "打开",
+      "change": "更改",
+      "close": "关闭",
       "preview": "预览",
       "send": "发送",
       "view": "查看",
@@ -341,7 +352,19 @@
       "resume": "恢复",
       "add_folder": "添加文件夹",
       "check_availability": "检查可用性",
-      "reload": "重新加载"
+      "reload": "重新加载",
+      "mute": "静音",
+      "unmute": "恢复",
+      "select": "选择",
+      "settings": "设置",
+      "fullscreen": "全屏",
+      "exit_fullscreen": "退出全屏",
+      "switch_fullscreen": "切换全屏",
+      "picture_in_picture": "画中画",
+      "exit_picture_in_picture": "退出画中画",
+      "switch_picture_in_picture": "切换画中画",
+      "stop": "停止",
+      "continue": "继续"
     },
     "clipboard_history": {
       "title": "剪贴板历史"
@@ -353,8 +376,8 @@
     },
     "about_dialog": {
       "title": "关于 Weblink",
-      "description1": "Weblink 是一款基于 WebRTC 的P2P聊天和文件传输工具，它可以帮助你快速、安全地传输文件。",
-      "description2": "提供文件同步、进度显示、断点续传、文件夹传输、剪贴板传输、文件缓存、视频通话等多种功能。",
+      "description1": "Weblink 是一款基于浏览器的P2P聊天、文件传输、文件同步和屏幕共享工具。",
+      "description2": "它提供文件同步、进度显示、断点续传、文件夹传输、剪贴板传输、文件缓存、视频通话等多种功能。",
       "description3": "此项目是纯Web应用，无需安装。功能较多实现比较复杂，如果遇到不稳定的情况，请尝试刷新页面，信息不会丢失。",
       "disclaimer": "免责声明：此应用使用P2P技术，所有数据储存在用户客户端（浏览器）中，服务器不存储任何用户数据，只负责转发信令。用户应自行承担使用风险，开发者不对任何数据丢失或隐私泄露负责。",
       "star_repo": "如果您喜欢这个项目，欢迎在 GitHub 上给我一个 ⭐！",
@@ -363,6 +386,44 @@
       "license": "许可证",
       "github": "GitHub 仓库"
     },
+    "media_selection_dialog": {
+      "title": "媒体选择",
+      "screen": "屏幕",
+      "media_device": "媒体设备",
+      "camera": "摄像头",
+      "microphone": "麦克风",
+      "speaker": "扬声器",
+      "enable_screen": "启用屏幕",
+      "enable_camera": "启用摄像头",
+      "enable_microphone": "启用麦克风",
+      "enable_speaker": "启用扬声器",
+      "no_camera_available": "没有摄像头可用",
+      "no_microphone_available": "没有麦克风可用",
+      "no_speaker_available": "没有扬声器可用",
+      "request_camera_permission": "请求摄像头权限",
+      "request_microphone_permission": "请求麦克风权限",
+      "select_speaker": "选择扬声器 (自动)",
+      "select_microphone": "选择麦克风 (自动)",
+      "select_camera": "选择摄像头 (自动)",
+      "open_screen": "打开屏幕",
+      "open_media_device": "打开媒体设备",
+      "current": "当前",
+      "preview": "预览",
+      "apply_constraints": "应用媒体约束",
+      "apply_constraints_description": "某些约束可能不支持动态更改，请选择新的流以应用",
+      "preset_constraints": "预设媒体约束",
+      "microphone_constraints": "麦克风约束",
+      "speaker_constraints": "扬声器约束",
+      "not_support_display_media": "您的浏览器不支持屏幕共享",
+      "not_support_user_media": "您的浏览器不支持媒体设备",
+      "constraints": {
+        "noise_suppression": "噪音抑制",
+        "echo_cancellation": "回声消除",
+        "auto_gain_control": "自动增益控制",
+        "voice_isolation": "语音隔离",
+        "suppress_local_audio_playback": "抑制本地音频播放"
+      }
+    },
     "notification": {
       "copy_success": "复制成功",
       "link_copy_success": "链接复制成功",
@@ -370,13 +431,15 @@
       "reset_options_success": "选项重置成功",
       "unknown_error": "未知错误",
       "processing_files": "处理文件中...",
-      "new_version_available": "新版本可用，点击重新加载",
-      "share_failed": "分享失败，错误: {{error}}"
+      "new_version_available": "新版本可用",
+      "share_failed": "分享失败，错误: {{error}}",
+      "clear_cache_success": "Cache Storage 和 Service Worker 清除成功",
+      "clear_cache_failed": "清除 Cache Storage 和 Service Worker 失败，错误: {{error}}"
     },
     "nav": {
       "chat": "聊天",
       "file_cache": "文件缓存",
-      "video_conference": "视频会议",
+      "screen_sharing": "屏幕共享",
       "settings": "设置",
       "join_room": "加入房间",
       "leave_room": "离开房间",
@@ -384,6 +447,17 @@
     },
     "timeago": {
       "just_now": "刚刚"
+    },
+    "starter": {
+      "starter_name": "欢迎",
+      "welcome": "欢迎使用weblink，这是一个可以直接在浏览器中运行的聊天、文件传输、文件同步和屏幕共享工具。",
+      "tip1": "请按以下步骤开始：\n 1. 设置你的名称和头像。\n 2. 设置房间ID和密码以加密客户端之间的信令消息，防止其他人加入。\n 3. 分享房间资料以邀请其他人加入房间。",
+      "tip2": "如果遇到任何问题或有任何建议，请在GitHub上提交issue, 或加入QQ群反馈：762463759"
+    },
+    "error_boundary": {
+      "title": "发生错误",
+      "description": "请尝试刷新页面或联系开发者，错误信息如下：",
+      "reset": "重置"
     }
   }
 }

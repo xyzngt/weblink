@@ -7,7 +7,7 @@ import { UpdateClientOptions } from "./client/firebase-client-service";
 import { EventHandler } from "@/libs/utils/event-emitter";
 
 export type ClientServiceEventMap = {
-  "status-change":
+  "statuschange":
     | "connected"
     | "connecting"
     | "disconnected";

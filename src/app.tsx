@@ -3,7 +3,9 @@ import {
   useSearchParams,
 } from "@solidjs/router";
 import {
+  createEffect,
   createSignal,
+  ErrorBoundary,
   onCleanup,
   onMount,
   ParentProps,
@@ -16,10 +18,10 @@ import {
   ColorModeProvider,
   ColorModeScript,
   createLocalStorageManager,
-  useColorMode,
 } from "@kobalte/core";
 import {
   clientProfile,
+  getRandomAvatar,
   setClientProfile,
 } from "./libs/core/store";
 import { useWebRTC } from "./libs/core/rtc-context";
@@ -32,9 +34,15 @@ import { toast } from "solid-sonner";
 import { sessionService } from "./libs/services/session-service";
 import createAboutDialog from "./components/about-dialog";
 import {
+  appInitialized,
   appOptions,
   backgroundImage,
+  localeOptionsMap,
+  localFromLanguage,
+  setAppInitialized,
   setAppOptions,
+  setStarterMessageSent,
+  starterMessageSent,
   TurnServerOptions,
 } from "./options";
 import { MetaProvider, Style } from "@solidjs/meta";
@@ -48,21 +56,31 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "./components/ui/avatar";
-import { getInitials } from "./libs/utils/name";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "./components/ui/hover-card";
-import { QRCode } from "./components/qrcode";
-import { Button } from "./components/ui/button";
-import { t } from "./i18n";
 import {
+  IconContentCopy,
   IconHome,
   IconLink,
   IconPermContactCalendar,
+  IconResetWrench,
 } from "./components/icons";
+import { getInitials } from "./libs/utils/name";
+import { Button } from "./components/ui/button";
+import { t, isDictLoaded } from "./i18n";
+import { v4 } from "uuid";
 import { createIsMobile } from "./libs/hooks/create-mobile";
+import { messageStores } from "./libs/core/messge";
+import { sleep } from "./libs/utils/sleep";
+import { Label } from "./components/ui/label";
+import { Textarea } from "./components/ui/textarea";
+import {
+  AudioPlayerProvider,
+  useAudioPlayer,
+} from "./components/audio-player";
 
 const createWakeLock = () => {
   const [wakeLock, setWakeLock] =
@@ -131,7 +149,7 @@ const InnerApp = (props: ParentProps) => {
   } = createAboutDialog();
 
   const onJoinRoom = async () => {
-    if (clientProfile.firstTime) {
+    if (clientProfile.initalJoin) {
       const result = await openRoomDialog();
       if (result.cancel) {
         return;
@@ -201,7 +219,7 @@ const InnerApp = (props: ParentProps) => {
       );
     }
     if (reset) {
-      setClientProfile("firstTime", true);
+      setClientProfile("initalJoin", true);
     }
 
     if (search.join) {
@@ -217,11 +235,65 @@ const InnerApp = (props: ParentProps) => {
     }
   };
 
+  const initStarterMessage = async () => {
+    const instructorClientId = v4();
+    const instructorName = t("common.starter.starter_name");
+    messageStores.setClient({
+      clientId: instructorClientId,
+      name: instructorName,
+      avatar: getRandomAvatar(instructorName),
+    });
+
+    await messageStores.addMessage({
+      id: v4(),
+      type: "text",
+      client: instructorClientId,
+      target: clientProfile.clientId,
+      data: t("common.starter.welcome"),
+      createdAt: Date.now(),
+      status: "received",
+    });
+    await sleep(1);
+    await messageStores.addMessage({
+      id: v4(),
+      type: "text",
+      client: instructorClientId,
+      target: clientProfile.clientId,
+      data: t("common.starter.tip1"),
+      createdAt: Date.now(),
+      status: "received",
+    });
+    await sleep(1);
+    await messageStores.addMessage({
+      id: v4(),
+      type: "text",
+      client: instructorClientId,
+      target: clientProfile.clientId,
+      data: t("common.starter.tip2"),
+      createdAt: Date.now(),
+      status: "received",
+    });
+  };
+
   onMount(async () => {
     parseSearchParams();
+    if (!localeOptionsMap[appOptions.locale]) {
+      setAppOptions(
+        "locale",
+        localFromLanguage(navigator.language),
+      );
+    }
 
-    if (appOptions.showAboutDialog) {
+    if (!appInitialized()) {
+      setAppInitialized(true);
       openAboutDialog();
+    }
+  });
+
+  createEffect(() => {
+    if (isDictLoaded() && !starterMessageSent()) {
+      setStarterMessageSent(true);
+      initStarterMessage();
     }
   });
 
@@ -255,12 +327,14 @@ const InnerApp = (props: ParentProps) => {
   }
   const { roomStatus } = useWebRTC();
   const isMobile = createIsMobile();
+
   return (
     <>
       <RoomDialogComponent />
       <QRCodeDialogComponent />
       <AboutDialogComponent />
       <ForwardDialogComponent />
+
       <div class="flex h-full min-h-full w-full flex-col md:flex-row">
         <div
           class="sticky top-0 z-50 h-[var(--mobile-header-height)]
@@ -366,7 +440,70 @@ const InnerApp = (props: ParentProps) => {
             <JoinRoomButton class="md:hidden" />
           </div>
         </div>
-        {props.children}
+        <div class="flex-1">
+          <ErrorBoundary
+            fallback={(err: Error, reset) => (
+              <div
+                class="flex size-full max-w-[100vw] flex-col justify-center gap-2
+                  bg-background/80 px-2 py-4 backdrop-blur"
+              >
+                <h3 class="h3 mb-4">
+                  {t("common.error_boundary.title")}
+                </h3>
+                <Label>
+                  {t("common.error_boundary.description")}
+                </Label>
+                <div class="flex h-full flex-col gap-2">
+                  <p>{err.message}</p>
+                  {/* Print stack trace */}
+                  <Textarea
+                    readOnly
+                    class="flex-1 overflow-x-auto whitespace-pre-wrap text-nowrap
+                      text-xs scrollbar-thin"
+                    value={err.stack}
+                  />
+                </div>
+                <div class="flex gap-2 self-end">
+                  <Show when={err.stack}>
+                    {(stack) => (
+                      <Button
+                        class="gap-2"
+                        onClick={() =>
+                          navigator.clipboard
+                            .writeText(stack())
+                            .then(() => {
+                              toast.success(
+                                t(
+                                  "common.notification.copy_success",
+                                ),
+                              );
+                            })
+                        }
+                        variant="outline"
+                      >
+                        <IconContentCopy class="size-4" />
+                        {t("common.action.copy")}
+                      </Button>
+                    )}
+                  </Show>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      reset();
+                      location.reload();
+                    }}
+                    class="gap-2"
+                  >
+                    <IconResetWrench class="size-4" />
+                    {t("common.error_boundary.reset")}
+                  </Button>
+                </div>
+              </div>
+            )}
+          >
+            {props.children}
+          </ErrorBoundary>
+        </div>
       </div>
     </>
   );
@@ -392,7 +529,9 @@ export default function App(props: RouteSectionProps) {
         <Toaster />
         <ColorModeProvider storageManager={storageManager}>
           <ChatProvider>
-            <InnerApp> {props.children}</InnerApp>
+            <AudioPlayerProvider>
+              <InnerApp>{props.children}</InnerApp>
+            </AudioPlayerProvider>
           </ChatProvider>
         </ColorModeProvider>
       </MetaProvider>

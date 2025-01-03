@@ -11,7 +11,11 @@ export default function NotFound(props: RouteSectionProps) {
       <h1 class="max-6-xs text-6xl font-thin uppercase">
         {t("404.title")}
       </h1>
-      <p>{t("404.description", { path: props.params.path })}</p>
+      <p>
+        {t("404.description", {
+          path: props.params?.path,
+        })}
+      </p>
       <p class="my-4">
         <Button as={A} href="/" variant="outline" class="">
           {t("404.home")}

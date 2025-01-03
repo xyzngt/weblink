@@ -98,18 +98,6 @@ export type FileTransfererEventMap = {
   close: void;
 };
 
-// export class FileSender {
-//   private eventEmitter: MultiEventEmitter<FileTransmitterEventMap> =
-//     new MultiEventEmitter();
-//   private blockSize = 128 * 1024;
-//   private bufferedAmountLowThreshold = 1024 * 1024;
-//   private sendData:SendData
-
-//   constructor() {
-
-//   }
-// }
-
 export class FileTransferer {
   private eventEmitter: MultiEventEmitter<FileTransfererEventMap> =
     new MultiEventEmitter();
@@ -122,7 +110,6 @@ export class FileTransferer {
   private initialized: boolean = false;
   private compressionLevel: CompressionLevel = 6;
   private isComplete: boolean = false;
-  private isReady: boolean = false;
 
   readonly cache: ChunkCache;
   private blockCache: {
@@ -405,7 +392,6 @@ export class FileTransferer {
     if (this.channels.length === 0) {
       if (channel.readyState === "open") {
         this.dispatchEvent("ready", undefined);
-        this.isReady = true;
       } else {
         const controller = new AbortController();
         channel.addEventListener(
@@ -413,7 +399,6 @@ export class FileTransferer {
           () => {
             controller.abort();
             this.dispatchEvent("ready", undefined);
-            this.isReady = true;
           },
           {
             signal: controller.signal,

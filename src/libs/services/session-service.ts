@@ -104,7 +104,7 @@ class SessionService {
     }
     this.service = cs;
 
-    cs.addEventListener("status-change", (ev) => {
+    cs.addEventListener("statuschange", (ev) => {
       this.setClientServiceStatus(ev.detail);
     });
   }
@@ -144,36 +144,23 @@ class SessionService {
 
   async addClient(client: TransferClient) {
     if (!this.service) {
-      console.warn(
-        `can not add client, client service not found`,
+      throw new Error(
+        `can not add client: ${client.clientId}, client service not found`,
       );
-      return;
     }
     if (this.sessions[client.clientId]) {
-      console.log(
+      throw new Error(
         `client ${client.clientId} has already created`,
       );
-      return;
     }
-
-    if (this.sessions[client.clientId]) {
-      return;
-    }
-
     const polite =
       this.service.info.createdAt < client.createdAt;
-
-    if (!this.service) {
-      throw new Error(
-        `can not add client, client service not found`,
-      );
-    }
     const sender = this.service.createSender(
       client.clientId,
     );
     if (!sender) {
       throw new Error(
-        `can not add client, can not create sender`,
+        `can not create sender for client: ${client.clientId}`,
       );
     }
     const session = new PeerSession(sender, {
@@ -192,52 +179,52 @@ class SessionService {
     this.setSessions(client.clientId, session);
 
     const controller = new AbortController();
-    session.addEventListener(
-      "connecting",
-      () => {
-        this.setClientInfo(
-          client.clientId,
-          "onlineStatus",
-          "connecting",
-        );
-      },
-      { signal: controller.signal },
-    );
 
     session.addEventListener(
-      "connected",
-      () => {
-        this.setClientInfo(
-          client.clientId,
-          "onlineStatus",
-          "online",
-        );
-      },
-      { signal: controller.signal },
-    );
-
-    session.addEventListener(
-      "close",
-      () => {
-        this.setClientInfo(
-          client.clientId,
-          "onlineStatus",
-          "offline",
-        );
-        controller.abort();
-        this.destorySession(session.clientId);
-      },
-      { signal: controller.signal },
-    );
-
-    session.addEventListener(
-      "disconnect",
-      () => {
-        this.setClientInfo(
-          client.clientId,
-          "onlineStatus",
-          "offline",
-        );
+      "statuschange",
+      (ev) => {
+        console.log(`session status change`, ev.detail);
+        switch (ev.detail) {
+          case "created":
+            break;
+          case "connecting":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "connecting",
+            );
+            break;
+          case "connected":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "online",
+            );
+            break;
+          case "reconnecting":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "reconnecting",
+            );
+            break;
+          case "disconnected":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "offline",
+            );
+            break;
+          case "closed":
+            this.setClientInfo(
+              client.clientId,
+              "onlineStatus",
+              "offline",
+            );
+            controller.abort();
+            this.destorySession(session.clientId);
+            break;
+        }
       },
       { signal: controller.signal },
     );
@@ -253,16 +240,20 @@ class SessionService {
       { signal: controller.signal },
     );
 
-    session.addEventListener("reconnect", (ev) => {
-      this.setClientInfo(
-        client.clientId,
-        "onlineStatus",
-        "reconnecting",
-      );
-    });
+    session.addEventListener(
+      "remotestreamchange",
+      (ev) => {
+        this.setClientInfo(
+          client.clientId,
+          "stream",
+          reconcile(ev.detail ?? undefined),
+        );
+      },
+      { signal: controller.signal },
+    );
 
     session.addEventListener(
-      "messageChannelChange",
+      "messagechannelchange",
       (ev) => {
         if (this.clientInfo[client.clientId]) {
           this.setClientInfo(

@@ -18,17 +18,22 @@ export interface PeerSessionOptions {
 }
 
 export type PeerSessionEventMap = {
-  created: void;
-  connecting: void;
-  connected: void;
-  close: void;
   channel: RTCDataChannel;
   message: SessionMessage;
   error: Error;
-  disconnect: void;
-  messageChannelChange: "ready" | "closed";
-  reconnect: void;
+  messagechannelchange: "ready" | "closed";
+  remotestreamchange: MediaStream | null;
+  statuschange: PeerSessionStatus;
 };
+
+type PeerSessionStatus =
+  | "init"
+  | "created"
+  | "connecting"
+  | "connected"
+  | "reconnecting"
+  | "disconnected"
+  | "closed";
 
 export class PeerSession {
   private eventEmitter: MultiEventEmitter<PeerSessionEventMap> =
@@ -42,11 +47,12 @@ export class PeerSession {
   private channels: RTCDataChannel[] = [];
   private messageChannel: RTCDataChannel | null = null;
   private iceServers: RTCIceServer[] = [];
-  private closed: boolean = false;
   private relayOnly: boolean;
   private signalCache: Array<ClientSignal> = [];
   readonly polite: boolean;
-  private reconnectTimeout: number | null = null;
+  private stream: MediaStream | null = null;
+  private remoteStream: MediaStream | null = null;
+  private status: PeerSessionStatus = "init";
   constructor(
     sender: SignalingService,
     {
@@ -59,6 +65,22 @@ export class PeerSession {
     this.polite = polite;
     this.iceServers = iceServers ?? [];
     this.relayOnly = relayOnly;
+
+    window.addEventListener("beforeunload", () => {
+      this.close();
+    });
+
+    document.addEventListener("resume", () => {
+      if (
+        this.peerConnection?.connectionState !== "connected"
+      ) {
+        this.disconnect();
+      }
+    });
+
+    document.addEventListener("freeze", () => {
+      this.disconnect();
+    });
   }
 
   get clientId() {
@@ -101,8 +123,14 @@ export class PeerSession {
     );
   }
 
+  private setStatus(status: PeerSessionStatus) {
+    if (this.status === status) return;
+    this.status = status;
+    this.dispatchEvent("statuschange", status);
+  }
+
   private initializeConnection() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `can not initialize connection, session ${this.clientId} is closed`,
       );
@@ -135,7 +163,12 @@ export class PeerSession {
     });
     this.peerConnection = pc;
 
-    if (pc.getTransceivers().length === 0) {
+    if (this.stream) {
+      const stream = this.stream;
+      stream.getTracks().forEach((track) => {
+        pc.addTrack(track, stream);
+      });
+    } else {
       pc.addTransceiver("video", {
         direction: "recvonly",
       });
@@ -144,40 +177,103 @@ export class PeerSession {
       });
     }
 
-    this.dispatchEvent("created", undefined);
-
-    window.addEventListener(
-      "beforeunload",
-      () => {
-        this.disconnect();
-      },
-      { signal: this.controller.signal },
-    );
-
-    window.addEventListener(
-      "visibilitychange",
-      () => {
-        if (pc.connectionState === "connected") return;
-        this.handleDisconnection();
-      },
-      { signal: this.controller.signal },
-    );
+    this.setStatus("created");
 
     pc.addEventListener(
       "icecandidate",
       async (ev: RTCPeerConnectionIceEvent) => {
-        if (ev.candidate) {
+        if (!ev.candidate) return;
+
+        const [err] = await catchErrorAsync(
           this.sender.sendSignal({
             type: "candidate",
             data: JSON.stringify({
               candidate: ev.candidate.toJSON(),
             }),
-          });
+          }),
+        );
+        if (err) {
+          console.error(err);
         }
       },
       {
         signal: this.controller.signal,
       },
+    );
+    pc.addEventListener(
+      "track",
+      (ev) => {
+        console.log(
+          `client ${this.targetClientId} add track ${ev.track.id} stream ${ev.streams[0]?.id}`,
+        );
+
+        const stream = ev.streams.at(0);
+        if (!stream) return;
+
+        const receiver = ev.receiver;
+
+        if ("jitterBufferTarget" in receiver)
+          receiver.jitterBufferTarget = 0;
+        if ("playoutDelayHint" in receiver)
+          receiver.playoutDelayHint = 0;
+
+        const track = ev.track;
+        track.addEventListener(
+          "ended",
+          () => {
+            if (this.remoteStream) {
+              this.remoteStream.removeTrack(track);
+              this.dispatchEvent(
+                "remotestreamchange",
+                this.remoteStream,
+              );
+            }
+          },
+          { once: true },
+        );
+
+        if (this.remoteStream) {
+          if (stream.id === this.remoteStream.id) {
+            this.remoteStream.addTrack(track);
+            this.dispatchEvent(
+              "remotestreamchange",
+              this.remoteStream,
+            );
+            return;
+          }
+
+          const remoteStream = this.remoteStream;
+
+          remoteStream.getTracks().forEach((t) => {
+            remoteStream.removeTrack(t);
+            t.stop();
+          });
+
+          this.remoteStream = null;
+        }
+        this.remoteStream = stream;
+
+        stream.addEventListener(
+          "removetrack",
+          (ev) => {
+            console.log(
+              `client ${this.targetClientId} removetrack`,
+              ev.track.id,
+            );
+            if (stream.getTracks().length === 0) {
+              this.remoteStream = null;
+            }
+            this.dispatchEvent(
+              "remotestreamchange",
+              this.remoteStream,
+            );
+          },
+          { signal: this.controller?.signal },
+        );
+
+        this.dispatchEvent("remotestreamchange", stream);
+      },
+      { signal: this.controller.signal },
     );
 
     pc.addEventListener(
@@ -209,7 +305,7 @@ export class PeerSession {
           "close",
           () => {
             const index = this.channels.findIndex(
-              (channel) => channel.id === ev.channel.id,
+              (c) => c.id === ev.channel.id,
             );
             if (index !== -1) {
               this.channels.splice(index, 1);
@@ -241,7 +337,7 @@ export class PeerSession {
 
           this.messageChannel = ev.channel;
           this.dispatchEvent(
-            "messageChannelChange",
+            "messagechannelchange",
             "ready",
           );
         }
@@ -256,9 +352,9 @@ export class PeerSession {
     pc.addEventListener(
       "signalingstatechange",
       () => {
-        if (pc.signalingState === "closed") {
-          this.disconnect();
-        }
+        console.log(
+          `signalingstatechange, signalingState: ${pc.signalingState}`,
+        );
       },
       {
         signal: this.controller.signal,
@@ -283,34 +379,20 @@ export class PeerSession {
           case "new":
             break;
           case "connecting":
-            this.dispatchEvent("connecting", undefined);
+            this.setStatus("connecting");
             break;
           case "connected":
             this.connectable = true;
-            this.dispatchEvent("connected", undefined);
+            this.setStatus("connected");
             break;
-          case "failed":
           case "closed":
           case "disconnected":
+          case "failed":
+            this.setStatus("disconnected");
             this.handleDisconnection();
             break;
           default:
             break;
-        }
-      },
-      { signal: this.controller.signal },
-    );
-
-    document.addEventListener(
-      "visibilitychange",
-      () => {
-        if (document.visibilityState === "visible") {
-          if (
-            this.peerConnection?.connectionState !==
-            "connected"
-          ) {
-            this.disconnect();
-          }
         }
       },
       { signal: this.controller.signal },
@@ -329,41 +411,32 @@ export class PeerSession {
   }
 
   private async handleDisconnection() {
-    if (this.reconnectTimeout) {
-      window.clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
-    }
-    if (this.closed) {
-      console.warn(
-        `session ${this.clientId} is closed, skip handle connection error`,
-      );
-      return;
-    }
-    if (
-      ["connected", "connecting"].includes(
-        this.peerConnection?.connectionState ?? "",
-      )
-    ) {
-      console.warn(
-        `connection error, session ${this.clientId} is already connected, skip handle connection error`,
-      );
-      return;
-    }
-    if (!this.connectable) {
-      console.warn(
-        `connection error, session ${this.clientId} is not connectable, disconnect`,
-      );
-      return;
-    }
     let reconnectAttempts = 0;
     const attemptReconnect = async () => {
-      if (this.closed) {
+      if (
+        ["closed", "reconnecting"].includes(this.status)
+      ) {
         console.warn(
-          `session ${this.clientId} is closed, skip reconnect`,
+          `session ${this.clientId} is ${this.status}, skip handle connection error`,
         );
         return;
       }
-
+      if (
+        ["connected", "connecting"].includes(
+          this.peerConnection?.connectionState ?? "",
+        )
+      ) {
+        console.warn(
+          `connection error, session ${this.clientId} is already ${this.peerConnection?.connectionState}, skip handle connection error`,
+        );
+        return;
+      }
+      if (!this.connectable) {
+        console.warn(
+          `connection error, session ${this.clientId} is not connectable, disconnect`,
+        );
+        return;
+      }
       reconnectAttempts++;
       console.log(
         `attempt reconnect, attempt ${reconnectAttempts}`,
@@ -375,16 +448,16 @@ export class PeerSession {
           `reconnect attempt ${reconnectAttempts} failed, error: `,
           err,
         );
-        if (reconnectAttempts <= 10) {
-          this.reconnectTimeout = window.setTimeout(
+        if (reconnectAttempts < 10) {
+          window.setTimeout(
             () => attemptReconnect(),
             Math.random() * (500 + reconnectAttempts * 500),
           );
         } else {
-          console.error(
-            `reconnect attempt ${reconnectAttempts} failed`,
-          );
           this.disconnect();
+          console.error(
+            `reconnect failed, reach max reconnect attempts`,
+          );
         }
       }
     };
@@ -492,7 +565,7 @@ export class PeerSession {
   }
 
   async listen() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not listen`,
       );
@@ -518,18 +591,110 @@ export class PeerSession {
         if (ev.detail.type === "candidate") {
           this.handleDisconnection();
         }
+      } else {
+        await this.handleSignal(ev.detail);
       }
-      await this.handleSignal(ev.detail);
     });
+  }
+
+  private removeStream() {
+    if (this.stream) {
+      this.stream.getTracks().forEach((track) => {
+        this.stream?.removeTrack(track);
+        track.stop();
+      });
+      this.stream = null;
+    }
+    this.peerConnection?.getSenders().forEach((sender) => {
+      if (sender.track) {
+        this.peerConnection?.removeTrack(sender);
+      }
+    });
+  }
+
+  setStream(stream: MediaStream | null) {
+    if (!stream) {
+      this.removeStream();
+      return;
+    }
+
+    if (this.stream) {
+      if (this.stream.id === stream.id) return;
+
+      this.removeStream();
+    }
+
+    this.stream = stream;
+
+    let senders: RTCRtpSender[] = [];
+
+    stream.addEventListener("addtrack", (ev) => {
+      const sender = this.peerConnection?.addTrack(
+        ev.track,
+        stream,
+      );
+      if (sender) {
+        senders.push(sender);
+      }
+    });
+
+    stream.addEventListener("removetrack", (ev) => {
+      const index = senders.findIndex(
+        (sender) => sender.track?.id === ev.track.id,
+      );
+      if (index !== -1) {
+        this.peerConnection?.removeTrack(senders[index]);
+        senders.splice(index, 1);
+      }
+    });
+
+    senders.push(
+      ...stream
+        .getTracks()
+        .map((track) => {
+          track.addEventListener("ended", () => {
+            console.log(
+              `track ended, remove track from peer connection`,
+              track.id,
+            );
+            const index = senders.findIndex(
+              (sender) => sender.track?.id === track.id,
+            );
+            if (index !== -1) {
+              this.peerConnection?.removeTrack(
+                senders[index],
+              );
+              senders.splice(index, 1);
+            }
+          });
+          return this.peerConnection?.addTrack(
+            track,
+            stream,
+          );
+        })
+        .filter((sender) => sender !== undefined),
+    );
   }
 
   async createChannel(label: string, protocol: string) {
     if (!this.peerConnection) {
-      console.error(
+      throw new Error(
         `failed to create channel, peer connection is null`,
       );
-      return;
     }
+
+    const existChannel = this.channels.find(
+      (channel) =>
+        channel.label === label &&
+        channel.protocol === protocol,
+    );
+    if (existChannel) {
+      console.warn(
+        `channel ${label} with protocol ${protocol} already exists`,
+      );
+      return existChannel;
+    }
+
     const channel = this.peerConnection.createDataChannel(
       label,
       {
@@ -553,7 +718,7 @@ export class PeerSession {
         if (channel.protocol === "message") {
           this.messageChannel = null;
           this.dispatchEvent(
-            "messageChannelChange",
+            "messagechannelchange",
             "closed",
           );
         }
@@ -582,7 +747,7 @@ export class PeerSession {
         "open",
         () => {
           this.dispatchEvent(
-            "messageChannelChange",
+            "messagechannelchange",
             "ready",
           );
         },
@@ -598,8 +763,9 @@ export class PeerSession {
       channel.addEventListener(
         "close",
         () => {
+          this.messageChannel = null;
           this.dispatchEvent(
-            "messageChannelChange",
+            "messagechannelchange",
             "closed",
           );
         },
@@ -612,7 +778,7 @@ export class PeerSession {
   }
 
   sendMessage(message: SessionMessage) {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not send message`,
       );
@@ -628,7 +794,7 @@ export class PeerSession {
   }
 
   async renegotiate() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not renegotiate`,
       );
@@ -640,9 +806,9 @@ export class PeerSession {
       return;
     }
 
-    if (this.peerConnection.signalingState === "closed") {
+    if (this.peerConnection.signalingState !== "stable") {
       console.warn(
-        `renegotiate error peerConnection connectionState is "closed"`,
+        `renegotiate failed, signalingState is ${this.peerConnection.signalingState}`,
       );
       return;
     }
@@ -664,7 +830,7 @@ export class PeerSession {
   }
 
   async reconnect() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not reconnect`,
       );
@@ -673,12 +839,18 @@ export class PeerSession {
       console.log(
         `peer connection ${this.targetClientId} is null, new connection`,
       );
-      const [err] = catchErrorSync(() =>
+      this.disconnect();
+      let err: Error | undefined;
+      [err] = catchErrorSync(() =>
         this.initializeConnection(),
       );
       if (err) throw err;
-      this.dispatchEvent("reconnect", undefined);
-      return await this.connect();
+      this.setStatus("reconnecting");
+      [err] = await catchErrorAsync(this.connect());
+      if (err) {
+        throw err;
+      }
+      return;
     }
     const pc = this.peerConnection;
     if (
@@ -692,31 +864,57 @@ export class PeerSession {
       return;
     }
 
-    this.dispatchEvent("reconnect", undefined);
+    this.setStatus("reconnecting");
+
+    let timer: number;
+
+    const connectAbortController = new AbortController();
 
     return new Promise<void>(async (resolve, reject) => {
+      this.createChannel("message", "message").catch(
+        (err) => {
+          connectAbortController.abort();
+          reject(err);
+        },
+      );
+      timer = window.setTimeout(() => {
+        connectAbortController.abort();
+        this.disconnect();
+        reject(new Error("connect timeout"));
+      }, 10000);
+
+      this.controller?.signal.addEventListener(
+        "abort",
+        () => {
+          connectAbortController.abort();
+        },
+        { once: true },
+      );
+
+      connectAbortController.signal.addEventListener(
+        "abort",
+        () => {
+          window.clearTimeout(timer);
+        },
+        { once: true },
+      );
+
       const onConnectionStateChange = () => {
         switch (pc.connectionState) {
           case "connected":
-            pc.removeEventListener(
-              "connectionstatechange",
-              onConnectionStateChange,
-            );
             this.connectable = true;
+            connectAbortController.abort();
             resolve();
             break;
           case "failed":
           case "closed":
           case "disconnected":
-            pc.removeEventListener(
-              "connectionstatechange",
-              onConnectionStateChange,
-            );
             this.dispatchEvent(
               "error",
               Error("reconnect error"),
             );
-            this.disconnect();
+            this.setStatus("disconnected");
+            connectAbortController.abort();
             reject(
               new Error(
                 `Connection failed with state: ${pc.connectionState}`,
@@ -734,6 +932,7 @@ export class PeerSession {
       pc.addEventListener(
         "connectionstatechange",
         onConnectionStateChange,
+        { signal: connectAbortController.signal },
       );
 
       pc.restartIce();
@@ -743,21 +942,26 @@ export class PeerSession {
         const [err] = await catchErrorAsync(
           handleOffer(pc, this.sender),
         );
+        this.makingOffer = false;
         if (err) {
           console.error("Error during ICE restart:", err);
-          return;
+          connectAbortController.abort();
+          this.disconnect();
+          reject(err);
         }
-        this.makingOffer = false;
       } else {
-        console.warn(
-          `session ${this.clientId} already making offer`,
+        this.disconnect();
+        reject(
+          new Error(
+            `session ${this.clientId} already making offer`,
+          ),
         );
       }
     });
   }
 
   async connect() {
-    if (this.closed) {
+    if (this.status === "closed") {
       throw new Error(
         `session ${this.clientId} is closed, can not connect`,
       );
@@ -770,16 +974,13 @@ export class PeerSession {
       return;
     }
 
-    if (pc.connectionState === "connected") {
+    if (
+      ["connected", "connecting"].includes(
+        pc.connectionState,
+      )
+    ) {
       console.warn(
-        `session ${this.clientId} already connected`,
-      );
-      return;
-    }
-
-    if (pc.connectionState === "connecting") {
-      console.warn(
-        `session ${this.clientId} already connecting, skip connect`,
+        `session ${this.clientId} already ${pc.connectionState}`,
       );
       return;
     }
@@ -787,12 +988,34 @@ export class PeerSession {
     const connectAbortController = new AbortController();
 
     return new Promise<void>(async (resolve, reject) => {
-      this.createChannel("message", "message");
+      this.createChannel("message", "message").catch(
+        (err) => {
+          connectAbortController.abort();
+          reject(err);
+        },
+      );
+
       const timer = window.setTimeout(() => {
         connectAbortController.abort();
         this.disconnect();
         reject(new Error("connect timeout"));
       }, 10000);
+
+      this.controller?.signal.addEventListener(
+        "abort",
+        () => {
+          connectAbortController.abort();
+        },
+        { once: true },
+      );
+
+      connectAbortController.signal.addEventListener(
+        "abort",
+        () => {
+          window.clearTimeout(timer);
+        },
+        { once: true },
+      );
 
       pc.addEventListener(
         "connectionstatechange",
@@ -802,14 +1025,13 @@ export class PeerSession {
               console.log(
                 `connection established, session ${this.clientId}, connectable: ${this.connectable}`,
               );
-              window.clearTimeout(timer);
               connectAbortController.abort();
+              this.connectable = true;
               resolve();
               break;
             case "failed":
             case "closed":
             case "disconnected":
-              window.clearTimeout(timer);
               connectAbortController.abort();
               this.disconnect();
               reject(
@@ -824,12 +1046,14 @@ export class PeerSession {
         },
         { signal: connectAbortController.signal },
       );
-      if (!this.makingOffer && !this.polite) {
+      if (!this.makingOffer) {
         this.makingOffer = true;
         const [err] = await catchErrorAsync(
           handleOffer(pc, this.sender),
         );
         if (err) {
+          connectAbortController.abort();
+          this.disconnect();
           reject(
             new Error(
               `Failed to create and send offer: ${err.message}`,
@@ -838,38 +1062,45 @@ export class PeerSession {
         }
         this.makingOffer = false;
       } else {
-        console.warn(
-          `session ${this.clientId} already making offer`,
+        this.disconnect();
+        reject(
+          new Error(
+            `session ${this.clientId} already making offer`,
+          ),
         );
       }
     });
   }
 
   disconnect() {
-    this.controller?.abort();
-    this.controller = null;
     this.makingOffer = false;
+    if (this.controller) {
+      this.controller.abort();
+      this.controller = null;
+    }
+    this.channels.forEach((channel) => channel.close());
     this.channels.length = 0;
     if (this.messageChannel) {
       this.messageChannel.close();
       this.messageChannel = null;
-      this.dispatchEvent("messageChannelChange", "closed");
+      this.dispatchEvent("messagechannelchange", "closed");
     }
     if (this.peerConnection) {
       this.peerConnection.close();
       this.peerConnection = null;
-      this.dispatchEvent("disconnect", undefined);
     }
-    if (this.reconnectTimeout) {
-      window.clearTimeout(this.reconnectTimeout);
-      this.reconnectTimeout = null;
+    if (this.remoteStream) {
+      this.remoteStream.getTracks().forEach((track) => {
+        track.stop();
+      });
+      this.remoteStream = null;
     }
+    this.setStatus("disconnected");
   }
 
   close() {
     this.disconnect();
-    this.closed = true;
-    this.dispatchEvent("close", undefined);
+    this.setStatus("closed");
   }
 }
 
